@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#183451">
+<link rel="manifest" href="/manifest-imobiliaria.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VIZELLO Imobiliária">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<script>try{var _t=localStorage.getItem('vz-theme');if(_t==='dark'||_t==='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/qrcode.js"></script>
+<title>VIZELLO — Imobiliária</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none}
+  *::-webkit-scrollbar{display:none;width:0;height:0}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+  html,body{margin:0;min-height:100%}
+  body{font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--app-bg)}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font:inherit}
+  input[type="date"],input[type="datetime-local"]{-webkit-appearance:none;appearance:none;min-height:46px}
+  a{color:var(--brand-ink)}
+  .hide{display:none!important}
+  /* ===== responsividade global ===== */
+  html,body{max-width:100%;overflow-x:hidden}
+  img,svg,video,canvas{max-width:100%;height:auto}
+  input,textarea,select{max-width:100%}
+  pre,code,textarea{overflow-wrap:anywhere;word-break:break-word}
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:400px){ .metrics,.mini{grid-template-columns:1fr!important} }
+  @media(max-width:380px){ .fld-row{flex-direction:column;gap:0} }
+  /* auth */
+  .center{min-height:100dvh;display:flex;padding:24px;overflow-y:auto;background:linear-gradient(165deg,#12586b 0%,#0e4a5a 46%,#0a3644 100%)}
+  .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);width:100%;max-width:420px;padding:28px;margin:auto}
+  .loginlogo{display:block;margin:2px auto 6px;width:180px;max-width:66%;height:auto}
+  .tagline{display:flex;justify-content:center;margin-bottom:4px}
+  .tagline .tag{font-size:11px;font-weight:800;background:var(--ink);color:#fff;padding:3px 10px;border-radius:999px;letter-spacing:1px}
+  .sub{color:var(--muted);font-size:14px;margin:6px 0 16px;text-align:center}
+  label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+  .field{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--field-bg);outline:none;color:var(--ink)}
+  .field:focus{border-color:var(--brand)}
+  .btn{width:100%;padding:13px;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;margin-top:16px;transition:filter .15s}
+  .btn:active{filter:brightness(.93)} .btn:disabled{opacity:.55}
+  .btn.secondary{background:var(--chip);color:var(--brand-ink)}
+  .btn.ghost{background:transparent;color:var(--brand-ink);margin-top:8px;font-weight:600}
+  .btn.small{width:auto;margin:0;padding:9px 15px;font-size:14px}
+  .btn.danger{background:#fdecea;color:var(--danger)}
+  .err{background:#fdecea;color:var(--danger);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none}
+  .err.show{display:block}
+  .ok{background:#e6f5ee;color:var(--ok);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none}
+  .ok.show{display:block}
+  .switch-txt{text-align:center;margin-top:14px;font-size:13.5px;color:var(--muted)}
+  .switch-txt button{color:var(--brand-ink);font-weight:700}
+  /* shell */
+  header.top{background:var(--bg);color:#eaf3f7;padding:16px 22px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}
+  header.top .brand{display:flex;align-items:center;gap:10px}
+  header.top .toplogo{height:34px;width:auto;display:block}
+  header.top .tag{font-size:10px;font-weight:800;background:rgba(255,255,255,.16);color:#eaf3f7;padding:3px 8px;border-radius:999px;letter-spacing:1px}
+  header.top .who{margin-left:auto;text-align:right;font-size:13px;color:#9fc0cd}
+  header.top .who b{display:block;color:#eaf3f7;font-size:14px}
+  @media(min-width:1040px){ header.top{padding-left:max(22px,calc((100% - 1000px)/2));padding-right:max(22px,calc((100% - 1000px)/2))} }
+  main{max-width:1000px;margin:0 auto;padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
+  nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:25}
+  nav.bottom .navinner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;font-weight:600;padding:6px 1px}
+  nav.bottom button .ic{font-size:20px;line-height:1}
+  nav.bottom button.active{color:var(--brand)}
+  .sec{display:none} .sec.on{display:block}
+  .h{font-size:20px;font-weight:800;margin:6px 2px 14px;letter-spacing:-.3px}
+  .h small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  @media(max-width:640px){.metrics{grid-template-columns:1fr 1fr}}
+  .metric{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .metric small{color:var(--muted);font-size:12.5px} .metric b{display:block;font-size:24px;margin-top:4px;letter-spacing:-.5px}
+  .metric b.warn{color:var(--brand)}
+  .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:-6px 0 20px}
+  @media(max-width:640px){.mini{grid-template-columns:1fr 1fr}}
+  .mini .m2{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .mini small{color:var(--muted);font-size:11.5px;display:block} .mini b{font-size:18px;letter-spacing:-.3px}
+  .mini b.warn{color:var(--brand)}
+  .bar{display:flex;gap:10px;align-items:center;margin:2px 2px 12px;flex-wrap:wrap}
+  .search{flex:1;min-width:140px;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--field-bg)}
+  .seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+  .seg button{padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(15,43,61,.12)}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .tile .row{display:flex;align-items:center;gap:10px}
+  .tile h3{margin:0;font-size:16px}
+  .meta{color:var(--muted);font-size:12.5px;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--brand-ink)}
+  .badge.disponivel{background:#e6f5ee;color:var(--ok)} .badge.locado{background:#fff4e0;color:var(--warn)}
+  .badge.vendido{background:#e2eff2;color:#00596b} .badge.inativo{background:#f0f0f0;color:#888}
+  .badge.pago{background:#e6f5ee;color:var(--ok)} .badge.pendente{background:#eef2f6;color:#5a6b78} .badge.vencida{background:#fdecea;color:var(--danger)}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px} .empty .big{font-size:40px}
+  .spin{width:24px;height:24px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:44px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .drow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .drow:last-child{border-bottom:none} .drow .k{color:var(--muted)} .drow .v{font-weight:600;text-align:right}
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:flex-end;justify-content:center;z-index:40}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:22px;box-shadow:var(--shadow);max-height:92dvh;overflow-y:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+  @media(min-width:560px){ .modal-bg{align-items:center} .modal{border-radius:20px} }
+  .modal h2{margin:0 0 4px;font-size:19px}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  #mapEl{height:64vh;width:100%;border-radius:var(--r);border:1px solid var(--line)}
+  .leaflet-container{font:inherit}
+  .fld-row{display:flex;gap:10px} .fld-row>div{flex:1}
+  .badge.ok{background:#e6f5ee;color:var(--ok)} .badge.atrasado,.badge.cancelado{background:#fdecea;color:var(--danger)}
+  .installbar{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;margin-bottom:14px}
+  .installbar b{font-size:13.5px} .installbar small{color:var(--muted);font-size:12px;display:block}
+  .installbar .ib{flex:0 0 auto;background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:9px 13px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="center">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
+    <div class="sub">Gestão de imóveis, locações e financeiro.</div>
+    <label>E-mail</label><input id="liEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
+    <label>Senha</label><input id="liPass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div id="liErr" class="err"></div><div id="liMsg" class="ok"></div>
+    <button id="liBtn" class="btn">Entrar</button>
+    <div class="switch-txt">Ainda não tem conta? <button id="goSignup">Criar conta</button></div>
+    <div class="switch-txt" style="margin-top:6px"><button id="liForgot">Esqueci minha senha</button></div>
+  </div>
+</div>
+
+<!-- CONVITE (inquilino / proprietário) -->
+<div id="invite" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="tagline"><span class="tag" id="inviteTag">PORTAL</span></div>
+    <div id="inviteBody"><div class="spin"></div></div>
+  </div>
+</div>
+
+<!-- SIGNUP -->
+<div id="signup" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
+    <div class="sub">Crie sua conta para começar.</div>
+    <label>Nome</label><input id="suNome" class="field" type="text" autocomplete="name" placeholder="Seu nome">
+    <label>E-mail</label><input id="suEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
+    <label>Senha</label><input id="suPass" class="field" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+    <div id="suErr" class="err"></div><div id="suMsg" class="ok"></div>
+    <button id="suBtn" class="btn">Criar conta</button>
+    <div class="switch-txt">Já tem conta? <button id="goLogin">Entrar</button></div>
+  </div>
+</div>
+
+<!-- CRIAR IMOBILIÁRIA -->
+<div id="createImob" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
+    <div class="sub">Cadastre sua imobiliária para continuar.</div>
+    <label>Nome da imobiliária</label><input id="ciNome" class="field" placeholder="Imobiliária Central">
+    <div class="fld-row">
+      <div><label>CNPJ (opcional)</label><input id="ciCnpj" class="field" inputmode="numeric" placeholder="00.000.000/0000-00"></div>
+      <div><label>UF</label><input id="ciUf" class="field" maxlength="2" placeholder="RJ"></div>
+    </div>
+    <label>Cidade (opcional)</label><input id="ciCidade" class="field" placeholder="Petrópolis">
+    <div id="ciErr" class="err"></div>
+    <button id="ciBtn" class="btn">Criar imobiliária</button>
+    <button id="ciOut" class="btn ghost">Sair</button>
+  </div>
+</div>
+
+<!-- ESCOLHER IMOBILIÁRIA -->
+<div id="pickImob" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="sub">Escolha uma imobiliária.</div>
+    <div id="pickList"></div>
+    <button id="pickNew" class="btn secondary">➕ Nova imobiliária</button>
+    <button id="pickOut" class="btn ghost">Sair</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hide">
+  <header class="top">
+    <div class="brand"><img class="toplogo" src="/logo-white.png?v=2" alt="VIZELLO"> <span class="tag" id="appTag">IMOBILIÁRIA</span></div>
+    <div class="who"><b id="whoImob">—</b><span id="whoUser">—</span></div>
+    <button class="btn small secondary" id="topOut" style="width:auto;margin:0 0 0 14px;padding:9px 15px">Sair</button>
+  </header>
+  <main id="view"><div class="spin"></div></main>
+  <nav class="bottom" id="nav"></nav>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const SUPABASE_URL="https://bklvbhsaxcmrnjxjbzjh.supabase.co";
+const SUPABASE_ANON="sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa";
+const sb=createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const S={ user:null, imob:null, imobs:[], tab:"inicio" };
+const $=s=>document.querySelector(s);
+const view=()=>$("#view");
+function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+function modal(html){ $("#modal").innerHTML=html; $("#modalBg").classList.add("show"); }
+function closeModal(){ $("#modalBg").classList.remove("show"); }
+$("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
+function confirmar(msg,ok="Confirmar"){ return new Promise(res=>{ modal(`<h2>Confirmar</h2><p class="sub" style="text-align:left">${esc(msg)}</p>
+  <div class="fld-row" style="margin-top:6px"><button class="btn secondary" id="cfN">Cancelar</button><button class="btn" id="cfY">${esc(ok)}</button></div>`);
+  $("#cfY").onclick=()=>{closeModal();res(true);}; $("#cfN").onclick=()=>{closeModal();res(false);}; }); }
+async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error) throw error; return data; }
+function fmtMoney(v){ return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
+function fmtDate(d){ return d? new Date(d+ (String(d).length<=10?"T00:00:00":"")).toLocaleDateString("pt-BR"):""; }
+function maskCnpj(v){ v=(v||"").replace(/\D/g,"").slice(0,14); return v.replace(/^(\d{2})(\d)/,"$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3").replace(/\.(\d{3})(\d)/,".$1/$2").replace(/(\d{4})(\d)/,"$1-$2"); }
+function maskCpf(v){ v=(v||"").replace(/\D/g,"").slice(0,11); return v.replace(/^(\d{3})(\d)/,"$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/,"$1.$2.$3").replace(/\.(\d{3})(\d)/,".$1-$2"); }
+function waPhone(raw){ let d=(raw||"").replace(/\D/g,""); if(!d) return ""; if(d.length<=11 && !d.startsWith("55")) d="55"+d; return d; }
+// ---- Pix (BR Code estático / copia e cola) ----
+function normPix(s,max){ return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9 .\-]/g,"").toUpperCase().slice(0,max); }
+function crc16(str){ let crc=0xFFFF; for(let i=0;i<str.length;i++){ crc^=str.charCodeAt(i)<<8; for(let j=0;j<8;j++){ crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1); crc&=0xFFFF; } } return crc.toString(16).toUpperCase().padStart(4,"0"); }
+function pixBRCode({chave,nome,cidade,valor,txid,descricao}){
+  const f=(id,v)=>id+String(v.length).padStart(2,"0")+v;
+  const desc=descricao?f("02",normPix(descricao,25)):"";
+  const mai=f("26", f("00","BR.GOV.BCB.PIX")+f("01",(chave||"").trim())+desc);
+  let p=f("00","01")+mai+f("52","0000")+f("53","986")
+    +(valor?f("54",Number(valor).toFixed(2)):"")+f("58","BR")
+    +f("59",normPix(nome||"RECEBEDOR",25)||"RECEBEDOR")+f("60",normPix(cidade||"BRASIL",15)||"BRASIL")
+    +f("62",f("05",(txid||"***").replace(/[^A-Za-z0-9]/g,"").slice(0,25)||"***"));
+  p+="6304"; return p+crc16(p);
+}
+function qrImgTag(text,cell=6){ try{ if(typeof qrcode==="undefined") return ""; const q=qrcode(0,"M"); q.addData(String(text)); q.make(); return q.createImgTag(cell,8); }catch(_){ return ""; } }
+
+const TIPOS={apartamento:"Apartamento",casa:"Casa",comercial:"Comercial",terreno:"Terreno"};
+const FINS={aluguel:"Aluguel",venda:"Venda"};
+const STATUS={disponivel:"Disponível",locado:"Locado",vendido:"Vendido",inativo:"Inativo"};
+const CAT_REC={aluguel:"Aluguel",taxa:"Taxa/Comissão",multa:"Multa",outro:"Outro"};
+const CAT_DESP={repasse:"Repasse ao proprietário",manutencao:"Manutenção",iptu:"IPTU",condominio:"Condomínio",comissao:"Comissão",marketing:"Marketing",administrativo:"Administrativo",outro:"Outro"};
+const ETAPAS={novo:"Novo",contato:"Em contato",visita:"Visita",proposta:"Proposta",fechado:"Fechado",perdido:"Perdido"};
+const ETAPA_ORDER=["novo","contato","visita","proposta","fechado"];
+
+function show(id){ for(const s of ["invite","login","signup","createImob","pickImob","app"]) $("#"+s).classList.toggle("hide", s!==id); }
+
+// ---------- AUTH ----------
+function setMsg(el,m,cls){ const e=$(el); if(!m){e.classList.remove("show");return;} e.textContent=m; e.className=cls+" show"; }
+$("#goSignup").onclick=()=>show("signup");
+$("#goLogin").onclick=()=>show("login");
+$("#liBtn").onclick=async()=>{
+  const email=$("#liEmail").value.trim(), pass=$("#liPass").value;
+  if(!email||!pass) return setMsg("#liErr","Preencha e-mail e senha.","err");
+  $("#liBtn").disabled=true; setMsg("#liErr","","err");
+  try{ const {error}=await sb.auth.signInWithPassword({email,password:pass}); if(error) throw error; await boot(); }
+  catch(e){ const m=(e?.message||"").toLowerCase(); setMsg("#liErr",m.includes("invalid")?"E-mail ou senha incorretos.":(e?.message||"Erro ao entrar."),"err"); }
+  $("#liBtn").disabled=false;
+};
+$("#liPass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#liBtn").click(); });
+$("#liForgot").onclick=async()=>{
+  const email=$("#liEmail").value.trim(); if(!email) return setMsg("#liErr","Digite seu e-mail acima primeiro.","err");
+  try{ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname}); if(error) throw error;
+    setMsg("#liMsg","Enviamos um link de redefinição para "+email+".","ok"); }catch(e){ setMsg("#liErr",e.message||"Erro","err"); }
+};
+$("#suBtn").onclick=async()=>{
+  const nome=$("#suNome").value.trim(), email=$("#suEmail").value.trim(), pass=$("#suPass").value;
+  if(!nome||!email||!pass) return setMsg("#suErr","Preencha todos os campos.","err");
+  if(pass.length<6) return setMsg("#suErr","A senha precisa de ao menos 6 caracteres.","err");
+  $("#suBtn").disabled=true; setMsg("#suErr","","err");
+  try{
+    const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nome}}});
+    if(error) throw error;
+    if(!data.session){ setMsg("#suMsg","Conta criada! Confirme pelo e-mail e depois entre.","ok"); show("login"); }
+    else await boot();
+  }catch(e){ setMsg("#suErr",e.message||"Erro ao criar conta.","err"); }
+  $("#suBtn").disabled=false;
+};
+$("#ciBtn").onclick=async()=>{
+  const nome=$("#ciNome").value.trim(); if(!nome) return setMsg("#ciErr","Informe o nome.","err");
+  $("#ciBtn").disabled=true;
+  try{ await rpc("imob_criar",{p_nome:nome,p_cnpj:$("#ciCnpj").value.replace(/\D/g,"")||null,p_cidade:$("#ciCidade").value.trim()||null,p_uf:$("#ciUf").value.trim()||null});
+    toast("Imobiliária criada ✅"); await boot(); }
+  catch(e){ setMsg("#ciErr",e.message||"Erro","err"); $("#ciBtn").disabled=false; }
+};
+$("#ciCnpj").addEventListener("input",e=>e.target.value=maskCnpj(e.target.value));
+$("#ciOut").onclick=logout; $("#pickOut").onclick=logout; $("#pickNew").onclick=()=>show("createImob");
+async function logout(){ await sb.auth.signOut(); S.user=null; S.imob=null; show("login"); }
+
+sb.auth.onAuthStateChange((ev)=>{ if(ev==="PASSWORD_RECOVERY"){ toast("Defina uma nova senha nas configurações após entrar."); } });
+
+// ---------- BOOT ----------
+async function boot(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){ conviteToken ? abrirConvite() : show("login"); return; }
+  S.user=user;
+  // veio de um convite e ainda não vinculado → aceita uma vez
+  if(conviteToken && !S._convOk){ S._convOk=true; try{ await aceitarConviteAtual(); }catch(_){} }
+  // 1) Gestor da imobiliária?
+  let imobs=[]; try{ imobs=await rpc("imob_boot"); }catch(_){ imobs=[]; }
+  if((imobs||[]).length){ startGestor(imobs); return; }
+  // 2) Proprietário?
+  try{ const pr=await rpc("imob_prop_boot"); if(pr && (pr.vinculos||[]).length){ Proprietario.start(pr); return; } }catch(_){}
+  // 3) Inquilino?
+  try{ const mo=await rpc("imob_morador_boot"); if(mo && (mo.contratos||[]).length){ Inquilino.start(mo); return; } }catch(_){}
+  // 4) Sem vínculo → assume novo gestor (cadastrar imobiliária)
+  show("createImob");
+}
+function startGestor(imobs){
+  S.imobs=imobs;
+  $("#appTag").textContent="IMOBILIÁRIA";
+  if(imobs.length===1){ S.imob=imobs[0]; enterApp(); return; }
+  $("#pickList").innerHTML=imobs.map(i=>`<button class="btn secondary" data-imob="${i.id}" style="text-align:left;margin-top:8px">🏢 ${esc(i.nome)}${i.cidade?` · ${esc(i.cidade)}`:""}</button>`).join("");
+  $("#pickList").querySelectorAll("[data-imob]").forEach(b=>b.onclick=()=>{ S.imob=imobs.find(x=>x.id===b.dataset.imob); enterApp(); });
+  show("pickImob");
+}
+async function aceitarConviteAtual(){
+  try{ await rpc("imob_prop_convite_aceitar",{p_token:conviteToken}); return; }catch(_){}
+  try{ await rpc("imob_convite_aceitar",{p_token:conviteToken}); }catch(_){}
+}
+function enterApp(){
+  $("#whoImob").textContent=S.imob.nome;
+  $("#whoUser").textContent=S.user.email;
+  $("#topOut").onclick=logout;
+  show("app"); buildNav(); go(S.tab||"inicio");
+}
+
+const TABS=[
+  {id:"inicio",ic:"📊",label:"Início"},
+  {id:"imoveis",ic:"🏠",label:"Imóveis"},
+  {id:"vistorias",ic:"📋",label:"Vistorias"},
+  {id:"proprietarios",ic:"👤",label:"Donos"},
+  {id:"leads",ic:"🤝",label:"Leads"},
+  {id:"mapa",ic:"🗺️",label:"Mapa"},
+  {id:"financeiro",ic:"💰",label:"Financeiro"},
+  {id:"config",ic:"⚙️",label:"Config"},
+];
+function buildNav(){
+  $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`;
+  $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+}
+function go(tab){
+  S.tab=tab;
+  $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  window.scrollTo(0,0);
+  ({inicio:renderInicio,imoveis:renderImoveis,vistorias:renderVistorias,proprietarios:renderProprietarios,leads:renderLeads,mapa:renderMapa,financeiro:renderFinanceiro,config:renderConfig}[tab]||renderInicio)();
+}
+
+// ---------- DADOS ----------
+async function carregarImoveis(){
+  const {data:imv,error}=await sb.from("imoveis").select("*").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false});
+  if(error) throw error;
+  const {data:loc}=await sb.from("locacoes").select("*").eq("imobiliaria_id",S.imob.id).eq("ativo",true);
+  const locByImovel={}; (loc||[]).forEach(l=>locByImovel[l.imovel_id]=l);
+  return (imv||[]).map(i=>({...i, locacao:locByImovel[i.id]||null}));
+}
+
+// ---------- INÍCIO ----------
+async function renderInicio(){
+  view().innerHTML='<div class="spin"></div>';
+  let imoveis=[], lanc=[];
+  try{
+    imoveis=await carregarImoveis();
+    const {data:l}=await sb.from("imob_lancamentos").select("*").eq("imobiliaria_id",S.imob.id);
+    lanc=l||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  const total=imoveis.length, disp=imoveis.filter(i=>i.status==="disponivel").length, locados=imoveis.filter(i=>i.status==="locado").length;
+  const aluguelAtivo=imoveis.filter(i=>i.locacao).reduce((s,i)=>s+(Number(i.locacao.valor_mensal)||0),0);
+  const hoje=new Date().toISOString().slice(0,10);
+  const areceber=lanc.filter(l=>l.tipo==="receita"&&l.status==="pendente");
+  const apagar=lanc.filter(l=>l.tipo==="despesa"&&l.status==="pendente");
+  const vencidasReceber=areceber.filter(l=>l.vencimento&&l.vencimento<hoje);
+  // ---- alertas & vencimentos ----
+  const alertas=[]; const hojeD=new Date();
+  if(vencidasReceber.length) alertas.push({ic:"⚠️",cls:"vencida",txt:`${vencidasReceber.length} aluguel(is) vencido(s) — ${fmtMoney(vencidasReceber.reduce((s,l)=>s+Number(l.valor),0))}`});
+  imoveis.forEach(i=>{ const l=i.locacao; if(!l) return;
+    if(l.fim){ const dias=Math.ceil((new Date(l.fim+"T00:00:00")-hojeD)/86400000); if(dias>=0&&dias<=60) alertas.push({ic:"📄",cls:"pendente",txt:`Contrato de ${i.titulo} vence em ${dias} dia(s) (${fmtDate(l.fim)})`}); }
+    if(l.inicio){ const ini=new Date(l.inicio+"T00:00:00"); const anos=(hojeD-ini)/(365.25*86400000);
+      if(anos>=1){ let prox=new Date(ini); prox.setFullYear(hojeD.getFullYear()); if(prox<hojeD) prox.setFullYear(hojeD.getFullYear()+1); const d2=Math.ceil((prox-hojeD)/86400000);
+        if(d2>=0&&d2<=30) alertas.push({ic:"📈",cls:"locado",txt:`Reajuste anual de ${i.titulo} em ${d2} dia(s)`}); } }
+  });
+  const alertasHtml = alertas.length? `<div class="h" style="font-size:16px;margin:4px 2px 8px">🔔 Alertas <small>${alertas.length}</small></div>`+alertas.map(a=>`<div class="tile" style="padding:12px 14px"><div class="row"><span style="font-size:18px">${a.ic}</span><span style="flex:1">${esc(a.txt)}</span><span class="badge ${a.cls}">!</span></div></div>`).join("")+`<div style="height:8px"></div>` : "";
+  view().innerHTML=`<div class="h">📊 Visão geral <small>${esc(S.imob.nome)}</small></div>
+    <div class="metrics">
+      <div class="metric"><small>Imóveis</small><b>${total}</b></div>
+      <div class="metric"><small>Disponíveis</small><b style="color:var(--ok)">${disp}</b></div>
+      <div class="metric"><small>Locados</small><b style="color:var(--warn)">${locados}</b></div>
+      <div class="metric"><small>Aluguéis/mês</small><b>${fmtMoney(aluguelAtivo)}</b></div>
+    </div>
+    <div class="mini">
+      <div class="m2"><small>A receber</small><b>${fmtMoney(areceber.reduce((s,l)=>s+Number(l.valor),0))}</b></div>
+      <div class="m2"><small>Receber vencido</small><b class="${vencidasReceber.length?"warn":""}">${fmtMoney(vencidasReceber.reduce((s,l)=>s+Number(l.valor),0))}</b></div>
+      <div class="m2"><small>A pagar</small><b>${fmtMoney(apagar.reduce((s,l)=>s+Number(l.valor),0))}</b></div>
+      <div class="m2"><small>Ocupação</small><b>${total?Math.round(locados/total*100):0}%</b></div>
+    </div>
+    ${alertasHtml}
+    <div class="bar"><button class="btn small" id="iNovo">➕ Novo imóvel</button><button class="btn small secondary" id="iLanc">💰 Novo lançamento</button></div>
+    <div class="h" style="font-size:16px;margin-top:10px">Imóveis recentes</div>
+    <div id="recentes"></div>`;
+  $("#iNovo").onclick=()=>formImovel();
+  $("#iLanc").onclick=()=>formLancamento();
+  $("#recentes").innerHTML = imoveis.slice(0,4).map(cardImovel).join("") || `<p class="empty">Nenhum imóvel ainda.</p>`;
+  wireImovelCards($("#recentes"), imoveis);
+}
+
+// ---------- IMÓVEIS ----------
+function cardImovel(i){
+  const loc=i.locacao;
+  const valor = i.finalidade==="venda"? i.valor_venda : i.valor_aluguel;
+  return `<div class="tile">
+    <div class="row"><div style="flex:1;min-width:0">
+      <h3>${esc(i.titulo)} <span class="badge ${i.status}">${STATUS[i.status]||i.status}</span></h3>
+      <div class="meta"><span>${TIPOS[i.tipo]||i.tipo} · ${FINS[i.finalidade]||i.finalidade}</span>
+        ${i.cidade?`<span>📍 ${esc(i.cidade)}${i.uf?"/"+esc(i.uf):""}</span>`:""}
+        ${valor?`<span>💵 ${fmtMoney(valor)}${i.finalidade==="venda"?"":"/mês"}</span>`:""}</div>
+      ${loc?`<div class="meta"><span>👤 ${esc(loc.locatario_nome)}</span>${loc.locatario_telefone?`<span>📞 ${esc(loc.locatario_telefone)}</span>`:""}</div>`:""}
+    </div></div>
+    <div class="bar" style="margin:12px 0 0">
+      <button class="btn small secondary" data-editi="${i.id}">✏️ Editar</button>
+      ${loc?`<button class="btn small secondary" data-loc="${i.id}">👤 Locatário</button><button class="btn small secondary" data-invite="${i.id}">✉️ Convidar</button><button class="btn small danger" data-endloc="${i.id}">Encerrar locação</button>`
+           :`<button class="btn small" data-loc="${i.id}">👤 Registrar locatário</button>`}
+      <button class="btn small secondary" data-docs="${i.id}">📎 Docs</button>
+      <button class="btn small danger" data-deli="${i.id}">🗑️</button>
+    </div></div>`;
+}
+function wireImovelCards(root, imoveis){
+  const byId={}; imoveis.forEach(i=>byId[i.id]=i);
+  root.querySelectorAll("[data-editi]").forEach(b=>b.onclick=()=>formImovel(byId[b.dataset.editi]));
+  root.querySelectorAll("[data-loc]").forEach(b=>b.onclick=()=>formLocacao(byId[b.dataset.loc]));
+  root.querySelectorAll("[data-endloc]").forEach(b=>b.onclick=()=>encerrarLocacao(byId[b.dataset.endloc]));
+  root.querySelectorAll("[data-docs]").forEach(b=>b.onclick=()=>docsImovel(byId[b.dataset.docs]));
+  root.querySelectorAll("[data-invite]").forEach(b=>b.onclick=()=>convidarMorador(byId[b.dataset.invite]));
+  root.querySelectorAll("[data-deli]").forEach(b=>b.onclick=()=>excluirImovel(byId[b.dataset.deli]));
+}
+function convidarMorador(i){
+  const loc=i.locacao; if(!loc){ toast("Registre o locatário primeiro."); return; }
+  modal(`<h2>✉️ Convidar morador</h2><p class="sub" style="text-align:left">${esc(loc.locatario_nome)} — ${esc(i.titulo)}</p>
+    <label>E-mail do morador</label><input id="cvEmail" class="field" type="email" value="${esc(loc.locatario_email||"")}" placeholder="morador@email.com">
+    <p class="sub" style="text-align:left;font-size:12px;margin:2px 2px 0">Ele recebe um link para criar a senha e acessar o portal (contrato, aluguel, Pix e avisos). Nome, telefone e CPF já vão preenchidos.</p>
+    <div id="cvErr" class="err"></div><div id="cvOut"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="cvCancel">Fechar</button><button class="btn" id="cvSave">Gerar convite</button></div>`);
+  $("#cvCancel").onclick=closeModal;
+  $("#cvSave").onclick=async()=>{
+    const email=$("#cvEmail").value.trim(); if(!email){ setMsg("#cvErr","Informe o e-mail.","err"); return; }
+    $("#cvSave").disabled=true;
+    try{
+      const tok=await rpc("imob_convite_criar",{p_locacao:loc.id,p_email:email});
+      const url=`${location.origin}/morador-imob?c=${tok}`;
+      const msg=`Olá ${loc.locatario_nome}! A ${S.imob.nome} criou seu acesso ao portal do morador (contrato, aluguel e Pix). Acesse e crie sua senha:\n${url}`;
+      $("#cvOut").innerHTML=`<div class="tile" style="margin-top:12px"><label style="margin-top:0">Link do convite</label>
+        <textarea class="field" rows="2" readonly style="font-size:12px;word-break:break-all">${esc(url)}</textarea>
+        <div class="fld-row" style="margin-top:8px"><button class="btn secondary" id="cvCopy">📋 Copiar</button><button class="btn secondary" id="cvMail">📧 E-mail</button>${loc.locatario_telefone?`<button class="btn" id="cvWa" style="background:#25d366">📲 WhatsApp</button>`:""}</div></div>`;
+      $("#cvCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(url); toast("Copiado ✅"); }catch(_){ toast("Copie o link acima"); } };
+      $("#cvMail").onclick=async()=>{ $("#cvMail").disabled=true; try{ const {error}=await sb.functions.invoke("enviar-convite-email",{body:{email,nome:loc.locatario_nome,url,tipo:"tenant",imobiliaria:S.imob.nome}}); if(error) throw error; toast("E-mail enviado ✅"); }catch(e){ toast(e.message||"Falha ao enviar"); } $("#cvMail").disabled=false; };
+      $("#cvWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(loc.locatario_telefone)}?text=${encodeURIComponent(msg)}`,"_blank","noopener"));
+      $("#cvSave").textContent="Gerar novo link"; $("#cvSave").disabled=false;
+    }catch(e){ setMsg("#cvErr",e.message||"Erro","err"); $("#cvSave").disabled=false; }
+  };
+}
+async function docsImovel(i){
+  const dir=`${S.imob.id}/${i.id}`;
+  modal(`<h2>📎 Documentos & fotos</h2><p class="sub" style="text-align:left">${esc(i.titulo)}</p>
+    <label>Enviar arquivo (contrato, foto, RG/CPF…)</label>
+    <input id="docFile" class="field" type="file" accept="image/*,.pdf,.doc,.docx" multiple>
+    <div id="docErr" class="err"></div>
+    <div id="docList" style="margin-top:12px"><div class="spin"></div></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="docClose">Fechar</button></div>`);
+  $("#docClose").onclick=closeModal;
+  $("#docFile").addEventListener("change",async e=>{
+    const files=[...e.target.files]; if(!files.length) return;
+    setMsg("#docErr","","err"); toast("Enviando…");
+    for(const f of files){
+      const path=`${dir}/${Date.now()}-${(f.name||"arquivo").replace(/[^\w.\-]/g,"_")}`;
+      const {error}=await sb.storage.from("imob-docs").upload(path,f,{upsert:false});
+      if(error){ setMsg("#docErr",error.message,"err"); }
+    }
+    toast("Arquivo(s) enviado(s) ✅"); e.target.value=""; listarDocs();
+  });
+  async function listarDocs(){
+    const el=$("#docList");
+    const {data,error}=await sb.storage.from("imob-docs").list(dir,{limit:100,sortBy:{column:"created_at",order:"desc"}});
+    if(error){ el.innerHTML=`<p class="sub">${esc(error.message)}</p>`; return; }
+    const files=(data||[]).filter(f=>f.name);
+    if(!files.length){ el.innerHTML='<p class="sub">Nenhum arquivo ainda.</p>'; return; }
+    el.innerHTML=files.map(f=>`<div class="drow"><span class="k" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name.replace(/^\d+-/,""))}</span><span class="v"><button class="badge" data-vf="${esc(f.name)}">Abrir</button> <button class="badge" data-df="${esc(f.name)}" style="background:#fdecea;color:var(--danger)">Excluir</button></span></div>`).join("");
+    el.querySelectorAll("[data-vf]").forEach(b=>b.onclick=async()=>{ const {data:s}=await sb.storage.from("imob-docs").createSignedUrl(`${dir}/${b.dataset.vf}`,3600); if(s?.signedUrl) window.open(s.signedUrl,"_blank","noopener"); });
+    el.querySelectorAll("[data-df]").forEach(b=>b.onclick=async()=>{ await sb.storage.from("imob-docs").remove([`${dir}/${b.dataset.df}`]); toast("Excluído"); listarDocs(); });
+  }
+  listarDocs();
+}
+async function renderImoveis(){
+  view().innerHTML='<div class="spin"></div>';
+  let imoveis=[]; try{ imoveis=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  S._imoveis=imoveis; S._imFiltro="todos"; S._imQ="";
+  view().innerHTML=`<div class="h">🏠 Imóveis <small>${imoveis.length} cadastrado(s)</small></div>
+    <div class="bar"><input id="imQ" class="search" placeholder="Buscar por título, endereço, locatário..."><button class="btn small" id="imNovo">➕ Novo</button></div>
+    <div class="bar"><div class="seg" id="imSeg">
+      <button data-f="todos" class="on">Todos</button><button data-f="disponivel">Disponíveis</button>
+      <button data-f="locado">Locados</button><button data-f="vendido">Vendidos</button></div></div>
+    <div id="imList"></div>`;
+  $("#imNovo").onclick=()=>formImovel();
+  $("#imQ").oninput=e=>{ S._imQ=e.target.value.trim().toLowerCase(); drawImoveis(); };
+  $("#imSeg").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ S._imFiltro=b.dataset.f; $("#imSeg").querySelectorAll("[data-f]").forEach(x=>x.classList.toggle("on",x===b)); drawImoveis(); });
+  drawImoveis();
+}
+function drawImoveis(){
+  let list=(S._imoveis||[]).slice();
+  if(S._imFiltro!=="todos") list=list.filter(i=>i.status===S._imFiltro);
+  if(S._imQ){ const q=S._imQ; list=list.filter(i=>(i.titulo||"").toLowerCase().includes(q)||(i.endereco||"").toLowerCase().includes(q)||(i.cidade||"").toLowerCase().includes(q)||(i.locacao&&(i.locacao.locatario_nome||"").toLowerCase().includes(q))); }
+  const el=$("#imList");
+  el.innerHTML = list.length? list.map(cardImovel).join("") : `<div class="empty"><div class="big">🏠</div><p>Nenhum imóvel neste filtro.</p></div>`;
+  wireImovelCards(el, S._imoveis||[]);
+}
+async function formImovel(i){
+  const ed=!!i;
+  let props=[]; try{ const {data}=await sb.from("imob_proprietarios").select("id,nome").eq("imobiliaria_id",S.imob.id).order("nome"); props=data||[]; }catch(_){}
+  modal(`<h2>${ed?"Editar imóvel":"Novo imóvel"}</h2>
+    <label>Título / identificação</label><input id="fTitulo" class="field" placeholder="Apto 302 - Ed. Aurora" value="${ed?esc(i.titulo):""}">
+    <div class="fld-row">
+      <div><label>Tipo</label><select id="fTipo" class="field">${Object.entries(TIPOS).map(([k,v])=>`<option value="${k}" ${ed&&i.tipo===k?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div><label>Finalidade</label><select id="fFin" class="field">${Object.entries(FINS).map(([k,v])=>`<option value="${k}" ${ed&&i.finalidade===k?"selected":""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div class="fld-row">
+      <div><label>Status</label><select id="fStatus" class="field">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${ed&&i.status===k?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div><label>Valor aluguel (R$/mês)</label><input id="fAluguel" class="field" inputmode="decimal" value="${ed&&i.valor_aluguel!=null?i.valor_aluguel:""}"></div>
+    </div>
+    <div class="fld-row">
+      <div><label>Valor venda (R$)</label><input id="fVenda" class="field" inputmode="decimal" value="${ed&&i.valor_venda!=null?i.valor_venda:""}"></div>
+      <div><label>Quartos</label><input id="fQuartos" class="field" inputmode="numeric" value="${ed&&i.quartos!=null?i.quartos:""}"></div>
+    </div>
+    <div class="fld-row">
+      <div><label>Vagas</label><input id="fVagas" class="field" inputmode="numeric" value="${ed&&i.vagas!=null?i.vagas:""}"></div>
+      <div><label>Área (m²)</label><input id="fArea" class="field" inputmode="decimal" value="${ed&&i.area!=null?i.area:""}"></div>
+    </div>
+    <label>Endereço</label>
+    <div class="fld-row"><input id="fEnd" class="field" placeholder="Rua, nº - bairro" value="${ed?esc(i.endereco||""):""}" style="flex:2"><button class="btn small secondary" id="fGeo" style="white-space:nowrap">📍 Localizar</button></div>
+    <div id="fGeoSt" class="meta" style="margin:6px 2px 0;min-height:14px"></div>
+    <div class="fld-row">
+      <div><label>Cidade</label><input id="fCidade" class="field" value="${ed?esc(i.cidade||""):""}"></div>
+      <div><label>UF</label><input id="fUf" class="field" maxlength="2" value="${ed?esc(i.uf||""):""}"></div>
+    </div>
+    <div class="h" style="font-size:15px;margin:14px 2px 6px">Proprietário & comissão</div>
+    <div class="fld-row">
+      <div><label>Proprietário</label><select id="fProp" class="field"><option value="">— não vinculado —</option>${props.map(pp=>`<option value="${pp.id}" ${ed&&i.proprietario_id===pp.id?"selected":""}>${esc(pp.nome)}</option>`).join("")}</select></div>
+      <div><label>Taxa adm. (%)</label><input id="fTaxa" class="field" inputmode="decimal" value="${ed&&i.taxa_admin_pct!=null?i.taxa_admin_pct:""}" placeholder="ex.: 10"></div>
+    </div>
+    <p class="sub" style="text-align:left;font-size:12px;margin:2px 2px 0">Ao receber o aluguel, o repasse ao proprietário (valor − taxa) é gerado automaticamente em "A pagar".</p>
+    <label>Observações</label><textarea id="fObs" class="field" rows="2" placeholder="Detalhes do imóvel...">${ed?esc(i.obs||""):""}</textarea>
+    <div id="fErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="fCancel">Cancelar</button><button class="btn" id="fSave">${ed?"Salvar":"Cadastrar"}</button></div>`);
+  let coords={lat: ed?i.lat:null, lng: ed?i.lng:null};
+  $("#fCancel").onclick=closeModal;
+  $("#fGeo").onclick=async()=>{
+    const q=[$("#fEnd").value.trim(),$("#fCidade").value.trim(),$("#fUf").value.trim(),"Brasil"].filter(Boolean).join(", ");
+    const st=$("#fGeoSt"); if(q.length<6){ st.textContent="Preencha o endereço primeiro."; st.style.color="var(--danger)"; return; }
+    st.textContent="Buscando..."; st.style.color="var(--muted)";
+    try{ const ll=await geocode(q); if(ll){ coords=ll; st.innerHTML=`✅ Localizado (${ll.lat.toFixed(4)}, ${ll.lng.toFixed(4)})`; st.style.color="var(--ok)"; } else { st.textContent="Não encontrado — salve e ajuste no mapa."; st.style.color="var(--warn)"; } }
+    catch(e){ st.textContent="Falha na busca."; st.style.color="var(--danger)"; }
+  };
+  $("#fSave").onclick=async()=>{
+    const titulo=$("#fTitulo").value.trim(); if(!titulo){ setMsg("#fErr","Informe o título.","err"); return; }
+    // geocode automático se tiver endereço e ainda sem coords
+    if(coords.lat==null && $("#fEnd").value.trim()){ try{ const ll=await geocode([$("#fEnd").value.trim(),$("#fCidade").value.trim(),$("#fUf").value.trim(),"Brasil"].filter(Boolean).join(", ")); if(ll) coords=ll; }catch(_){} }
+    const rec={
+      imobiliaria_id:S.imob.id, titulo, tipo:$("#fTipo").value, finalidade:$("#fFin").value, status:$("#fStatus").value,
+      endereco:$("#fEnd").value.trim()||null, cidade:$("#fCidade").value.trim()||null, uf:$("#fUf").value.trim().toUpperCase()||null,
+      valor_aluguel:num($("#fAluguel").value), valor_venda:num($("#fVenda").value),
+      quartos:int($("#fQuartos").value), vagas:int($("#fVagas").value), area:num($("#fArea").value),
+      proprietario_id:$("#fProp").value||null, taxa_admin_pct:num($("#fTaxa").value),
+      obs:$("#fObs").value.trim()||null, lat:coords.lat, lng:coords.lng
+    };
+    $("#fSave").disabled=true;
+    try{
+      if(ed){ const {error}=await sb.from("imoveis").update(rec).eq("id",i.id); if(error) throw error; }
+      else { const {error}=await sb.from("imoveis").insert(rec); if(error) throw error; }
+      closeModal(); toast(ed?"Imóvel atualizado ✅":"Imóvel cadastrado ✅"); go(S.tab);
+    }catch(e){ setMsg("#fErr",e.message||"Erro","err"); $("#fSave").disabled=false; }
+  };
+}
+function num(v){ v=(v||"").toString().trim(); if(!v) return null; if(v.includes(",")) v=v.replace(/\./g,"").replace(",","."); const n=Number(v); return isNaN(n)?null:n; }
+function int(v){ v=(v||"").toString().trim(); if(!v) return null; const n=parseInt(v,10); return isNaN(n)?null:n; }
+async function excluirImovel(i){
+  if(!await confirmar(`Excluir o imóvel "${i.titulo}"? Locações e lançamentos ligados a ele também serão afetados.`,"Excluir")) return;
+  try{ const {error}=await sb.from("imoveis").delete().eq("id",i.id); if(error) throw error; toast("Imóvel excluído"); go(S.tab); }catch(e){ toast(e.message); }
+}
+function formLocacao(i){
+  const l=i.locacao;
+  modal(`<h2>${l?"Locatário":"Registrar locatário"}</h2><p class="sub" style="text-align:left">${esc(i.titulo)}</p>
+    <label>Nome do locatário</label><input id="lNome" class="field" value="${l?esc(l.locatario_nome):""}" placeholder="João da Silva">
+    <div class="fld-row">
+      <div><label>Telefone / WhatsApp</label><input id="lTel" class="field" type="tel" value="${l?esc(l.locatario_telefone||""):""}" placeholder="(11) 91234-5678"></div>
+      <div><label>CPF</label><input id="lCpf" class="field" inputmode="numeric" value="${l?esc(l.locatario_cpf||""):""}" placeholder="000.000.000-00"></div>
+    </div>
+    <div class="fld-row">
+      <div><label>Início</label><input id="lIni" class="field" type="date" value="${l&&l.inicio?l.inicio:""}"></div>
+      <div><label>Fim (opcional)</label><input id="lFim" class="field" type="date" value="${l&&l.fim?l.fim:""}"></div>
+    </div>
+    <div class="fld-row">
+      <div><label>Aluguel (R$/mês)</label><input id="lValor" class="field" inputmode="decimal" value="${l&&l.valor_mensal!=null?l.valor_mensal:(i.valor_aluguel!=null?i.valor_aluguel:"")}"></div>
+      <div><label>Vence dia</label><input id="lDia" class="field" inputmode="numeric" value="${l&&l.dia_vencimento?l.dia_vencimento:10}"></div>
+    </div>
+    <div id="lErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="lCancel">Cancelar</button><button class="btn" id="lSave">${l?"Salvar":"Registrar"}</button></div>`);
+  $("#lCpf").addEventListener("input",e=>e.target.value=maskCpf(e.target.value));
+  $("#lCancel").onclick=closeModal;
+  $("#lSave").onclick=async()=>{
+    const nome=$("#lNome").value.trim(); if(!nome){ setMsg("#lErr","Informe o nome do locatário.","err"); return; }
+    const rec={ imobiliaria_id:S.imob.id, imovel_id:i.id, locatario_nome:nome,
+      locatario_telefone:$("#lTel").value.trim()||null, locatario_cpf:$("#lCpf").value.replace(/\D/g,"")||null,
+      inicio:$("#lIni").value||null, fim:$("#lFim").value||null, valor_mensal:num($("#lValor").value), dia_vencimento:int($("#lDia").value)||10, ativo:true };
+    $("#lSave").disabled=true;
+    try{
+      if(l){ const {error}=await sb.from("locacoes").update(rec).eq("id",l.id); if(error) throw error; }
+      else {
+        // desativa qualquer locação ativa remanescente e insere a nova
+        await sb.from("locacoes").update({ativo:false}).eq("imovel_id",i.id).eq("ativo",true);
+        const {error}=await sb.from("locacoes").insert(rec); if(error) throw error;
+      }
+      await sb.from("imoveis").update({status:"locado"}).eq("id",i.id);
+      closeModal(); toast("Locatário salvo ✅"); go(S.tab);
+    }catch(e){ setMsg("#lErr",e.message||"Erro","err"); $("#lSave").disabled=false; }
+  };
+}
+async function encerrarLocacao(i){
+  if(!await confirmar(`Encerrar a locação de "${i.titulo}"? O imóvel volta a ficar disponível.`,"Encerrar")) return;
+  try{
+    await sb.from("locacoes").update({ativo:false, fim:new Date().toISOString().slice(0,10)}).eq("imovel_id",i.id).eq("ativo",true);
+    await sb.from("imoveis").update({status:"disponivel"}).eq("id",i.id);
+    toast("Locação encerrada"); go(S.tab);
+  }catch(e){ toast(e.message); }
+}
+
+// ---------- PROPRIETÁRIOS ----------
+async function renderProprietarios(){
+  view().innerHTML='<div class="spin"></div>';
+  let props=[], imoveis=[], lanc=[];
+  try{
+    const {data:p}=await sb.from("imob_proprietarios").select("*").eq("imobiliaria_id",S.imob.id).order("nome");
+    props=p||[];
+    const {data:im}=await sb.from("imoveis").select("id,titulo,proprietario_id").eq("imobiliaria_id",S.imob.id);
+    imoveis=im||[];
+    const {data:l}=await sb.from("imob_lancamentos").select("valor,status,imovel_id").eq("imobiliaria_id",S.imob.id).eq("categoria","repasse");
+    lanc=l||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  const imById={}; imoveis.forEach(i=>imById[i.id]=i);
+  const repByProp={}, countByProp={};
+  imoveis.forEach(i=>{ if(i.proprietario_id) countByProp[i.proprietario_id]=(countByProp[i.proprietario_id]||0)+1; });
+  lanc.forEach(l=>{ if(l.status==="pendente"){ const im=imById[l.imovel_id]; if(im&&im.proprietario_id) repByProp[im.proprietario_id]=(repByProp[im.proprietario_id]||0)+Number(l.valor); } });
+  view().innerHTML=`<div class="h">👤 Proprietários <small>${props.length} cadastrado(s)</small></div>
+    <div class="bar"><button class="btn small" id="prNovo">➕ Novo proprietário</button></div>
+    <div id="prList"></div>`;
+  $("#prNovo").onclick=()=>formProprietario();
+  const el=$("#prList");
+  el.innerHTML = props.length? props.map(p=>`<div class="tile">
+    <div class="row"><div style="flex:1;min-width:0"><h3>${esc(p.nome)}</h3>
+      <div class="meta">${p.telefone?`<span>📞 ${esc(p.telefone)}</span>`:""}${p.documento?`<span>${esc(p.documento)}</span>`:""}<span>🏠 ${countByProp[p.id]||0} imóvel(is)</span></div>
+      ${repByProp[p.id]?`<div class="meta"><span style="color:var(--warn)">💸 Repasse a pagar: ${fmtMoney(repByProp[p.id])}</span></div>`:""}</div></div>
+    <div class="bar" style="margin:10px 0 0"><button class="btn small secondary" data-edp="${p.id}">✏️ Editar</button><button class="btn small secondary" data-invp="${p.id}">${p.user_id?"🔑 Portal ✅":"🔑 Convidar p/ portal"}</button>${p.telefone?`<button class="btn small secondary" data-wap="${p.id}" style="background:#25d366;color:#fff">📲 WhatsApp</button>`:""}<button class="btn small danger" data-delp="${p.id}">🗑️</button></div></div>`).join("")
+    : `<div class="empty"><div class="big">👤</div><p>Nenhum proprietário. Cadastre para vincular aos imóveis e automatizar o repasse do aluguel.</p></div>`;
+  const byId={}; props.forEach(p=>byId[p.id]=p);
+  el.querySelectorAll("[data-edp]").forEach(b=>b.onclick=()=>formProprietario(byId[b.dataset.edp]));
+  el.querySelectorAll("[data-invp]").forEach(b=>b.onclick=()=>convidarProprietario(byId[b.dataset.invp]));
+  el.querySelectorAll("[data-wap]").forEach(b=>b.onclick=()=>{ const p=byId[b.dataset.wap]; window.open(`https://wa.me/${waPhone(p.telefone)}?text=${encodeURIComponent(`Olá ${p.nome}! Aqui é da ${S.imob.nome}.`)}`,"_blank","noopener"); });
+  el.querySelectorAll("[data-delp]").forEach(b=>b.onclick=async()=>{ const p=byId[b.dataset.delp]; if(!await confirmar(`Excluir o proprietário "${p.nome}"? Os imóveis dele ficam sem proprietário vinculado.`,"Excluir")) return; try{ await sb.from("imob_proprietarios").delete().eq("id",p.id); toast("Excluído"); renderProprietarios(); }catch(e){ toast(e.message); } });
+}
+function convidarProprietario(p){
+  modal(`<h2>🔑 Convidar para o portal</h2><p class="sub" style="text-align:left">${esc(p.nome)} poderá acompanhar imóveis e repasses no portal do proprietário.</p>
+    <label>E-mail do proprietário</label><input id="cpEmail" class="field" type="email" value="${esc(p.email||"")}" placeholder="dono@email.com">
+    <div id="cpErr" class="err"></div>
+    <div id="cpOut" style="margin-top:12px"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="cpCancel">Fechar</button><button class="btn" id="cpGerar">Gerar link</button></div>`);
+  $("#cpCancel").onclick=closeModal;
+  $("#cpGerar").onclick=async()=>{
+    const email=$("#cpEmail").value.trim(); if(!email){ setMsg("#cpErr","Informe o e-mail.","err"); return; }
+    $("#cpGerar").disabled=true; setMsg("#cpErr","","err");
+    try{
+      const tok=await rpc("imob_prop_convite_criar",{p_proprietario:p.id,p_email:email});
+      const url=`${location.origin}/proprietario?c=${tok}`;
+      const msg=`Olá ${p.nome}! A ${S.imob.nome} criou seu acesso ao portal do proprietário (imóveis e repasses). Acesse e crie sua senha:\n${url}`;
+      $("#cpOut").innerHTML=`<div class="tile" style="padding:12px"><div class="meta" style="word-break:break-all"><span>${esc(url)}</span></div>
+        <div class="bar" style="margin-top:8px"><button class="btn small secondary" id="cpCopy">📋 Copiar link</button><button class="btn small secondary" id="cpMail">📧 E-mail</button>${p.telefone?`<button class="btn small secondary" id="cpWa" style="background:#25d366;color:#fff">📲 WhatsApp</button>`:""}</div></div>`;
+      $("#cpCopy").onclick=()=>{ try{ navigator.clipboard.writeText(url); toast("Link copiado ✅"); }catch(_){ toast("Copie o link manualmente."); } };
+      $("#cpMail").onclick=async()=>{ $("#cpMail").disabled=true; try{ const {error}=await sb.functions.invoke("enviar-convite-email",{body:{email,nome:p.nome,url,tipo:"prop",imobiliaria:S.imob.nome}}); if(error) throw error; toast("E-mail enviado ✅"); }catch(e){ toast(e.message||"Falha ao enviar"); } $("#cpMail").disabled=false; };
+      $("#cpWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(p.telefone)}?text=${encodeURIComponent(msg)}`,"_blank","noopener"));
+    }catch(e){ setMsg("#cpErr",e.message||"Erro","err"); }
+    $("#cpGerar").disabled=false;
+  };
+}
+function formProprietario(p){
+  const ed=!!p;
+  const pixTipos={cpf:"CPF",cnpj:"CNPJ",email:"E-mail",telefone:"Telefone",aleatoria:"Aleatória"};
+  modal(`<h2>${ed?"Editar":"Novo"} proprietário</h2>
+    <label>Nome</label><input id="pNome" class="field" value="${ed?esc(p.nome):""}" placeholder="Nome completo">
+    <div class="fld-row"><div><label>Telefone/WhatsApp</label><input id="pTel" class="field" type="tel" value="${ed?esc(p.telefone||""):""}"></div><div><label>CPF/CNPJ</label><input id="pDoc" class="field" value="${ed?esc(p.documento||""):""}"></div></div>
+    <label>E-mail</label><input id="pEmail" class="field" type="email" value="${ed?esc(p.email||""):""}">
+    <div class="h" style="font-size:15px;margin:14px 2px 6px">Dados para repasse (Pix)</div>
+    <div class="fld-row"><div><label>Tipo</label><select id="pPixT" class="field"><option value="">—</option>${Object.entries(pixTipos).map(([k,v])=>`<option value="${k}" ${ed&&p.pix_tipo===k?"selected":""}>${v}</option>`).join("")}</select></div><div><label>Chave Pix</label><input id="pPixK" class="field" value="${ed?esc(p.pix_chave||""):""}"></div></div>
+    <label>Observações</label><textarea id="pObs" class="field" rows="2">${ed?esc(p.obs||""):""}</textarea>
+    <div id="pErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="pCancel">Cancelar</button><button class="btn" id="pSave">${ed?"Salvar":"Cadastrar"}</button></div>`);
+  $("#pCancel").onclick=closeModal;
+  $("#pSave").onclick=async()=>{
+    const nome=$("#pNome").value.trim(); if(!nome){ setMsg("#pErr","Informe o nome.","err"); return; }
+    const rec={ imobiliaria_id:S.imob.id, nome, telefone:$("#pTel").value.trim()||null, documento:$("#pDoc").value.trim()||null, email:$("#pEmail").value.trim()||null, pix_tipo:$("#pPixT").value||null, pix_chave:$("#pPixK").value.trim()||null, obs:$("#pObs").value.trim()||null };
+    $("#pSave").disabled=true;
+    try{ if(ed){ const {error}=await sb.from("imob_proprietarios").update(rec).eq("id",p.id); if(error) throw error; } else { const {error}=await sb.from("imob_proprietarios").insert(rec); if(error) throw error; }
+      closeModal(); toast("Proprietário salvo ✅"); if(S.tab==="proprietarios") renderProprietarios(); }
+    catch(e){ setMsg("#pErr",e.message||"Erro","err"); $("#pSave").disabled=false; }
+  };
+}
+
+// ---------- CRM / LEADS ----------
+async function renderLeads(){
+  view().innerHTML='<div class="spin"></div>';
+  let leads=[], imoveis=[];
+  try{
+    const {data:l}=await sb.from("imob_leads").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false});
+    leads=l||[];
+    const {data:im}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo"); imoveis=im||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  S._leadImoveis=imoveis; S._leads=leads; S._leadFiltro=S._leadFiltro||"ativos";
+  const ativos=leads.filter(l=>!["fechado","perdido"].includes(l.etapa));
+  view().innerHTML=`<div class="h">🤝 Interessados <small>${ativos.length} ativo(s) de ${leads.length}</small></div>
+    <div class="bar"><button class="btn small" id="ldNovo">➕ Novo interessado</button></div>
+    <div class="bar"><div class="seg" id="ldSeg">
+      <button data-f="ativos" class="${S._leadFiltro==="ativos"?"on":""}">Ativos</button>
+      <button data-f="visita" class="${S._leadFiltro==="visita"?"on":""}">Visitas</button>
+      <button data-f="todos" class="${S._leadFiltro==="todos"?"on":""}">Todos</button></div></div>
+    <div id="ldList"></div>`;
+  $("#ldNovo").onclick=()=>formLead();
+  $("#ldSeg").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ S._leadFiltro=b.dataset.f; $("#ldSeg").querySelectorAll("[data-f]").forEach(x=>x.classList.toggle("on",x===b)); drawLeads(); });
+  drawLeads();
+}
+function drawLeads(){
+  let list=(S._leads||[]).slice();
+  if(S._leadFiltro==="ativos") list=list.filter(l=>!["fechado","perdido"].includes(l.etapa));
+  else if(S._leadFiltro==="visita") list=list.filter(l=>l.etapa==="visita"||l.visita_em);
+  const badgeCls={novo:"pendente",contato:"locado",visita:"locado",proposta:"pendente",fechado:"pago",perdido:"vencida"};
+  const el=$("#ldList");
+  if(!list.length){ el.innerHTML=`<div class="empty"><div class="big">🤝</div><p>Nenhum interessado.</p></div>`; return; }
+  el.innerHTML=list.map(l=>{
+    const idx=ETAPA_ORDER.indexOf(l.etapa), prox=(idx>=0&&idx<ETAPA_ORDER.length-1)?ETAPA_ORDER[idx+1]:null;
+    const visita=l.visita_em?new Date(l.visita_em):null;
+    return `<div class="tile"><div class="row"><div style="flex:1;min-width:0">
+      <h3>${esc(l.nome)} <span class="badge ${badgeCls[l.etapa]||""}">${ETAPAS[l.etapa]||l.etapa}</span></h3>
+      <div class="meta">${l.telefone?`<span>📞 ${esc(l.telefone)}</span>`:""}${l.imoveis?`<span>🏠 ${esc(l.imoveis.titulo)}</span>`:""}${visita?`<span>📅 ${visita.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>`:""}</div>
+    </div></div>
+    <div class="bar" style="margin:10px 0 0">
+      ${prox?`<button class="btn small" data-adv="${l.id}">➡️ ${ETAPAS[prox]}</button>`:""}
+      ${l.telefone?`<button class="btn small secondary" data-wal="${l.id}" style="background:#25d366;color:#fff">📲</button>`:""}
+      <button class="btn small secondary" data-edl="${l.id}">✏️</button>
+      ${l.etapa!=="perdido"?`<button class="btn small secondary" data-lostl="${l.id}">✖</button>`:""}
+      <button class="btn small danger" data-dell="${l.id}">🗑️</button></div></div>`;
+  }).join("");
+  const byId={}; (S._leads||[]).forEach(l=>byId[l.id]=l);
+  el.querySelectorAll("[data-adv]").forEach(b=>b.onclick=()=>advLead(byId[b.dataset.adv]));
+  el.querySelectorAll("[data-wal]").forEach(b=>b.onclick=()=>{ const l=byId[b.dataset.wal]; const im=l.imoveis?` sobre o imóvel ${l.imoveis.titulo}`:""; window.open(`https://wa.me/${waPhone(l.telefone)}?text=${encodeURIComponent(`Olá ${l.nome}! Aqui é da ${S.imob.nome}${im}.`)}`,"_blank","noopener"); });
+  el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLead(byId[b.dataset.edl]));
+  el.querySelectorAll("[data-lostl]").forEach(b=>b.onclick=async()=>{ try{ await sb.from("imob_leads").update({etapa:"perdido"}).eq("id",b.dataset.lostl); toast("Marcado como perdido"); renderLeads(); }catch(e){ toast(e.message); } });
+  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este interessado?","Excluir")) return; try{ await sb.from("imob_leads").delete().eq("id",b.dataset.dell); toast("Excluído"); renderLeads(); }catch(e){ toast(e.message); } });
+}
+async function advLead(l){
+  const idx=ETAPA_ORDER.indexOf(l.etapa), prox=(idx>=0&&idx<ETAPA_ORDER.length-1)?ETAPA_ORDER[idx+1]:null; if(!prox) return;
+  try{ await sb.from("imob_leads").update({etapa:prox}).eq("id",l.id); toast(`→ ${ETAPAS[prox]}`); renderLeads(); }catch(e){ toast(e.message); }
+}
+function formLead(l){
+  const ed=!!l; const imoveis=S._leadImoveis||[];
+  const vis = ed&&l.visita_em? new Date(new Date(l.visita_em).getTime()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : "";
+  modal(`<h2>${ed?"Editar":"Novo"} interessado</h2>
+    <label>Nome</label><input id="ldNome" class="field" value="${ed?esc(l.nome):""}" placeholder="Nome do interessado">
+    <div class="fld-row"><div><label>Telefone/WhatsApp</label><input id="ldTel" class="field" type="tel" value="${ed?esc(l.telefone||""):""}"></div><div><label>E-mail</label><input id="ldEmail" class="field" type="email" value="${ed?esc(l.email||""):""}"></div></div>
+    <label>Imóvel de interesse</label><select id="ldImovel" class="field"><option value="">— nenhum —</option>${imoveis.map(i=>`<option value="${i.id}" ${ed&&l.imovel_id===i.id?"selected":""}>${esc(i.titulo)}</option>`).join("")}</select>
+    <div class="fld-row">
+      <div><label>Etapa</label><select id="ldEtapa" class="field">${Object.entries(ETAPAS).map(([k,v])=>`<option value="${k}" ${ed&&l.etapa===k?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div><label>Origem</label><input id="ldOrigem" class="field" value="${ed?esc(l.origem||""):""}" placeholder="site, indicação…"></div>
+    </div>
+    <label>Agendar visita (opcional)</label><input id="ldVisita" class="field" type="datetime-local" value="${vis}">
+    <label>Observações</label><textarea id="ldObs" class="field" rows="2">${ed?esc(l.obs||""):""}</textarea>
+    <div id="ldErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="ldCancel">Cancelar</button><button class="btn" id="ldSave">${ed?"Salvar":"Cadastrar"}</button></div>`);
+  $("#ldCancel").onclick=closeModal;
+  $("#ldSave").onclick=async()=>{
+    const nome=$("#ldNome").value.trim(); if(!nome){ setMsg("#ldErr","Informe o nome.","err"); return; }
+    const rec={ imobiliaria_id:S.imob.id, nome, telefone:$("#ldTel").value.trim()||null, email:$("#ldEmail").value.trim()||null,
+      imovel_id:$("#ldImovel").value||null, etapa:$("#ldEtapa").value, origem:$("#ldOrigem").value.trim()||null,
+      visita_em:$("#ldVisita").value?new Date($("#ldVisita").value).toISOString():null, obs:$("#ldObs").value.trim()||null };
+    $("#ldSave").disabled=true;
+    try{ if(ed){ const {error}=await sb.from("imob_leads").update(rec).eq("id",l.id); if(error) throw error; } else { const {error}=await sb.from("imob_leads").insert(rec); if(error) throw error; }
+      closeModal(); toast("Interessado salvo ✅"); renderLeads(); }
+    catch(e){ setMsg("#ldErr",e.message||"Erro","err"); $("#ldSave").disabled=false; }
+  };
+}
+
+// ---------- MAPA ----------
+let _map=null, _markers=[];
+async function renderMapa(){
+  view().innerHTML=`<div class="h">🗺️ Mapa dos imóveis</div><div id="mapEl"></div><div class="meta" style="margin-top:10px"><span>🟢 Disponível</span><span>🟠 Locado</span><span>🔵 Vendido</span></div>`;
+  let imoveis=[]; try{ imoveis=await carregarImoveis(); }catch(e){ toast(e.message); }
+  const comLoc=imoveis.filter(i=>i.lat!=null&&i.lng!=null);
+  if(typeof L==="undefined"){ $("#mapEl").innerHTML='<p class="empty">Mapa indisponível (sem conexão).</p>'; return; }
+  setTimeout(()=>{
+    if(_map){ _map.remove(); _map=null; }
+    _map=L.map("mapEl");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(_map);
+    const cor={disponivel:"#1e9e6a",locado:"#c9622a",vendido:"#2e6e92",inativo:"#888"};
+    const bounds=[];
+    comLoc.forEach(i=>{
+      const c=cor[i.status]||"#888";
+      const mk=L.circleMarker([i.lat,i.lng],{radius:9,color:"#fff",weight:2,fillColor:c,fillOpacity:.95}).addTo(_map);
+      const val=i.finalidade==="venda"?i.valor_venda:i.valor_aluguel;
+      mk.bindPopup(`<b>${esc(i.titulo)}</b><br>${STATUS[i.status]||i.status}${val?" · "+fmtMoney(val):""}${i.locacao?"<br>👤 "+esc(i.locacao.locatario_nome):""}`);
+      bounds.push([i.lat,i.lng]);
+    });
+    if(bounds.length) _map.fitBounds(bounds,{padding:[40,40],maxZoom:16}); else _map.setView([-14.24,-53.18],4);
+    if(!comLoc.length){ const d=document.createElement("div"); d.className="meta"; d.style.marginTop="8px"; d.textContent=`${imoveis.length} imóvel(is), nenhum com localização. Edite um imóvel e use "📍 Localizar".`; $("#mapEl").after(d); }
+  },60);
+}
+
+// ---------- FINANCEIRO ----------
+async function renderFinanceiro(){
+  view().innerHTML='<div class="spin"></div>';
+  let lanc=[], imoveis=[];
+  try{
+    const {data:l,error}=await sb.from("imob_lancamentos").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("vencimento",{ascending:false});
+    if(error) throw error; lanc=l||[];
+    imoveis=await carregarImoveis();
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  S._lanc=lanc; S._finView=S._finView||"resumo";
+  S._telByImovel={}; imoveis.forEach(i=>{ if(i.locacao) S._telByImovel[i.id]={nome:i.locacao.locatario_nome,telefone:i.locacao.locatario_telefone}; });
+  const hoje=new Date().toISOString().slice(0,10);
+  const rec=lanc.filter(l=>l.tipo==="receita"), desp=lanc.filter(l=>l.tipo==="despesa");
+  const recPagas=rec.filter(l=>l.status==="pago").reduce((s,l)=>s+Number(l.valor),0);
+  const despPagas=desp.filter(l=>l.status==="pago").reduce((s,l)=>s+Number(l.valor),0);
+  const aReceber=rec.filter(l=>l.status==="pendente"), aPagar=desp.filter(l=>l.status==="pendente");
+  const aluguelAtivo=imoveis.filter(i=>i.locacao).reduce((s,i)=>s+(Number(i.locacao.valor_mensal)||0),0);
+  const resultado=recPagas-despPagas;
+  // ---- faturamento (comissões) da imobiliária ----
+  const brutoAlug=rec.filter(l=>l.status==="pago"&&l.categoria==="aluguel").reduce((s,l)=>s+Number(l.valor),0);
+  const repassesTot=desp.filter(l=>l.categoria==="repasse").reduce((s,l)=>s+Number(l.valor),0);
+  const repassePend=desp.filter(l=>l.categoria==="repasse"&&l.status==="pendente").reduce((s,l)=>s+Number(l.valor),0);
+  const comissao=brutoAlug-repassesTot;
+  const outrasRec=rec.filter(l=>l.status==="pago"&&l.categoria!=="aluguel").reduce((s,l)=>s+Number(l.valor),0);
+  const despOper=desp.filter(l=>l.status==="pago"&&l.categoria!=="repasse").reduce((s,l)=>s+Number(l.valor),0);
+  const faturamento=comissao+outrasRec;
+  const resultadoGestao=faturamento-despOper;
+  let html=`<div class="h">💰 Financeiro</div>
+    <div class="metrics">
+      <div class="metric"><small>Faturamento (comissões)</small><b style="color:var(--ok)">${fmtMoney(faturamento)}</b></div>
+      <div class="metric"><small>Repasses a pagar</small><b class="${repassePend?"warn":""}">${fmtMoney(repassePend)}</b></div>
+      <div class="metric"><small>Resultado (caixa)</small><b style="color:${resultado>=0?"var(--ok)":"var(--danger)"}">${fmtMoney(resultado)}</b></div>
+      <div class="metric"><small>Aluguéis ativos/mês</small><b>${fmtMoney(aluguelAtivo)}</b></div>
+    </div>
+    <div class="tile">
+      <div class="h" style="font-size:15px;margin:0 0 8px">🧾 Faturamento (comissões)</div>
+      <div class="drow"><span class="k">Aluguéis recebidos (bruto)</span><span class="v">${fmtMoney(brutoAlug)}</span></div>
+      <div class="drow"><span class="k">(−) Repasses aos proprietários</span><span class="v" style="color:var(--danger)">${fmtMoney(repassesTot)}</span></div>
+      <div class="drow"><span class="k"><b>(=) Comissões de administração</b></span><span class="v"><b style="color:var(--ok)">${fmtMoney(comissao)}</b></span></div>
+      ${outrasRec?`<div class="drow"><span class="k">(+) Outras receitas</span><span class="v">${fmtMoney(outrasRec)}</span></div>`:""}
+      <div class="drow"><span class="k">(−) Despesas operacionais</span><span class="v" style="color:var(--danger)">${fmtMoney(despOper)}</span></div>
+      <div class="drow"><span class="k"><b>(=) Resultado da gestão</b></span><span class="v"><b style="color:${resultadoGestao>=0?"var(--ok)":"var(--danger)"}">${fmtMoney(resultadoGestao)}</b></span></div>
+    </div>
+    <div class="mini">
+      <div class="m2"><small>A receber</small><b>${fmtMoney(aReceber.reduce((s,l)=>s+Number(l.valor),0))}</b></div>
+      <div class="m2"><small>A pagar</small><b>${fmtMoney(aPagar.reduce((s,l)=>s+Number(l.valor),0))}</b></div>
+      <div class="m2"><small>Lançamentos</small><b>${lanc.length}</b></div>
+      <div class="m2"><small>Vencidos</small><b class="${[...aReceber,...aPagar].some(l=>l.vencimento&&l.vencimento<hoje)?"warn":""}">${[...aReceber,...aPagar].filter(l=>l.vencimento&&l.vencimento<hoje).length}</b></div>
+    </div>
+    <div class="bar"><button class="btn small" id="fnNovo">➕ Novo lançamento</button><button class="btn small secondary" id="fnAlug">🔁 Gerar aluguéis do mês</button></div>
+    <div class="bar"><div class="seg" id="fnSeg">
+      <button data-v="resumo" class="${S._finView==="resumo"?"on":""}">Todos</button>
+      <button data-v="receber" class="${S._finView==="receber"?"on":""}">A receber</button>
+      <button data-v="pagar" class="${S._finView==="pagar"?"on":""}">A pagar</button></div></div>
+    <div id="fnList"></div>`;
+  view().innerHTML=html;
+  $("#fnNovo").onclick=()=>formLancamento();
+  $("#fnAlug").onclick=async()=>{
+    if(!await confirmar("Gerar as cobranças de aluguel deste mês para todas as locações ativas? As já geradas não são duplicadas.","Gerar")) return;
+    try{ const n=await rpc("imob_alugueis_gerar_agora",{p_imob:S.imob.id}); toast(n>0?`${n} aluguel(is) gerado(s) 🧾`:"Tudo já estava lançado neste mês."); renderFinanceiro(); }
+    catch(e){ toast(e.message); }
+  };
+  $("#fnSeg").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{ S._finView=b.dataset.v; renderFinanceiro(); });
+  drawLancamentos();
+}
+function drawLancamentos(){
+  const hoje=new Date().toISOString().slice(0,10);
+  let list=(S._lanc||[]).slice();
+  if(S._finView==="receber") list=list.filter(l=>l.tipo==="receita"&&l.status==="pendente");
+  else if(S._finView==="pagar") list=list.filter(l=>l.tipo==="despesa"&&l.status==="pendente");
+  const el=$("#fnList");
+  if(!list.length){ el.innerHTML=`<p class="empty">Nenhum lançamento.</p>`; return; }
+  el.innerHTML=list.map(l=>{
+    const venc=l.vencimento&&l.status==="pendente"&&l.vencimento<hoje;
+    const cat=(l.tipo==="receita"?CAT_REC:CAT_DESP)[l.categoria]||l.categoria;
+    return `<div class="tile"><div class="row"><div style="flex:1;min-width:0">
+      <h3>${l.tipo==="receita"?"⬆️":"⬇️"} ${esc(l.descricao)}</h3>
+      <div class="meta"><span class="badge">${cat}</span>${l.imoveis?`<span>🏠 ${esc(l.imoveis.titulo)}</span>`:""}${l.vencimento?`<span>📅 ${fmtDate(l.vencimento)}</span>`:""}${l.recorrente?'<span class="badge">🔁</span>':""}</div>
+    </div><div style="text-align:right"><b style="color:${l.tipo==="receita"?"var(--ok)":"var(--danger)"}">${fmtMoney(l.valor)}</b>
+      <div style="margin-top:4px"><span class="badge ${l.status==="pago"?"pago":(venc?"vencida":"pendente")}">${l.status==="pago"?"Pago":(venc?"Vencido":"Pendente")}</span></div></div></div>
+    <div class="bar" style="margin:10px 0 0">${l.status==="pendente"?`<button class="btn small" data-pg="${l.id}">✅ ${l.tipo==="receita"?"Recebido":"Pago"}</button>`:`<button class="btn small secondary" data-reab="${l.id}">↩ Reabrir</button>`}
+      ${(l.tipo==="receita"&&l.status==="pendente"&&S.imob.pix_chave)?`<button class="btn small secondary" data-pix="${l.id}">💠 Pix</button>`:""}
+      ${(l.tipo==="receita"&&l.imovel_id&&(S._telByImovel||{})[l.imovel_id])?`<button class="btn small secondary" data-cobra="${l.id}" style="background:#25d366;color:#fff">📲 Cobrar</button>`:""}
+      <button class="btn small secondary" data-edl="${l.id}">✏️</button><button class="btn small danger" data-dell="${l.id}">🗑️</button></div></div>`;
+  }).join("");
+  const byId={}; (S._lanc||[]).forEach(l=>byId[l.id]=l);
+  el.querySelectorAll("[data-pg]").forEach(b=>b.onclick=()=>lancStatus(b.dataset.pg,"pago"));
+  el.querySelectorAll("[data-reab]").forEach(b=>b.onclick=()=>lancStatus(b.dataset.reab,"pendente"));
+  el.querySelectorAll("[data-cobra]").forEach(b=>b.onclick=()=>cobrarWhatsApp(byId[b.dataset.cobra]));
+  el.querySelectorAll("[data-pix]").forEach(b=>b.onclick=()=>gerarPix(byId[b.dataset.pix]));
+  el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLancamento(byId[b.dataset.edl]));
+  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este lançamento?","Excluir")) return; try{ await sb.from("imob_lancamentos").delete().eq("id",b.dataset.dell); toast("Excluído"); renderFinanceiro(); }catch(e){ toast(e.message); } });
+}
+async function lancStatus(id,status){
+  try{ await sb.from("imob_lancamentos").update({status, pago_em: status==="pago"?new Date().toISOString():null}).eq("id",id); toast(status==="pago"?"Baixado ✅":"Reaberto"); renderFinanceiro(); }catch(e){ toast(e.message); }
+}
+function cobrarWhatsApp(l){
+  if(!l) return;
+  const t=(S._telByImovel||{})[l.imovel_id]||{};
+  const imovel=(l.imoveis&&l.imoveis.titulo)?` (${l.imoveis.titulo})`:"";
+  const nome=t.nome?` ${t.nome}`:"";
+  const venc=l.vencimento?` com vencimento em ${fmtDate(l.vencimento)}`:"";
+  const jaPago=l.status==="pago";
+  const pixLbl={cpf:"CPF",cnpj:"CNPJ",email:"e-mail",telefone:"telefone",aleatoria:"aleatória"};
+  const pix=(!jaPago&&S.imob.pix_chave)?`\n\n💠 Pague via Pix${S.imob.pix_tipo?" ("+(pixLbl[S.imob.pix_tipo]||S.imob.pix_tipo)+")":""}: ${S.imob.pix_chave}`:"";
+  const msg=jaPago
+    ? `Olá${nome}! Confirmamos o recebimento de ${l.descricao}${imovel}: ${fmtMoney(l.valor)}. Obrigado! — ${S.imob.nome}`
+    : `Olá${nome}! Segue a cobrança de ${l.descricao}${imovel}: *${fmtMoney(l.valor)}*${venc}.${pix}\n\nQualquer dúvida, estamos à disposição. — ${S.imob.nome}`;
+  window.open(`https://wa.me/${waPhone(t.telefone)}?text=${encodeURIComponent(msg)}`,"_blank","noopener");
+}
+async function gerarPix(l){
+  if(!l) return;
+  if(!S.imob.pix_chave){ toast("Cadastre a chave Pix em Config → Dados de recebimento."); return; }
+  const tel=(S._telByImovel||{})[l.imovel_id]||{};
+  const payload=pixBRCode({chave:S.imob.pix_chave, nome:S.imob.nome, cidade:S.imob.cidade, valor:l.valor, txid:("L"+String(l.id).replace(/-/g,"").slice(0,15)), descricao:l.descricao});
+  try{ await sb.from("imob_lancamentos").update({metodo:"pix", gateway:"pix_manual", pix_copiacola:payload}).eq("id",l.id); }catch(_){}
+  modal(`<h2>💠 Cobrança Pix</h2><p class="sub" style="text-align:left">${esc(l.descricao)} · <b>${fmtMoney(l.valor)}</b></p>
+    <div style="text-align:center">${qrImgTag(payload,6)||'<p class="sub">QR indisponível (sem conexão).</p>'}</div>
+    <label style="margin-top:10px">Pix copia e cola</label>
+    <textarea id="pxCode" class="field" rows="3" readonly style="font-size:12px;word-break:break-all">${esc(payload)}</textarea>
+    <div class="fld-row" style="margin-top:10px">
+      <button class="btn secondary" id="pxCopy">📋 Copiar</button>
+      ${tel.telefone?`<button class="btn" id="pxWa" style="background:#25d366">📲 Enviar no WhatsApp</button>`:""}
+    </div>
+    <button class="btn secondary" id="pxClose" style="margin-top:10px">Fechar</button>
+    <p class="sub" style="text-align:left;font-size:12px;margin-top:8px">⚠️ Pix estático (sua chave): o pagamento é confirmado manualmente — marque “Recebido” após cair. Para <b>baixa automática</b>, conecte um provedor em Config → Integração de recebimento.</p>`);
+  $("#pxClose").onclick=closeModal;
+  $("#pxCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(payload); toast("Copiado ✅"); }catch(_){ const t=$("#pxCode"); t.focus(); t.select(); toast("Selecione e copie"); } };
+  $("#pxWa")?.addEventListener("click",()=>{ const nm=tel.nome?` ${tel.nome}`:""; const m=`Olá${nm}! Segue o Pix de ${l.descricao}: ${fmtMoney(l.valor)}.\n\nPix copia e cola:\n${payload}\n\n— ${S.imob.nome}`; window.open(`https://wa.me/${waPhone(tel.telefone)}?text=${encodeURIComponent(m)}`,"_blank","noopener"); });
+}
+async function formLancamento(l){
+  const ed=!!l;
+  let imoveis=S._imoveis; if(!imoveis){ try{ imoveis=await carregarImoveis(); }catch(_){ imoveis=[]; } }
+  const tipo=ed?l.tipo:"receita";
+  const catOpts=t=>Object.entries(t==="receita"?CAT_REC:CAT_DESP).map(([k,v])=>`<option value="${k}" ${ed&&l.categoria===k?"selected":""}>${v}</option>`).join("");
+  modal(`<h2>${ed?"Editar lançamento":"Novo lançamento"}</h2>
+    <div class="seg" id="lnTipo" style="margin-bottom:12px"><button data-t="receita" class="${tipo==="receita"?"on":""}">⬆️ Receita</button><button data-t="despesa" class="${tipo==="despesa"?"on":""}">⬇️ Despesa</button></div>
+    <label>Descrição</label><input id="lnDesc" class="field" value="${ed?esc(l.descricao):""}" placeholder="Ex.: Aluguel março - Apto 302">
+    <div class="fld-row">
+      <div><label>Valor (R$)</label><input id="lnValor" class="field" inputmode="decimal" value="${ed?l.valor:""}"></div>
+      <div><label>Vencimento</label><input id="lnVenc" class="field" type="date" value="${ed&&l.vencimento?l.vencimento:new Date().toISOString().slice(0,10)}"></div>
+    </div>
+    <label>Categoria</label><select id="lnCat" class="field">${catOpts(tipo)}</select>
+    <label>Imóvel (opcional)</label><select id="lnImovel" class="field"><option value="">— nenhum —</option>${(imoveis||[]).map(i=>`<option value="${i.id}" ${ed&&l.imovel_id===i.id?"selected":""}>${esc(i.titulo)}</option>`).join("")}</select>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="lnPago" ${ed&&l.status==="pago"?"checked":""}> Já ${tipo==="receita"?"recebido":"pago"}</label>
+    <div id="lnErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="lnCancel">Cancelar</button><button class="btn" id="lnSave">${ed?"Salvar":"Lançar"}</button></div>`);
+  let curTipo=tipo;
+  $("#lnTipo").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{ curTipo=b.dataset.t; $("#lnTipo").querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b)); $("#lnCat").innerHTML=catOpts(curTipo); });
+  $("#lnCancel").onclick=closeModal;
+  $("#lnSave").onclick=async()=>{
+    const desc=$("#lnDesc").value.trim(); if(!desc){ setMsg("#lnErr","Informe a descrição.","err"); return; }
+    const valor=num($("#lnValor").value); if(valor==null||valor<0){ setMsg("#lnErr","Valor inválido.","err"); return; }
+    const pago=$("#lnPago").checked;
+    const rec={ imobiliaria_id:S.imob.id, imovel_id:$("#lnImovel").value||null, tipo:curTipo, categoria:$("#lnCat").value,
+      descricao:desc, valor, vencimento:$("#lnVenc").value||null, status:pago?"pago":"pendente", pago_em:pago?new Date().toISOString():null };
+    $("#lnSave").disabled=true;
+    try{
+      if(ed){ const {error}=await sb.from("imob_lancamentos").update(rec).eq("id",l.id); if(error) throw error; }
+      else { const {error}=await sb.from("imob_lancamentos").insert(rec); if(error) throw error; }
+      closeModal(); toast("Lançamento salvo ✅"); renderFinanceiro();
+    }catch(e){ setMsg("#lnErr",e.message||"Erro","err"); $("#lnSave").disabled=false; }
+  };
+}
+
+// ---------- CONFIG ----------
+// ---------- VISTORIAS ----------
+const VIST_ST={rascunho:["Rascunho","pendente"],concluida:["Concluída","locado"],assinada:["Assinada","ok"]};
+const VIST_ESTADO={novo:"Novo",bom:"Bom",regular:"Regular",ruim:"Ruim",danificado:"Danificado"};
+async function renderVistorias(){
+  view().innerHTML='<div class="spin"></div>';
+  let vist=[];
+  try{
+    const {data,error}=await sb.from("imob_vistorias").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("data_vistoria",{ascending:false});
+    if(error) throw error; vist=data||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  view().innerHTML=`<div class="h">📋 Vistorias <small>Laudos de entrada e saída</small></div>
+    <button class="btn" id="nvBtn" style="margin-bottom:12px">➕ Nova vistoria</button>
+    ${vist.length? vist.map(v=>{ const [l,c]=VIST_ST[v.status]||[v.status,""]; return `<div class="tile clickable" data-v="${v.id}"><div class="row">
+      <div style="flex:1;min-width:0"><h3 style="margin:0">${esc(v.imoveis?.titulo||"Imóvel")} <span class="badge ${c}">${l}</span></h3>
+      <div class="meta"><span>${v.tipo==="entrada"?"➡️ Entrada":"⬅️ Saída"}</span><span>🗓️ ${fmtDate(v.data_vistoria)}</span>${v.assinado_locatario_em?`<span>✍️ ${esc(v.assinatura_nome||"assinada")}</span>`:""}</div></div></div></div>`;}).join("")
+      : '<p class="empty">Nenhuma vistoria ainda. Crie a primeira para documentar o estado do imóvel.</p>'}`;
+  $("#nvBtn").onclick=novaVistoria;
+  view().querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>abrirVistoria(b.dataset.v));
+}
+async function novaVistoria(){
+  const {data:imv}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo");
+  const imoveis=imv||[]; if(!imoveis.length){ toast("Cadastre um imóvel primeiro."); return; }
+  modal(`<h2>Nova vistoria</h2>
+    <label>Imóvel</label><select id="nvImovel" class="field">${imoveis.map(i=>`<option value="${i.id}">${esc(i.titulo)}</option>`).join("")}</select>
+    <label>Tipo</label><select id="nvTipo" class="field"><option value="entrada">Entrada (início da locação)</option><option value="saida">Saída (fim da locação)</option></select>
+    <label>Data</label><input id="nvData" class="field" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <div id="nvErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="nvCancel">Cancelar</button><button class="btn" id="nvSave">Criar</button></div>`);
+  $("#nvCancel").onclick=closeModal;
+  $("#nvSave").onclick=async()=>{
+    const imovel_id=$("#nvImovel").value, tipo=$("#nvTipo").value, data_vistoria=$("#nvData").value;
+    $("#nvSave").disabled=true;
+    try{
+      const {data:loc}=await sb.from("locacoes").select("id").eq("imovel_id",imovel_id).eq("ativo",true).maybeSingle();
+      const {data:v,error}=await sb.from("imob_vistorias").insert({imobiliaria_id:S.imob.id,imovel_id,locacao_id:loc?.id||null,tipo,data_vistoria}).select("id").single();
+      if(error) throw error;
+      closeModal(); abrirVistoria(v.id);
+    }catch(e){ setMsg("#nvErr",e.message,"err"); $("#nvSave").disabled=false; }
+  };
+}
+async function abrirVistoria(id){
+  view().innerHTML='<div class="spin"></div>';
+  const {data:v,error}=await sb.from("imob_vistorias").select("*, imoveis(titulo,endereco)").eq("id",id).single();
+  if(error){ toast(error.message); return go("vistorias"); }
+  const {data:itensRaw}=await sb.from("imob_vistoria_itens").select("*").eq("vistoria_id",id).order("ordem").order("created_at");
+  const itens=itensRaw||[]; const [slbl,scls]=VIST_ST[v.status]||[v.status,""];
+  const locked = v.status!=="rascunho";
+  const dir=`${S.imob.id}/vistorias/${id}`;
+  view().innerHTML=`<div class="h"><button class="badge" id="vBack">‹ Voltar</button> Vistoria <small>${v.tipo==="entrada"?"Entrada":"Saída"}</small></div>
+    <div class="tile"><div class="row"><div style="flex:1">
+      <h3 style="margin:0">${esc(v.imoveis?.titulo||"Imóvel")} <span class="badge ${scls}">${slbl}</span></h3>
+      <div class="meta"><span>🗓️ ${fmtDate(v.data_vistoria)}</span>${v.imoveis?.endereco?`<span>📍 ${esc(v.imoveis.endereco)}</span>`:""}${v.assinado_locatario_em?`<span>✍️ ${esc(v.assinatura_nome||"")} em ${fmtDate(v.assinado_locatario_em.slice(0,10))}</span>`:""}</div>
+    </div></div></div>
+    <button class="btn secondary" id="vPrint" style="margin-top:8px">🖨️ Imprimir / Salvar PDF</button>
+    <div id="vItens" style="margin-top:8px"></div>
+    ${!locked?`<button class="btn secondary" id="vAdd" style="margin-top:10px">➕ Adicionar cômodo/item</button>
+      <button class="btn" id="vDone" style="margin-top:10px" ${itens.length?"":"disabled"}>✅ Concluir (liberar assinatura)</button>
+      ${itens.length?"":'<p class="sub" style="text-align:center">Adicione ao menos um item para concluir.</p>'}`
+      :`<p class="sub" style="text-align:center;margin-top:12px">${v.status==="assinada"?"Vistoria assinada pelo locatário — somente leitura.":"Vistoria concluída — aguardando assinatura do locatário."}</p>`}`;
+  $("#vBack").onclick=()=>go("vistorias");
+  $("#vPrint").onclick=()=>laudoVistoria(v,itens);
+  const elItens=$("#vItens");
+  elItens.innerHTML = itens.length? itens.map(it=>`<div class="tile" style="padding:12px 14px">
+      <div class="row"><b style="flex:1">${esc(it.comodo)}${it.item?" · "+esc(it.item):""}</b>
+        ${it.estado?`<span class="badge">${esc(VIST_ESTADO[it.estado]||it.estado)}</span>`:""}
+        ${!locked?`<button class="badge" data-del="${it.id}" style="background:#fdecea;color:var(--danger)">✕</button>`:""}</div>
+      ${it.observacao?`<div class="meta"><span>${esc(it.observacao)}</span></div>`:""}
+      ${(it.fotos&&it.fotos.length)?`<div class="meta">${it.fotos.map((_,idx)=>`<button class="badge" data-foto="${it.id}:${idx}">📷 Foto ${idx+1}</button>`).join(" ")}</div>`:""}
+    </div>`).join("") : '<p class="sub">Nenhum item ainda.</p>';
+  // abrir foto (signed url)
+  elItens.querySelectorAll("[data-foto]").forEach(b=>b.onclick=async()=>{
+    const [itId,idx]=b.dataset.foto.split(":"); const it=itens.find(x=>x.id===itId); const path=it?.fotos?.[Number(idx)]; if(!path) return;
+    const {data:s}=await sb.storage.from("imob-docs").createSignedUrl(path,3600); if(s?.signedUrl) window.open(s.signedUrl,"_blank","noopener");
+  });
+  elItens.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+    if(!await confirmar("Excluir este item da vistoria?","Excluir")) return;
+    try{ await sb.from("imob_vistoria_itens").delete().eq("id",b.dataset.del); toast("Item excluído"); abrirVistoria(id); }catch(e){ toast(e.message); }
+  });
+  $("#vAdd")?.addEventListener("click",()=>addItemVistoria(id,dir,itens.length));
+  $("#vDone")?.addEventListener("click",async()=>{
+    if(!await confirmar("Concluir a vistoria? Depois disso o locatário poderá assiná-la e ela não poderá mais ser editada.","Concluir")) return;
+    try{ await sb.from("imob_vistorias").update({status:"concluida"}).eq("id",id); toast("Vistoria concluída ✅"); abrirVistoria(id); }catch(e){ toast(e.message); }
+  });
+}
+function laudoVistoria(v,itens){
+  const w=window.open("","_blank"); if(!w){ toast("Permita pop-ups para gerar o PDF."); return; }
+  const linhas=(itens||[]).map(it=>`<tr><td>${esc(it.comodo)}${it.item?" — "+esc(it.item):""}</td><td>${it.estado?esc(VIST_ESTADO[it.estado]||it.estado):"—"}</td><td>${esc(it.observacao||"")}</td><td style="text-align:center">${(it.fotos&&it.fotos.length)||0}</td></tr>`).join("");
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Vistoria — ${esc(v.imoveis?.titulo||"")}</title>
+   <style>body{font-family:Arial,Helvetica,sans-serif;color:#12303a;padding:28px;max-width:820px;margin:0 auto}
+   h1{font-size:20px;margin:0 0 2px}.sub{color:#5b7079;font-size:13px;margin:0 0 16px}
+   table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:7px 9px;font-size:13px;text-align:left;vertical-align:top}th{background:#f2f6f7}
+   .sign{margin-top:40px;font-size:13px}.line{margin-top:44px;border-top:1px solid #333;width:300px;padding-top:6px}</style></head><body>
+   <h1>Laudo de Vistoria — ${v.tipo==="entrada"?"Entrada":"Saída"}</h1>
+   <p class="sub">${esc(S.imob.nome)} · Imóvel: ${esc(v.imoveis?.titulo||"")}${v.imoveis?.endereco?" — "+esc(v.imoveis.endereco):""} · Data: ${fmtDate(v.data_vistoria)}</p>
+   <table><thead><tr><th>Cômodo / Item</th><th>Estado</th><th>Observação</th><th>Fotos</th></tr></thead>
+   <tbody>${linhas||'<tr><td colspan="4">Sem itens</td></tr>'}</tbody></table>
+   ${v.observacoes?`<p class="sub" style="margin-top:14px">Observações gerais: ${esc(v.observacoes)}</p>`:""}
+   <div class="sign">${v.assinado_locatario_em?`Assinado eletronicamente por <b>${esc(v.assinatura_nome||"")}</b> em ${fmtDate(String(v.assinado_locatario_em).slice(0,10))}.`:'<div class="line">Assinatura do locatário</div>'}</div>
+   <p class="sub" style="margin-top:30px">Documento gerado pelo VIZELLO em ${new Date().toLocaleString("pt-BR")}.</p>
+   </body></html>`);
+  w.document.close(); w.focus(); setTimeout(()=>{ try{ w.print(); }catch(_){} },300);
+}
+function addItemVistoria(vistoriaId,dir,ordem){
+  modal(`<h2>Cômodo / item</h2>
+    <label>Cômodo</label><input id="viComodo" class="field" placeholder="Ex.: Sala, Cozinha, Quarto 1">
+    <label>Item (opcional)</label><input id="viItem" class="field" placeholder="Ex.: Parede, Piso, Tomadas">
+    <label>Estado</label><select id="viEstado" class="field">${Object.entries(VIST_ESTADO).map(([k,l])=>`<option value="${k}" ${k==="bom"?"selected":""}>${l}</option>`).join("")}</select>
+    <label>Observação (opcional)</label><input id="viObs" class="field" placeholder="Ex.: risco na parede próximo à janela">
+    <label>Fotos (opcional)</label><input id="viFotos" class="field" type="file" accept="image/*" multiple capture="environment">
+    <div id="viErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="viCancel">Cancelar</button><button class="btn" id="viSave">Adicionar</button></div>`);
+  $("#viCancel").onclick=closeModal;
+  $("#viSave").onclick=async()=>{
+    const comodo=$("#viComodo").value.trim(); if(!comodo){ setMsg("#viErr","Informe o cômodo.","err"); return; }
+    $("#viSave").disabled=true;
+    try{
+      const files=[...($("#viFotos").files||[])]; const paths=[];
+      for(const f of files){
+        const path=`${dir}/${Date.now()}-${(f.name||"foto").replace(/[^\w.\-]/g,"_")}`;
+        const {error:ue}=await sb.storage.from("imob-docs").upload(path,f,{upsert:false});
+        if(ue) throw ue; paths.push(path);
+      }
+      const {error}=await sb.from("imob_vistoria_itens").insert({
+        vistoria_id:vistoriaId, imobiliaria_id:S.imob.id, comodo,
+        item:$("#viItem").value.trim()||null, estado:$("#viEstado").value,
+        observacao:$("#viObs").value.trim()||null, fotos:paths, ordem
+      });
+      if(error) throw error;
+      closeModal(); abrirVistoria(vistoriaId);
+    }catch(e){ setMsg("#viErr",e.message,"err"); $("#viSave").disabled=false; }
+  };
+}
+
+async function renderConfig(){
+  view().innerHTML=`<div class="h">⚙️ Configurações</div>
+    <div class="tile"><b>${esc(S.imob.nome)}</b>
+      <div class="meta"><span>${S.imob.cnpj?"CNPJ "+esc(S.imob.cnpj):"sem CNPJ"}</span>${S.imob.cidade?`<span>📍 ${esc(S.imob.cidade)}${S.imob.uf?"/"+esc(S.imob.uf):""}</span>`:""}<span class="badge">${esc(S.imob.papel)}</span></div>
+    </div>
+    <div class="bar"><button class="btn small secondary" id="cfEdit">✏️ Editar imobiliária</button><button class="btn small secondary" id="cfBanco">🏦 Dados de recebimento</button><button class="btn small secondary" id="cfIntegra">🔌 Integração de recebimento</button><button class="btn small secondary" id="cfAviso">📢 Avisos aos moradores</button>${S.imob.papel==="dono"?`<button class="btn small secondary" id="cfMembro">➕ Adicionar operador</button>`:""}</div>
+    <div class="h" style="font-size:16px;margin-top:20px">Assinatura VIZELLO</div><div id="assinVzImob"><div class="spin"></div></div>
+    <div class="h" style="font-size:16px;margin-top:20px">Equipe</div><div id="cfMembros"><div class="spin"></div></div>
+    <div class="h" style="font-size:16px;margin-top:20px">Aparência</div>
+    <div class="bar"><button class="btn small secondary" id="cfTema">${(document.documentElement.getAttribute("data-theme")==="dark")?"☀️ Modo claro":"🌙 Modo escuro"}</button></div>
+    ${S.imobs.length>1?`<button class="btn secondary" id="cfTrocar" style="margin-top:16px">🔁 Trocar de imobiliária</button>`:""}
+    <button class="btn ghost" id="cfOut" style="margin-top:10px">Sair da conta</button>`;
+  $("#cfEdit").onclick=editarImob;
+  $("#cfBanco").onclick=dadosRecebimento;
+  $("#cfIntegra").onclick=integracaoPagamento;
+  $("#cfAviso").onclick=avisosManager;
+  $("#cfMembro")?.addEventListener("click",addMembro);
+  $("#cfTema").onclick=()=>{ const dark=document.documentElement.getAttribute("data-theme")==="dark"; const nv=dark?"light":"dark"; document.documentElement.setAttribute("data-theme",nv); try{localStorage.setItem("vz-theme",nv);}catch(_){} renderConfig(); };
+  $("#cfTrocar")?.addEventListener("click",()=>{ S.imob=null; boot(); });
+  $("#cfOut").onclick=logout;
+  carregarAssinVzImob();
+  try{
+    const {data:membros}=await sb.from("imobiliaria_membros").select("user_id,papel,ativo").eq("imobiliaria_id",S.imob.id).eq("ativo",true);
+    $("#cfMembros").innerHTML=(membros||[]).map(m=>`<div class="drow"><span class="k">${m.user_id===S.user.id?"Você":"Operador"}</span><span class="v">${esc(m.papel)}</span></div>`).join("")||'<p class="sub">Só você.</p>';
+  }catch(_){ $("#cfMembros").innerHTML=""; }
+}
+async function carregarAssinVzImob(){
+  const el=$("#assinVzImob"); if(!el) return;
+  let fats=[]; try{ fats=((await rpc("minha_fatura_vizello"))||[]).filter(f=>f.tipo==="imobiliaria"); }catch(_){ el.innerHTML='<p class="sub">—</p>'; return; }
+  if(!fats.length){ el.innerHTML='<p class="sub">Nenhuma mensalidade em aberto. 🎉</p>'; return; }
+  el.innerHTML=fats.map(f=>`<div class="tile" style="background:#fff9e8;border-color:#ece79a"><div class="row"><span style="flex:1">🧾 ${esc(f.competencia)} · <b>${fmtMoney(f.valor)}</b>${f.vencimento?` <span class="sub">vence ${fmtDate(f.vencimento)}</span>`:""}</span><button class="btn small" data-payfat="${f.id}">💠 Pagar PIX</button></div></div>`).join("");
+  el.querySelectorAll("[data-payfat]").forEach(b=>b.onclick=()=>pagarMensImob(b.dataset.payfat));
+}
+async function pagarMensImob(id){
+  modal(`<h2>💠 Mensalidade VIZELLO</h2><div class="spin"></div>`);
+  try{
+    const { data, error } = await sb.functions.invoke("cobrar-mensalidade",{ body:{ fatura_id:id } });
+    if(error||!data||data.error) throw new Error((data&&data.error)||error?.message||"Falha ao gerar PIX");
+    const qr=data.qr_code, qr64=data.qr_code_base64;
+    modal(`<h2>💠 Mensalidade VIZELLO</h2><p class="sub" style="text-align:left">Pague com PIX (copia-e-cola ou QR). A baixa é automática.</p>
+      ${qr64?`<div style="text-align:center"><img alt="QR PIX" src="data:image/png;base64,${qr64}" style="width:220px;max-width:70%"></div>`:""}
+      ${qr?`<textarea class="field" rows="3" readonly style="font-size:12px;word-break:break-all;margin-top:8px">${esc(qr)}</textarea><button class="btn secondary" id="fatCopy" style="margin-top:8px">📋 Copiar código</button>`:'<p class="empty">PIX indisponível. Tente novamente.</p>'}
+      <button class="btn" id="fatClose" style="margin-top:8px">Fechar</button>`);
+    $("#fatClose").onclick=closeModal;
+    $("#fatCopy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(qr); toast("Copiado ✅"); }catch(_){ toast("Copie o código manualmente."); } });
+  }catch(e){ closeModal(); toast(e.message||"Erro"); }
+}
+function editarImob(){
+  modal(`<h2>Editar imobiliária</h2>
+    <label>Nome</label><input id="eiNome" class="field" value="${esc(S.imob.nome)}">
+    <div class="fld-row"><div><label>Cidade</label><input id="eiCidade" class="field" value="${esc(S.imob.cidade||"")}"></div><div><label>UF</label><input id="eiUf" class="field" maxlength="2" value="${esc(S.imob.uf||"")}"></div></div>
+    <div id="eiErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="eiCancel">Cancelar</button><button class="btn" id="eiSave">Salvar</button></div>`);
+  $("#eiCancel").onclick=closeModal;
+  $("#eiSave").onclick=async()=>{
+    const nome=$("#eiNome").value.trim(); if(!nome){ setMsg("#eiErr","Informe o nome.","err"); return; }
+    try{ const {error}=await sb.from("imobiliarias").update({nome,cidade:$("#eiCidade").value.trim()||null,uf:$("#eiUf").value.trim().toUpperCase()||null}).eq("id",S.imob.id); if(error) throw error;
+      S.imob.nome=nome; S.imob.cidade=$("#eiCidade").value.trim(); S.imob.uf=$("#eiUf").value.trim().toUpperCase();
+      $("#whoImob").textContent=nome; closeModal(); toast("Salvo ✅"); renderConfig();
+    }catch(e){ setMsg("#eiErr",e.message||"Erro","err"); }
+  };
+}
+async function dadosRecebimento(){
+  modal('<h2>Dados de recebimento</h2><div class="spin"></div>');
+  let d={};
+  try{ const {data}=await sb.from("imobiliarias").select("*").eq("id",S.imob.id).single(); d=data||{}; }catch(_){}
+  const pixTipos={cpf:"CPF",cnpj:"CNPJ",email:"E-mail",telefone:"Telefone",aleatoria:"Aleatória"};
+  const contaTipos={corrente:"Corrente",poupanca:"Poupança"};
+  modal(`<h2>🏦 Dados de recebimento</h2><p class="sub" style="text-align:left">Para receber os pagamentos das suas locações/vendas. A chave Pix é enviada junto na cobrança do WhatsApp.</p>
+    <div class="h" style="font-size:15px;margin:6px 2px 6px">Pix</div>
+    <div class="fld-row">
+      <div><label>Tipo de chave</label><select id="brTipo" class="field"><option value="">—</option>${Object.entries(pixTipos).map(([k,v])=>`<option value="${k}" ${d.pix_tipo===k?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div><label>Chave Pix</label><input id="brChave" class="field" value="${esc(d.pix_chave||"")}" placeholder="chave Pix"></div>
+    </div>
+    <div class="h" style="font-size:15px;margin:16px 2px 6px">Conta bancária</div>
+    <label>Titular</label><input id="brTitular" class="field" value="${esc(d.titular||"")}" placeholder="Nome do titular">
+    <label>CPF/CNPJ do titular</label><input id="brDoc" class="field" value="${esc(d.titular_doc||"")}" placeholder="00.000.000/0000-00">
+    <label>Banco</label><input id="brBanco" class="field" value="${esc(d.banco||"")}" placeholder="Ex.: 341 - Itaú">
+    <div class="fld-row">
+      <div><label>Agência</label><input id="brAg" class="field" value="${esc(d.agencia||"")}"></div>
+      <div><label>Conta</label><input id="brConta" class="field" value="${esc(d.conta||"")}"></div>
+      <div><label>Tipo</label><select id="brCTipo" class="field"><option value="">—</option>${Object.entries(contaTipos).map(([k,v])=>`<option value="${k}" ${d.conta_tipo===k?"selected":""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div id="brErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="brCancel">Cancelar</button><button class="btn" id="brSave">Salvar</button></div>`);
+  $("#brCancel").onclick=closeModal;
+  $("#brSave").onclick=async()=>{
+    const rec={ pix_tipo:$("#brTipo").value||null, pix_chave:$("#brChave").value.trim()||null,
+      titular:$("#brTitular").value.trim()||null, titular_doc:$("#brDoc").value.trim()||null,
+      banco:$("#brBanco").value.trim()||null, agencia:$("#brAg").value.trim()||null,
+      conta:$("#brConta").value.trim()||null, conta_tipo:$("#brCTipo").value||null };
+    $("#brSave").disabled=true;
+    try{ const {error}=await sb.from("imobiliarias").update(rec).eq("id",S.imob.id); if(error) throw error;
+      S.imob.pix_tipo=rec.pix_tipo; S.imob.pix_chave=rec.pix_chave;
+      closeModal(); toast("Dados de recebimento salvos ✅");
+    }catch(e){ setMsg("#brErr",e.message||"Erro","err"); $("#brSave").disabled=false; }
+  };
+}
+async function avisosManager(){
+  modal('<h2>Avisos</h2><div class="spin"></div>');
+  let avisos=[]; try{ const {data}=await sb.from("imob_avisos").select("*").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false}).limit(20); avisos=data||[]; }catch(_){}
+  modal(`<h2>📢 Avisos aos moradores</h2>
+    <p class="sub" style="text-align:left">Publicados aqui aparecem no portal do morador vinculado à sua imobiliária.</p>
+    <label>Título</label><input id="avT" class="field" placeholder="Ex.: Manutenção do elevador">
+    <label>Mensagem</label><textarea id="avC" class="field" rows="3" placeholder="Detalhes do aviso..."></textarea>
+    <div id="avErr" class="err"></div>
+    <div class="fld-row" style="margin:10px 0 14px"><button class="btn secondary" id="avClose">Fechar</button><button class="btn" id="avPub">Publicar</button></div>
+    <div id="avList">${avisos.length?avisos.map(a=>`<div class="tile" style="padding:12px"><div class="row"><div style="flex:1;min-width:0"><h3 style="font-size:15px">${esc(a.titulo)}</h3>${a.corpo?`<div class="meta"><span>${esc(a.corpo)}</span></div>`:""}<div class="meta"><span>${fmtDate(a.created_at)}</span></div></div><button class="badge" data-delav="${a.id}" style="background:#fdecea;color:var(--danger)">Excluir</button></div></div>`).join(""):'<p class="sub">Nenhum aviso publicado.</p>'}</div>`);
+  $("#avClose").onclick=closeModal;
+  $("#avPub").onclick=async()=>{ const t=$("#avT").value.trim(); if(!t){ setMsg("#avErr","Informe o título.","err"); return; }
+    try{ await rpc("imob_aviso_publicar",{p_imob:S.imob.id,p_titulo:t,p_corpo:$("#avC").value.trim()||null}); toast("Aviso publicado ✅"); avisosManager(); }
+    catch(e){ setMsg("#avErr",e.message||"Erro","err"); } };
+  document.querySelectorAll("[data-delav]").forEach(b=>b.onclick=async()=>{ await sb.from("imob_avisos").delete().eq("id",b.dataset.delav); toast("Excluído"); avisosManager(); });
+}
+async function integracaoPagamento(){
+  modal('<h2>Integração de recebimento</h2><div class="spin"></div>');
+  let cfg={}; try{ const {data}=await sb.from("imob_pagamentos_config").select("*").eq("imobiliaria_id",S.imob.id).maybeSingle(); cfg=data||{}; }catch(_){}
+  const provs=[
+    {id:"pix_manual",nome:"Pix (sua chave)",desc:"QR e copia-e-cola pela sua chave Pix. Baixa manual.",pronto:true},
+    {id:"mercadopago",nome:"Mercado Pago / Mercado Livre",desc:"Pix dinâmico + boleto + baixa automática (webhook).",pronto:false},
+    {id:"cora",nome:"Cora",desc:"Boleto e Pix com conciliação automática.",pronto:false},
+    {id:"itau",nome:"Itaú",desc:"API de cobrança (Pix/boleto) com baixa automática.",pronto:false},
+    {id:"bradesco",nome:"Bradesco",desc:"API de cobrança (Pix/boleto) com baixa automática.",pronto:false},
+  ];
+  modal(`<h2>🔌 Integração de recebimento</h2>
+    <p class="sub" style="text-align:left">Como sua imobiliária recebe. O <b>Pix pela sua chave já funciona</b> (gera QR/copia-e-cola). Os bancos/PSPs abaixo habilitam <b>boleto e baixa automática</b> e exigem as credenciais do provedor (configuração no servidor).</p>
+    ${provs.map(p=>`<div class="tile" style="padding:14px"><div class="row"><div style="flex:1;min-width:0">
+      <h3>${esc(p.nome)} ${cfg.provider===p.id&&cfg.conectado?'<span class="badge pago">conectado</span>':(cfg.provider===p.id?'<span class="badge pendente">selecionado</span>':"")}</h3>
+      <div class="meta"><span>${esc(p.desc)}</span>${p.pronto?'<span class="badge pago">disponível</span>':'<span class="badge pendente">requer credenciais</span>'}</div></div></div>
+      <div class="bar" style="margin:10px 0 0"><button class="btn small ${cfg.provider===p.id?"secondary":""}" data-prov="${p.id}">${cfg.provider===p.id?"Selecionado ✓":(p.pronto?"Ativar":"Selecionar")}</button></div></div>`).join("")}
+    <button class="btn secondary" id="ipClose" style="margin-top:6px">Fechar</button>`);
+  $("#ipClose").onclick=closeModal;
+  document.querySelectorAll("[data-prov]").forEach(b=>b.onclick=async()=>{
+    const pid=b.dataset.prov, pronto=pid==="pix_manual";
+    try{ await sb.from("imob_pagamentos_config").upsert({imobiliaria_id:S.imob.id, provider:pid, conectado:pronto, atualizado_em:new Date().toISOString()},{onConflict:"imobiliaria_id"});
+      toast(pronto?"Pix ativado ✅":"Provedor selecionado — próximo passo: credenciais no servidor"); integracaoPagamento(); }
+    catch(e){ toast(e.message); }
+  });
+}
+function addMembro(){
+  modal(`<h2>Adicionar operador</h2><p class="sub" style="text-align:left">A pessoa precisa já ter uma conta (criada nesta página).</p>
+    <label>E-mail</label><input id="amEmail" class="field" type="email" placeholder="operador@imobiliaria.com">
+    <div id="amErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="amCancel">Cancelar</button><button class="btn" id="amSave">Adicionar</button></div>`);
+  $("#amCancel").onclick=closeModal;
+  $("#amSave").onclick=async()=>{
+    const email=$("#amEmail").value.trim(); if(!email){ setMsg("#amErr","Informe o e-mail.","err"); return; }
+    try{ await rpc("imob_membro_add",{p_imob:S.imob.id,p_email:email}); closeModal(); toast("Operador adicionado ✅"); renderConfig(); }
+    catch(e){ setMsg("#amErr",e.message||"Erro","err"); }
+  };
+}
+
+// ---------- Geocoding ----------
+async function geocode(q){
+  const res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${encodeURIComponent(q)}`,{headers:{Accept:"application/json"}});
+  if(!res.ok) throw new Error("geocode falhou");
+  const a=await res.json(); if(!a||!a.length) return null;
+  const lat=parseFloat(a[0].lat), lng=parseFloat(a[0].lon);
+  return (isFinite(lat)&&isFinite(lng))?{lat,lng}:null;
+}
+
+// ===================================================================
+// CONVITE (inquilino / proprietário) — detecta o tipo pelo token
+// ===================================================================
+const conviteToken = new URLSearchParams(location.search).get("c");
+async function abrirConvite(){
+  show("invite"); const body=$("#inviteBody"); body.innerHTML='<div class="spin"></div>';
+  let cv=null, kind=null;
+  try{ const pv=await rpc("imob_prop_convite_ver",{p_token:conviteToken}); if(pv && !pv.erro){ cv=pv; kind="prop"; } }catch(_){}
+  if(!cv){ try{ const tv=await rpc("imob_convite_ver",{p_token:conviteToken}); if(tv && !tv.erro){ cv=tv; kind="tenant"; } }catch(_){} }
+  $("#inviteTag").textContent = kind==="prop"?"PORTAL DO PROPRIETÁRIO":"PORTAL DO MORADOR";
+  if(!cv){ body.innerHTML=`<p class="empty">Convite inválido ou expirado.</p><button class="btn ghost" id="ivLg">Já tenho conta — entrar</button>`; $("#ivLg").onclick=()=>show("login"); return; }
+  if(cv.status==="aceito"){ body.innerHTML=`<div class="sub">Este convite já foi ativado. Entre com seu e-mail e senha.</div><button class="btn" id="ivLg2">Ir para o login</button>`; $("#ivLg2").onclick=()=>show("login"); return; }
+  body.innerHTML=`<div class="sub">Bem-vindo(a)! A <b>${esc(cv.imobiliaria||"imobiliária")}</b> criou seu acesso${(kind==="tenant"&&cv.imovel)?` — <b>${esc(cv.imovel)}</b>`:""}. Confira seus dados e crie uma senha.</div>
+    <label>Nome</label><input class="field" value="${esc(cv.nome||"")}" readonly>
+    <label>E-mail</label><input class="field" value="${esc(cv.email||"")}" readonly>
+    <label>Crie uma senha</label><input id="ivPass" class="field" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+    <div id="ivErr" class="err"></div><div id="ivMsg" class="ok"></div>
+    <button id="ivBtn" class="btn">Criar acesso</button>`;
+  $("#ivBtn").onclick=async()=>{
+    const pass=$("#ivPass").value; if(!pass||pass.length<6){ setMsg("#ivErr","A senha precisa de ao menos 6 caracteres.","err"); return; }
+    $("#ivBtn").disabled=true; setMsg("#ivErr","","err");
+    try{
+      let session=null;
+      const su=await sb.auth.signUp({email:cv.email,password:pass,options:{data:{nome:cv.nome}}});
+      if(su.error && !/already registered|already exists/i.test(su.error.message)) throw su.error;
+      session=su.data?.session||null;
+      if(!session){ const li=await sb.auth.signInWithPassword({email:cv.email,password:pass}); if(li.error){ setMsg("#ivMsg","Conta criada! Confirme pelo e-mail e depois entre.","ok"); $("#ivBtn").disabled=false; return; } session=li.data.session; }
+      await rpc(kind==="prop"?"imob_prop_convite_aceitar":"imob_convite_aceitar",{p_token:conviteToken});
+      await boot();
+    }catch(e){ setMsg("#ivErr",e.message||"Erro ao criar acesso.","err"); $("#ivBtn").disabled=false; }
+  };
+}
+
+// ===================================================================
+// PERSONA: INQUILINO (portal do morador)
+// ===================================================================
+const Inquilino = (()=>{
+  let data=null, tab="contrato";
+  const TABS=[{id:"contrato",ic:"📄",label:"Contrato"},{id:"financeiro",ic:"💰",label:"Aluguel"},{id:"vistorias",ic:"📋",label:"Vistorias"},{id:"avisos",ic:"📢",label:"Avisos"}];
+  function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
+  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({contrato:renderContrato,financeiro:renderFin,vistorias:renderVist,avisos:renderAvisos}[t]||renderContrato)(); }
+  function renderContrato(){
+    const c=(data.contratos||[])[0]; if(!c){ view().innerHTML='<p class="empty">Sem contrato.</p>'; return; }
+    const im=c.imovel||{}, ib=c.imobiliaria||{};
+    view().innerHTML=`<div class="h">📄 Meu contrato</div>
+      <div class="tile"><h3>${esc(im.titulo||"Imóvel")}</h3>
+        <div class="meta"><span>${esc(im.tipo||"")}</span>${im.cidade?`<span>📍 ${esc(im.cidade)}${im.uf?"/"+esc(im.uf):""}</span>`:""}</div>
+        ${im.endereco?`<div class="meta"><span>${esc(im.endereco)}</span></div>`:""}</div>
+      <div class="tile">
+        <div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(c.valor_mensal)}/mês</span></div>
+        <div class="drow"><span class="k">Vencimento</span><span class="v">dia ${c.dia_vencimento||"—"}</span></div>
+        <div class="drow"><span class="k">Início</span><span class="v">${fmtDate(c.inicio)||"—"}</span></div>
+        <div class="drow"><span class="k">Fim</span><span class="v">${c.fim?fmtDate(c.fim):"sem prazo"}</span></div>
+        <div class="drow"><span class="k">Imobiliária</span><span class="v">${esc(ib.nome||"")}</span></div></div>
+      ${ib.telefone?`<button class="btn secondary" id="ctWa">📲 Falar com a imobiliária</button>`:""}`;
+    $("#ctWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(ib.telefone)}?text=${encodeURIComponent(`Olá! Sou morador do ${im.titulo||"imóvel"}.`)}`,"_blank","noopener"));
+  }
+  function renderFin(){
+    const c=(data.contratos||[])[0]; if(!c){ view().innerHTML='<p class="empty">Sem contrato.</p>'; return; }
+    const ib=c.imobiliaria||{}, hoje=new Date().toISOString().slice(0,10), mens=(c.mensalidades||[]);
+    const abertas=mens.filter(m=>m.status==="pendente");
+    view().innerHTML=`<div class="h">💰 Meu aluguel <small>${esc(c.imovel?c.imovel.titulo:"")}</small></div>
+      <div class="tile"><div class="drow"><span class="k">Valor mensal</span><span class="v">${fmtMoney(c.valor_mensal)}</span></div>
+        <div class="drow"><span class="k">Em aberto</span><span class="v">${fmtMoney(abertas.reduce((s,m)=>s+Number(m.valor),0))}</span></div></div>
+      ${mens.length?mens.map(m=>{ const venc=m.status==="pendente"&&m.vencimento&&m.vencimento<hoje;
+        return `<div class="tile"><div class="drow" style="border:none;padding:0"><span class="k" style="flex:1">${esc(m.descricao)}</span><b>${fmtMoney(m.valor)}</b></div>
+          <div class="meta"><span>📅 ${m.vencimento?fmtDate(m.vencimento):"—"}</span><span class="badge ${m.status==="pago"?"pago":(venc?"vencida":"pendente")}">${m.status==="pago"?"Pago":(venc?"Vencido":"Em aberto")}</span></div>
+          ${m.status==="pendente"&&ib.pix_chave?`<button class="btn secondary" data-pix="${m.id}" style="margin-top:10px">💠 Pagar com Pix</button>`:""}</div>`;
+      }).join(""):`<div class="empty"><div class="big">💰</div><p>Nenhuma cobrança ainda.</p></div>`}`;
+    const byId={}; mens.forEach(m=>byId[m.id]=m);
+    view().querySelectorAll("[data-pix]").forEach(b=>b.onclick=()=>pagarPix(byId[b.dataset.pix], c));
+  }
+  function pagarPix(m,c){
+    const ib=c.imobiliaria||{}; if(!ib.pix_chave){ toast("Pix indisponível."); return; }
+    const payload=pixBRCode({chave:ib.pix_chave, nome:ib.nome, cidade:c.imovel?c.imovel.cidade:"", valor:m.valor, txid:("L"+String(m.id).replace(/-/g,"").slice(0,15)), descricao:m.descricao});
+    modal(`<h2>💠 Pagar aluguel</h2><p class="sub" style="text-align:left">${esc(m.descricao)} · <b>${fmtMoney(m.valor)}</b></p>
+      <div style="text-align:center">${qrImgTag(payload,6)||'<p class="sub">QR indisponível.</p>'}</div>
+      <label>Pix copia e cola</label><textarea id="pxCode" class="field" rows="3" readonly style="font-size:12px;word-break:break-all">${esc(payload)}</textarea>
+      <button class="btn secondary" id="pxCopy" style="margin-top:10px">📋 Copiar código</button>
+      <button class="btn" id="pxClose" style="margin-top:8px">Fechar</button>`);
+    $("#pxClose").onclick=closeModal;
+    $("#pxCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(payload); toast("Copiado ✅"); }catch(_){ const t=$("#pxCode"); t.focus(); t.select(); toast("Selecione e copie"); } };
+  }
+  async function renderVist(){
+    view().innerHTML='<div class="spin"></div>';
+    let vist=[]; try{ vist=await rpc("imob_morador_vistorias")||[]; }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+    if(!vist.length){ view().innerHTML=`<div class="h">📋 Vistorias</div><div class="empty"><div class="big">📋</div><p>Nenhuma vistoria disponível ainda.</p></div>`; return; }
+    view().innerHTML=`<div class="h">📋 Vistorias <small>Laudo do imóvel</small></div>`+vist.map(v=>`
+      <div class="tile">
+        <h3>${v.tipo==="entrada"?"➡️ Entrada":"⬅️ Saída"}${v.imovel?" · "+esc(v.imovel):""} ${v.status==="assinada"?'<span class="badge ok">Assinada</span>':'<span class="badge pendente">A assinar</span>'}</h3>
+        <div class="meta"><span>🗓️ ${fmtDate(v.data_vistoria)}</span>${v.assinado_locatario_em?`<span>✍️ ${esc(v.assinatura_nome||"")}</span>`:""}</div>
+        ${(v.itens||[]).map(it=>`<div class="drow"><span class="k">${esc(it.comodo)}${it.item?" · "+esc(it.item):""}</span><span class="v">${it.estado?esc(VIST_ESTADO[it.estado]||it.estado):""}</span></div>${it.observacao?`<div class="meta" style="margin-top:-4px"><span>${esc(it.observacao)}</span></div>`:""}${(it.fotos&&it.fotos.length)?`<div class="meta">${it.fotos.map((p,ix)=>`<button class="badge" data-foto="${esc(p)}">📷 Foto ${ix+1}</button>`).join(" ")}</div>`:""}`).join("")}
+        ${v.observacoes?`<div class="meta"><span>📝 ${esc(v.observacoes)}</span></div>`:""}
+        ${v.status==="concluida"?`<button class="btn" data-sign="${v.id}" style="margin-top:12px">✍️ Assinar vistoria</button>`:""}
+      </div>`).join("");
+    view().querySelectorAll("[data-sign]").forEach(b=>b.onclick=()=>assinar(b.dataset.sign));
+    view().querySelectorAll("[data-foto]").forEach(b=>b.onclick=async()=>{ try{ const {data:s}=await sb.storage.from("imob-docs").createSignedUrl(b.dataset.foto,3600); if(s?.signedUrl) window.open(s.signedUrl,"_blank","noopener"); else toast("Não foi possível abrir a foto."); }catch(e){ toast(e.message||"Erro"); } });
+  }
+  function assinar(id){
+    modal(`<h2>Assinar vistoria</h2><p class="sub" style="text-align:left">Ao assinar, você declara que revisou e concorda com o estado do imóvel descrito neste laudo.</p>
+      <label>Digite seu nome completo</label><input id="asgNome" class="field" placeholder="Seu nome">
+      <div id="asgErr" class="err"></div>
+      <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="asgCancel">Cancelar</button><button class="btn" id="asgSave">Assinar</button></div>`);
+    $("#asgCancel").onclick=closeModal;
+    $("#asgSave").onclick=async()=>{ const nome=$("#asgNome").value.trim(); if(!nome){ setMsg("#asgErr","Informe seu nome.","err"); return; } $("#asgSave").disabled=true;
+      try{ await rpc("imob_vistoria_assinar",{p_vistoria:id,p_nome:nome}); closeModal(); toast("Vistoria assinada ✅"); go("vistorias"); }catch(e){ setMsg("#asgErr",e.message||"Erro","err"); $("#asgSave").disabled=false; } };
+  }
+  function renderAvisos(){
+    const c=(data.contratos||[])[0]||{}; const ib=c.imobiliaria||{}; const avisos=data.avisos||[];
+    view().innerHTML=`<div class="h">📢 Avisos & contato</div>
+      ${ib.telefone?`<button class="btn secondary" id="avWa" style="margin-bottom:12px">📲 Falar com a imobiliária</button>`:""}
+      ${avisos.length?avisos.map(a=>`<div class="tile"><h3>${esc(a.titulo)}</h3>${a.corpo?`<div class="meta"><span>${esc(a.corpo)}</span></div>`:""}<div class="meta"><span>${fmtDate(a.created_at)}</span>${a.imobiliaria?`<span>${esc(a.imobiliaria)}</span>`:""}</div></div>`).join(""):`<div class="empty"><div class="big">📢</div><p>Nenhum aviso no momento.</p></div>`}`;
+    $("#avWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(ib.telefone)}?text=${encodeURIComponent("Olá! Sou morador.")}`,"_blank","noopener"));
+  }
+  function start(d){ data=d; const c0=(d.contratos||[])[0]||{}; $("#appTag").textContent="MORADOR"; $("#whoImob").textContent=c0.imobiliaria?c0.imobiliaria.nome:""; $("#whoUser").textContent=(S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email)||"Morador"; $("#topOut").onclick=logout; show("app"); buildNav(); go("contrato"); }
+  return { start };
+})();
+
+// ===================================================================
+// PERSONA: PROPRIETÁRIO (portal do proprietário)
+// ===================================================================
+const Proprietario = (()=>{
+  let data=null, tab="imoveis";
+  const REPST={pago:["Pago","pago"],pendente:["Pendente","pendente"],atrasado:["Atrasado","vencida"],cancelado:["Cancelado","pendente"]};
+  const TABS=[{id:"imoveis",ic:"🏠",label:"Imóveis"},{id:"repasses",ic:"💰",label:"Repasses"},{id:"config",ic:"⚙️",label:"Conta"}];
+  function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
+  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({imoveis:rImoveis,repasses:rRepasses,config:rConfig}[t]||rImoveis)(); }
+  function allImoveis(){ return (data.vinculos||[]).flatMap(v=>(v.imoveis||[]).map(im=>({...im, imobiliaria:v.imobiliaria&&v.imobiliaria.nome}))); }
+  function allRepasses(){ return (data.vinculos||[]).flatMap(v=>(v.repasses||[]).map(r=>({...r, imobiliaria:v.imobiliaria&&v.imobiliaria.nome}))); }
+  function rImoveis(){
+    const imv=allImoveis();
+    view().innerHTML=`<div class="h">🏠 Meus imóveis <small>${imv.length} imóvel(is)</small></div>`+
+      (imv.length? imv.map(im=>{ const l=im.locacao; return `<div class="tile">
+        <h3>${esc(im.titulo||"Imóvel")} <span class="badge ${im.status||""}">${esc(STATUS[im.status]||im.status||"")}</span></h3>
+        ${im.endereco?`<div class="meta"><span>📍 ${esc(im.endereco)}</span></div>`:""}
+        ${l?`<div class="drow"><span class="k">Locatário</span><span class="v">${esc(l.locatario_nome||"—")}</span></div>
+            <div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(l.valor_mensal)}/mês</span></div>
+            ${l.inicio?`<div class="drow"><span class="k">Início</span><span class="v">${fmtDate(l.inicio)}</span></div>`:""}
+            ${l.fim?`<div class="drow"><span class="k">Fim do contrato</span><span class="v">${fmtDate(l.fim)}</span></div>`:""}`
+          :`<div class="meta"><span>Sem locação ativa</span>${im.valor_aluguel?`<span>Aluguel anunciado: ${fmtMoney(im.valor_aluguel)}</span>`:""}</div>`}
+        ${im.imobiliaria?`<div class="meta"><span>🏢 ${esc(im.imobiliaria)}</span></div>`:""}
+      </div>`;}).join("")
+      : `<div class="empty"><div class="big">🏠</div><p>Nenhum imóvel vinculado a você ainda.</p></div>`);
+  }
+  function rRepasses(){
+    const reps=allRepasses();
+    const recebido=(data.vinculos||[]).reduce((s,v)=>s+Number(v.resumo&&v.resumo.recebido||0),0);
+    const pendente=(data.vinculos||[]).reduce((s,v)=>s+Number(v.resumo&&v.resumo.pendente||0),0);
+    view().innerHTML=`<div class="h">💰 Repasses <small>Aluguéis repassados a você</small></div>
+      <div class="metrics"><div class="metric"><small>Recebido (total)</small><b style="color:var(--ok)">${fmtMoney(recebido)}</b></div>
+        <div class="metric"><small>A receber</small><b class="warn">${fmtMoney(pendente)}</b></div></div>`+
+      (reps.length? reps.map(r=>{ const st=REPST[r.status]||[r.status,"pendente"]; return `<div class="tile" style="padding:13px 15px">
+        <div class="row"><div style="flex:1;min-width:0"><b>${esc(r.descricao||"Repasse")}</b>
+          <div class="meta">${r.imovel?`<span>🏠 ${esc(r.imovel)}</span>`:""}${r.competencia?`<span>${esc(r.competencia)}</span>`:""}<span>${r.pago_em?"Pago em "+fmtDate(String(r.pago_em).slice(0,10)):(r.vencimento?"Vence "+fmtDate(r.vencimento):"")}</span></div></div>
+          <div style="text-align:right"><b>${fmtMoney(r.valor)}</b><div><span class="badge ${st[1]}">${st[0]}</span></div></div></div></div>`;}).join("")
+      : `<div class="empty"><div class="big">💰</div><p>Nenhum repasse registrado ainda.</p></div>`);
+  }
+  function rConfig(){
+    const v0=(data.vinculos||[])[0]||{};
+    view().innerHTML=`<div class="h">⚙️ Conta</div>
+      <div class="tile"><div class="drow"><span class="k">Nome</span><span class="v">${esc((S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||v0.nome||"—")}</span></div>
+        <div class="drow"><span class="k">E-mail</span><span class="v">${esc(S.user&&S.user.email||"")}</span></div></div>
+      <button class="btn secondary" id="pcTema">🌙 Alternar tema</button>
+      <button class="btn ghost" id="pcOut">Sair</button>`;
+    $("#pcTema").onclick=()=>{ const cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"; document.documentElement.setAttribute("data-theme",cur); try{localStorage.setItem("vz-theme",cur);}catch(_){} };
+    $("#pcOut").onclick=logout;
+  }
+  function start(d){ data=d; const v0=(d.vinculos||[])[0]||{}; $("#appTag").textContent="PROPRIETÁRIO"; $("#whoImob").textContent=(d.vinculos&&d.vinculos.length>1)?`${d.vinculos.length} imobiliárias`:(v0.imobiliaria?v0.imobiliaria.nome:""); $("#whoUser").textContent=(S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||v0.nome||(S.user&&S.user.email)||"Proprietário"; $("#topOut").onclick=logout; show("app"); buildNav(); go("imoveis"); }
+  return { start };
+})();
+
+try{ if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{}); }catch(_){}
+
+// ---------- start ----------
+boot().catch(e=>{ console.error(e); conviteToken?abrirConvite():show("login"); });
+</script>
+</body>
+</html>

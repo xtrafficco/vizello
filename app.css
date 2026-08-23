@@ -1,0 +1,248 @@
+  /* tokens de cor e modo escuro em /theme.css (compartilhado com o admin) */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none;-ms-overflow-style:none}
+  *::-webkit-scrollbar{display:none;width:0;height:0}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+  html,body{margin:0;height:100%;overscroll-behavior:none}
+  /* pinta a área de safe-area (home indicator) para não mostrar faixa branca no login */
+  html{background:var(--bg)}
+  /* Na tela de login o fundo é o gradiente petróleo (não o navy do app-shell).
+     Casa o html com a base do gradiente para o vão de safe-area não virar "faixa". */
+  html:has(.login-page){background:#0a3644}
+  body{
+    font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+    background:#0e4a5a;
+    background:linear-gradient(165deg,#12586b 0%,#0e4a5a 46%,#0a3644 100%);
+    /* --appvh = window.innerHeight real (setado no app.js) evita o vão do menu/login na 1ª pintura */
+    /* altura DEFINIDA (não min-height) para o main rolar corretamente no PWA do Android */
+    /* min-height:100dvh garante que o corpo SEMPRE alcance o fundo real da tela
+       (inclui a safe-area); o var(--appvh) continua controlando a altura exata
+       no PWA Android. O piso 100dvh impede o "vão" que expunha o fundo do html. */
+    display:flex; flex-direction:column; min-height:100dvh; height:100dvh; height:var(--appvh,100dvh); overscroll-behavior:none;
+  }
+  /* inputs de data/hora: normaliza para não deformar o layout */
+  input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]{
+    -webkit-appearance:none;appearance:none;min-width:0;max-width:100%;min-height:46px
+  }
+  input::-webkit-date-and-time-value{text-align:left;margin:0}
+  input::-webkit-calendar-picker-indicator{opacity:.55}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea,select{font:inherit}
+  a{color:var(--brand-ink)}
+  /* ===== responsividade global: nunca rolar na horizontal ===== */
+  html,body{max-width:100%;overflow-x:hidden}
+  img,svg,video,canvas{max-width:100%;height:auto}
+  input,textarea,select{max-width:100%}
+  .codebox,pre,code,textarea{overflow-wrap:anywhere;word-break:break-word}
+  /* qualquer conteúdo largo (tabelas) rola dentro do próprio bloco, não na página */
+  table{max-width:100%}
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* ---------- AUTH / SETUP SCREENS ---------- */
+  /* flex + margin:auto centra o cartão nos dois eixos e, quando a tela é
+     baixa (paisagem / teclado aberto), rola sem cortar o topo do cartão */
+  .center{flex:1;display:flex;padding:24px;overflow-y:auto;min-height:var(--appvh,100dvh)}
+  .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);width:100%;max-width:400px;padding:26px;margin:auto}
+  @media(min-width:681px){ .card{max-width:420px;padding:32px} }
+  .brand{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:22px;color:var(--bg);letter-spacing:-.3px}
+
+  /* ---------- LOGIN redesenhado: fundo azul-petróleo, cartão branco, logo escura ---------- */
+  .login-page{background:linear-gradient(165deg,#12586b 0%,#0e4a5a 46%,#0a3644 100%)}
+  .loginlogo{display:block;margin:2px auto 8px;width:196px;max-width:72%;height:auto}
+  .tagline{display:flex;justify-content:center;margin-bottom:8px}
+  .tagline .tag{font-size:11px;font-weight:800;background:#0e4a5a;color:#fff;padding:3px 12px;border-radius:999px;letter-spacing:1.2px}
+  .login-page .card{background:#ffffff;color:#12303a}
+  .login-page .card .sub{color:#5b7079}
+  .login-page .card label{color:#5f747c}
+  .login-page .card .field{background:#f4f7f8;border-color:#dbe6e9;color:#12303a}
+  .login-page .card .field:focus{border-color:#0e4a5a}
+  .login-page .card .btn{background:#0e4a5a;color:#fff}
+  .login-page .card .btn.secondary{background:#eaf1f2;color:#0e4a5a}
+  .login-page .card .btn.ghost{background:transparent;color:#0e4a5a}
+  .login-page .switch{color:#5b7079}
+  .login-page .switch button,.login-page .card a{color:#0e4a5a}
+  /* seletor "Entrar como" na tela de login */
+  .loginroles{display:flex;gap:8px;margin:2px 0 4px}
+  #loginRoles button{flex:1;padding:10px 6px;border-radius:12px;background:#eef3f4;color:#365a63;font-weight:700;font-size:13px;border:1.5px solid transparent;transition:all .15s}
+  #loginRoles button.on{background:#0e4a5a;color:#fff;border-color:#0e4a5a}
+  .login-page .rolepick{background:#f6f9fa;border-color:#e4edef;color:#12303a}
+  .login-page .rolepick h3{color:#12303a}
+  .login-page .rolepick p{color:#5b7079}
+  .wordmark{font-family:'Luckiest Guy',Inter,system-ui,cursive;font-weight:400;font-size:34px;letter-spacing:.5px;line-height:1;padding-top:3px;display:inline-flex}
+  .wordmark i{font-style:normal;transform:rotate(var(--tw,0deg));transform-origin:50% 60%}
+  .wordmark i:nth-child(1){color:var(--wm-orange);--tw:-4deg}
+  .wordmark i:nth-child(2){color:var(--wm-gold);--tw:2deg}
+  .wordmark i:nth-child(3){color:var(--wm-gold);--tw:-3deg}
+  .wordmark i:nth-child(4){color:var(--wm-blue);--tw:3deg}
+  .wordmark i:nth-child(5){color:var(--wm-navy);--tw:-2deg}
+  .wordmark i:nth-child(6){color:var(--wm-orange);--tw:3deg}
+  .wordmark i:nth-child(7){color:var(--wm-gold);--tw:-3deg}
+  .sub{color:var(--muted);font-size:14px;margin:6px 0 18px}
+  label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+  .field{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--field-bg);outline:none}
+  .field:focus{border-color:var(--brand)}
+  .btn{width:100%;padding:13px;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;margin-top:18px;transition:filter .15s}
+  .btn:active{filter:brightness(.93)}
+  .btn.secondary{background:var(--chip);color:var(--brand-ink)}
+  .btn.ghost{background:transparent;color:var(--brand-ink);margin-top:8px;font-weight:600}
+  .btn:disabled{opacity:.55}
+  .switch{text-align:center;margin-top:14px;font-size:14px;color:var(--muted)}
+  .switch button{color:var(--brand-ink);font-weight:700}
+  .err{background:#fdecea;color:var(--danger);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:14px;display:none}
+  .err.show{display:block}
+  .ok{background:#e6f5ee;color:var(--ok);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:14px;display:none}
+  .ok.show{display:block}
+
+  /* ---------- APP SHELL ---------- */
+  #app{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--app-bg)}
+  header.top{
+    background:var(--bg);color:#eaf3f7;padding:calc(env(safe-area-inset-top) + 14px) 16px 14px;
+    display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20
+  }
+  header.top .cond{flex:1;min-width:0}
+  header.top .cond b{display:block;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  header.top .cond small{color:#9fc0cd;font-size:12px}
+  .rolechip{background:rgba(255,255,255,.14);color:#eaf3f7;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .iconbtn{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:18px}
+  .notifdot{position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);line-height:1}
+  .offchip{background:rgba(255,255,255,.16);color:#ffd9a8;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+
+  /* banner de instalação (PWA) */
+  .installbar{display:flex;align-items:center;gap:12px;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px;position:sticky;top:0;z-index:19}
+  .installbar .ic{font-size:24px;flex:0 0 auto}
+  .installbar .txt{flex:1;min-width:0}
+  .installbar .txt b{display:block;font-size:14px}
+  .installbar .txt small{color:var(--muted);font-size:12px}
+  .installbar .ib-yes{flex:0 0 auto;background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:9px 14px;border-radius:10px}
+  .installbar .ib-no{flex:0 0 auto;width:32px;height:32px;border-radius:9px;background:var(--chip);color:var(--muted);font-size:14px}
+
+  main{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:16px 14px 24px;max-width:640px;width:100%;margin:0 auto}
+  .h{font-size:20px;font-weight:800;margin:4px 2px 14px;letter-spacing:-.3px}
+  .h small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
+
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .tile .row{display:flex;align-items:center;gap:10px}
+  .tile h3{margin:0 0 4px;font-size:16px}
+  .tile p{margin:6px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+  .meta{color:var(--muted);font-size:12.5px;margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--brand-ink)}
+  .badge.urgente{background:#fdeede;color:var(--warn)}
+  .badge.emergencia{background:var(--danger);color:#fff}
+  .emerg-banner{background:linear-gradient(135deg,#c0392b,#e2645a);color:#fff;border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(192,57,43,.35);animation:emergpulse 2s ease-in-out infinite}
+  .emerg-banner b{font-size:15px;display:block}
+  @keyframes emergpulse{0%,100%{box-shadow:0 4px 16px rgba(192,57,43,.35)}50%{box-shadow:0 4px 26px rgba(192,57,43,.6)}}
+  .badge.aberta{background:#e2eff2;color:#00596b}
+  .badge.em_andamento{background:#fff4e0;color:var(--warn)}
+  .badge.resolvida{background:#e6f5ee;color:var(--ok)}
+  .badge.cancelada{background:#f0f0f0;color:#888}
+  .badge.recebida{background:#fff4e0;color:var(--warn)}
+  .badge.retirada{background:#e6f5ee;color:var(--ok)}
+  .badge.autorizado{background:#e2eff2;color:#00596b}
+  .badge.entrou{background:#e6f5ee;color:var(--ok)}
+  .badge.saiu{background:#f0f0f0;color:#888}
+  .pin{color:var(--accent);font-weight:700}
+  .unread{width:8px;height:8px;border-radius:50%;background:var(--brand);flex:0 0 auto}
+
+  .empty{text-align:center;color:var(--muted);padding:48px 20px}
+  .empty .big{font-size:42px}
+  .empty p{margin:10px 0 0;font-size:14px}
+
+  /* hub de serviços */
+  .hub{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hubcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 16px;box-shadow:0 1px 2px rgba(15,43,61,.04);text-align:left;display:flex;flex-direction:column;gap:8px;min-height:104px}
+  .hubcard .ic{font-size:26px}
+  .hubcard b{font-size:15px}
+  .hubcard small{color:var(--muted);font-size:12.5px;line-height:1.35}
+  .hubcard.soon{opacity:.62}
+  .hubcard .tag{align-self:flex-start;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);margin-top:auto}
+  /* cartão de gráfico (painel do síndico + prestação de contas) */
+  .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .chartcard .ct{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px}
+  .subhead{display:flex;align-items:center;gap:10px;margin:2px 2px 14px}
+  .subhead .back{width:34px;height:34px;border-radius:10px;background:var(--chip);display:grid;place-items:center;font-size:18px;color:var(--brand-ink);flex:0 0 auto}
+
+  /* anexos (fotos/arquivos) */
+  .anexos{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .anexo{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--line);text-decoration:none}
+  .anexo img{width:74px;height:74px;object-fit:cover;display:block}
+  .anexo.file{padding:12px 12px;font-size:12.5px;color:var(--brand-ink);background:var(--chip);max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* recibo imprimível */
+  #reciboWrap{position:fixed;inset:0;background:var(--app-bg);z-index:70;overflow-y:auto;padding:24px;display:flex;justify-content:center;align-items:center}
+  #reciboWrap .recibo{background:#fff;max-width:520px;width:100%;border-radius:14px;box-shadow:var(--shadow);padding:26px;margin:auto}
+  .rc-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--bg);padding-bottom:12px;margin-bottom:10px}
+  .rc-head b{font-size:18px} .rc-head span{color:var(--muted);font-size:13px}
+  #reciboWrap h2{font-size:18px;margin:8px 0 16px}
+  .rc-tab{width:100%;border-collapse:collapse}
+  .rc-tab td{padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}
+  .rc-tab td:first-child{color:var(--muted);width:38%}
+  .rc-total{text-align:right;font-size:18px;margin-top:16px}
+  .rc-note{color:var(--muted);font-size:12px;margin-top:16px;line-height:1.5}
+  @media print{
+    body>*{visibility:hidden!important}
+    #reciboWrap,#reciboWrap *{visibility:visible!important}
+    #reciboWrap{position:absolute;inset:0;background:#fff;padding:0}
+    #reciboWrap .recibo{box-shadow:none;max-width:100%}
+    .no-print{display:none!important}
+  }
+
+  .fab{position:fixed;right:calc(50% - 320px + 18px);bottom:calc(84px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:18px;background:var(--brand);color:#fff;font-size:26px;box-shadow:var(--shadow);display:grid;place-items:center;z-index:30}
+  @media(max-width:680px){.fab{right:18px}}
+
+  /* bottom nav — item natural da coluna flex (#app), NÃO fixed.
+     position:fixed;bottom:0 no iOS Safari gruda numa posição defasada quando a
+     barra do navegador aparece/some (o menu "sobe" e só corrige num reflow).
+     Como item de flex, o menu senta sempre no fundo real do app-shell. */
+  nav.bottom{
+    flex:0 0 auto;background:var(--surface);border-top:1px solid var(--line);
+    display:flex;justify-content:space-around;padding:6px 4px max(6px, env(safe-area-inset-bottom));z-index:25;
+    max-width:640px;width:100%;margin:0 auto
+  }
+  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:clamp(9px,2.9vw,11px);font-weight:600;padding:6px 1px}
+  nav.bottom button .ic{display:flex;align-items:center;justify-content:center;height:23px}
+  nav.bottom button .ic svg{display:block}
+  /* rótulo nunca quebra linha nem transborda: encolhe com reticências */
+  nav.bottom button .lbl{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;letter-spacing:-.2px}
+  nav.bottom button.active{color:var(--brand)}
+
+  /* Desktop: barras full-width, mas conteúdo alinhado à coluna central de 640px */
+  @media(min-width:681px){
+    header.top{ padding-left:max(16px, calc((100% - 640px)/2 + 14px)); padding-right:max(16px, calc((100% - 640px)/2 + 14px)); }
+    nav.bottom{ max-width:none; margin:0; padding-left:max(4px, calc((100% - 640px)/2)); padding-right:max(4px, calc((100% - 640px)/2)); }
+  }
+
+  /* modal / sheet */
+  .sheet-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:flex-end;justify-content:center;z-index:40}
+  .sheet-bg.show{display:flex}
+  .sheet{background:var(--surface);width:100%;max-width:640px;border-radius:22px 22px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));max-height:88dvh;overflow-y:auto}
+  .sheet h2{margin:2px 0 4px;font-size:19px}
+  .sheet .grab{width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 12px}
+  .seg{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .seg button{padding:9px 14px;border-radius:999px;background:var(--chip);color:var(--brand-ink);font-weight:600;font-size:13px}
+  .seg button.on{background:var(--brand);color:#fff}
+  .codebox{font-size:34px;font-weight:800;letter-spacing:6px;text-align:center;background:var(--chip);color:var(--brand-ink);border-radius:14px;padding:18px;margin:14px 0}
+
+  /* NPS (pesquisas) */
+  .npsrow{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+  .npsbtn{flex:1 1 auto;min-width:30px;height:38px;border-radius:9px;background:var(--chip);color:var(--brand-ink);font-weight:700;font-size:14px}
+  .npsbtn.on{background:var(--brand);color:#fff}
+  .npsbtn:disabled{opacity:.5}
+
+  /* chat (conversas) */
+  .chat{display:flex;flex-direction:column;gap:8px;padding:4px 0 8px}
+  .bubble{max-width:82%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.42;white-space:pre-wrap;word-break:break-word}
+  .bubble.me{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:5px}
+  .bubble.them{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .bubble .who{display:block;font-size:11px;font-weight:700;opacity:.8;margin-bottom:2px}
+  .bubble .t{display:block;font-size:10.5px;opacity:.65;margin-top:4px;text-align:right}
+  .composer{position:sticky;bottom:0;display:flex;gap:8px;padding:10px 0 4px;background:var(--app-bg)}
+  .composer textarea{flex:1;resize:none;max-height:120px;min-height:44px;padding:11px 13px;border:1.5px solid var(--line);border-radius:14px;background:var(--field-bg);outline:none}
+  .composer textarea:focus{border-color:var(--brand)}
+  .composer .send{flex:0 0 auto;width:46px;border-radius:14px;background:var(--brand);color:#fff;font-size:18px}
+  .composer .send:disabled{opacity:.5}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .spin{width:22px;height:22px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hide{display:none!important}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e4a5a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<title>VIZELLO — Política de Privacidade</title>
+<style>
+  :root{--bg:#0e4a5a;--ink:#12303a;--muted:#5b7079;--surface:#fff;--line:#e4edef;--brand:#0e4a5a;--accent:#d9962a}
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(165deg,#12586b,#0a3644 90%);color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.65;padding:24px 16px calc(40px + env(safe-area-inset-bottom))}
+  .card{background:var(--surface);max-width:760px;margin:0 auto;border-radius:18px;box-shadow:0 20px 60px -30px rgba(0,0,0,.5);padding:34px 30px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  header .logo{height:40px;width:auto}
+  header .logo-dk{display:none}
+  h1{font-size:26px;margin:0;color:var(--brand);letter-spacing:-.02em}
+  .upd{color:var(--muted);font-size:13px;margin:4px 0 22px}
+  h2{font-size:18px;margin:26px 0 8px;color:var(--ink)}
+  p,li{color:#243b43;font-size:15px}
+  ul{padding-left:20px}
+  a{color:var(--brand);font-weight:600}
+  .ph{background:#fff7e6;border:1px dashed var(--accent);border-radius:6px;padding:0 5px;font-size:13.5px;color:#8a5a10}
+  .note{background:#f4f7f8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13.5px;color:var(--muted);margin-top:24px}
+  .back{display:inline-block;margin-top:26px;background:var(--brand);color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:12px}
+  @media(prefers-color-scheme:dark){
+    body{color:#e8f2f3}.card{background:#0c2831;box-shadow:0 20px 60px -30px #000}
+    header .logo-lt{display:none}header .logo-dk{display:inline}
+    h1{color:#eab048}h2{color:#e8f2f3}p,li{color:#c7d6da}.note{background:#0a222a;border-color:#123640;color:#8fb0b8}
+    .ph{background:#2a2413;border-color:#eab048;color:#eab048}a{color:#eab048}
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <header><img class="logo logo-lt" src="/logo-dark.png?v=2" alt="VIZELLO"><img class="logo logo-dk" src="/logo-white.png?v=2" alt="VIZELLO"><h1>Política de Privacidade</h1></header>
+  <p class="upd">VIZELLO — Gestão de Condomínios · Última atualização: <span class="ph">[DATA]</span></p>
+
+  <p>Esta Política explica como o VIZELLO trata dados pessoais em conformidade com a Lei nº 13.709/2018 (<strong>LGPD</strong>). Ao usar o aplicativo, você declara estar ciente das condições abaixo.</p>
+
+  <h2>1. Controlador dos dados</h2>
+  <p>O controlador é <span class="ph">[RAZÃO SOCIAL]</span>, inscrita no CNPJ <span class="ph">[CNPJ]</span>, com sede em <span class="ph">[ENDEREÇO]</span>. Encarregado (DPO): <span class="ph">[NOME/E-MAIL DO DPO]</span>.</p>
+  <p>Nos condomínios atendidos, a administração/síndico atua como controlador dos dados dos moradores, e o VIZELLO atua como <strong>operador</strong>, tratando os dados conforme instruções e para as finalidades desta Política.</p>
+
+  <h2>2. Dados que coletamos</h2>
+  <ul>
+    <li><strong>Cadastro:</strong> nome, e-mail, telefone e vínculo com a unidade.</li>
+    <li><strong>Uso do condomínio:</strong> ocorrências, reservas, encomendas, comunicações, votos em assembleias, cobranças e pagamentos.</li>
+    <li><strong>Controle de acesso:</strong> dados de visitantes autorizados (nome e, opcionalmente, documento), placas de veículos e registros de portaria.</li>
+    <li><strong>Localização:</strong> coordenadas de GPS <strong>apenas quando você aciona um alerta de emergência (SOS)</strong> e autoriza o navegador a compartilhá-las.</li>
+    <li><strong>Técnicos:</strong> identificador do dispositivo para notificações push e dados de sessão.</li>
+  </ul>
+
+  <h2>3. Para que usamos</h2>
+  <ul>
+    <li>Operar os serviços do condomínio (comunicação, portaria, finanças, reservas, governança e segurança).</li>
+    <li>Enviar notificações relevantes (interfone, encomendas, cobranças, assembleias, emergências).</li>
+    <li>Processar cobranças e pagamentos (PIX/boleto).</li>
+    <li>Cumprir obrigações legais e garantir a segurança do condomínio.</li>
+  </ul>
+
+  <h2>4. Bases legais</h2>
+  <p>Tratamos dados com base em: execução de contrato, cumprimento de obrigação legal, legítimo interesse na gestão condominial e <strong>consentimento</strong> (por exemplo, para geolocalização no SOS e para notificações).</p>
+
+  <h2>5. Compartilhamento</h2>
+  <p>Não vendemos dados. Compartilhamos apenas com operadores necessários à prestação do serviço:</p>
+  <ul>
+    <li><strong>Supabase</strong> — infraestrutura de banco de dados, autenticação e armazenamento.</li>
+    <li><strong>Mercado Pago</strong> — processamento de pagamentos.</li>
+    <li>A administração/síndico e a portaria do seu condomínio, no limite de suas funções.</li>
+  </ul>
+
+  <h2>6. Armazenamento e retenção</h2>
+  <p>Os dados são mantidos enquanto durar o vínculo com o condomínio e pelos prazos legais aplicáveis. Após esse período, são eliminados ou anonimizados. Prazo padrão de retenção: <span class="ph">[PRAZO — ex.: 5 anos após o desligamento]</span>.</p>
+
+  <h2>7. Segurança</h2>
+  <p>Adotamos medidas técnicas e organizacionais: segurança em nível de registro (RLS) em todas as tabelas, verificação em duas etapas (2FA), controle de acesso por papel e criptografia em trânsito.</p>
+
+  <h2>8. Seus direitos (LGPD)</h2>
+  <p>Você pode solicitar: confirmação e acesso aos seus dados, correção, anonimização, portabilidade, informação sobre compartilhamento, revogação de consentimento e <strong>exclusão</strong>. Faça o pedido pelo app (Perfil → “Privacidade e meus dados”) ou pelo e-mail <span class="ph">[E-MAIL DE CONTATO]</span>.</p>
+
+  <h2>9. Cookies e tecnologias</h2>
+  <p>O VIZELLO é um aplicativo web (PWA) e usa armazenamento local apenas para funcionamento (sessão, preferências e uso offline). Não usamos cookies de rastreamento publicitário.</p>
+
+  <h2>10. Alterações</h2>
+  <p>Esta Política pode ser atualizada. Mudanças relevantes serão comunicadas pelo aplicativo.</p>
+
+  <div class="note">⚠️ <strong>Modelo para revisão jurídica.</strong> Os campos destacados devem ser preenchidos com os dados reais do controlador, e o texto deve ser validado por um(a) advogado(a) antes da publicação definitiva.</div>
+
+  <a class="back" href="/login">← Voltar ao app</a>
+</div>
+</body>
+</html>

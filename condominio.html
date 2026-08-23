@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#183451">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/app.css">
+<script src="/qrcode.js"></script>
+<script src="/jsqr.js"></script>
+<script>try{var _t=localStorage.getItem('vz-theme');if(_t==='dark'||_t==='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<script>try{document.documentElement.style.setProperty('--vh',(window.innerHeight*0.01)+'px');document.documentElement.style.setProperty('--appvh',window.innerHeight+'px');}catch(e){}</script>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VIZELLO">
+<title>VIZELLO — Condomínio</title>
+</head>
+<body>
+
+<!-- ============ AUTH ============ -->
+<div id="auth" class="center">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="tagline"><span class="tag">CONDOMÍNIO</span></div>
+    <div class="sub" style="text-align:center">Gestão do seu condomínio na palma da mão.</div>
+    <div id="authForm">
+      <label>E-mail</label>
+      <input id="email" class="field" type="email" autocomplete="email" placeholder="voce@email.com">
+      <label id="nameLbl" class="hide">Nome</label>
+      <input id="name" class="field hide" type="text" autocomplete="name" placeholder="Seu nome">
+      <label>Senha</label>
+      <input id="pass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div id="authErr" class="err"></div>
+      <div id="authMsg" class="ok"></div>
+      <button id="authBtn" class="btn">Entrar</button>
+      <button id="magicBtn" class="btn ghost" type="button">Entrar com link por e-mail</button>
+      <div class="switch">
+        <span id="switchTxt">Ainda não tem conta?</span>
+        <button id="switchBtn">Criar conta</button>
+        <div style="margin-top:8px"><button id="forgotBtn" type="button">Esqueci minha senha</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEFINIR NOVA SENHA (recuperação) ============ -->
+<div id="reset" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="sub" style="text-align:center">Defina uma nova senha para sua conta.</div>
+    <label>Nova senha</label>
+    <input id="rsPass" class="field" type="password" autocomplete="new-password" placeholder="••••••••">
+    <label>Confirmar nova senha</label>
+    <input id="rsPass2" class="field" type="password" autocomplete="new-password" placeholder="••••••••">
+    <div id="rsErr" class="err"></div>
+    <div id="rsMsg" class="ok"></div>
+    <button id="rsSave" class="btn">Salvar nova senha</button>
+    <button id="rsCancel" class="btn ghost" type="button">Cancelar</button>
+  </div>
+</div>
+
+<!-- ============ ESCOLHER PERFIL (Morador/Síndico/Portaria) ============ -->
+<div id="roles" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="sub" style="text-align:center">Como você quer entrar?</div>
+    <div id="roleList"></div>
+    <button id="newCondBtnR" class="btn secondary">➕ Cadastrar novo condomínio</button>
+    <button id="logoutBtn3" class="btn ghost">Sair</button>
+  </div>
+</div>
+
+<!-- ============ ESCOLHER CONDOMÍNIO ============ -->
+<div id="pick" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="sub" style="text-align:center">Escolha um condomínio para continuar.</div>
+    <div id="pickList"></div>
+    <button id="newCondBtn" class="btn secondary">➕ Cadastrar novo condomínio</button>
+    <button id="switchRole" class="btn ghost">↩︎ Trocar de perfil</button>
+    <button id="logoutBtn2" class="btn ghost">Sair</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hide">
+  <header class="top">
+    <button class="iconbtn" id="switchCond" title="Trocar condomínio" aria-label="Trocar condomínio">🔁</button>
+    <div class="cond"><b id="condName">—</b><small id="condSub">—</small></div>
+    <button class="iconbtn" id="search" title="Buscar" aria-label="Buscar">🔍</button>
+    <button class="iconbtn" id="bell" title="Notificações" aria-label="Notificações" style="position:relative">🔔<span id="notifDot" class="notifdot hide"></span></button>
+    <span class="offchip hide" id="offlineChip" title="Você está offline">⚡ offline</span>
+    <span class="rolechip" id="roleChip">—</span>
+  </header>
+  <div class="installbar hide" id="installBar">
+    <span class="ic">📲</span>
+    <div class="txt"><b>Instalar o VIZELLO</b><small>Acesso rápido, tela cheia e uso offline.</small></div>
+    <button class="ib-yes" id="installYes">Instalar</button>
+    <button class="ib-no" id="installNo" aria-label="Agora não">✕</button>
+  </div>
+  <main id="view"><div class="spin"></div></main>
+  <button class="fab hide" id="fab">＋</button>
+  <nav class="bottom" id="nav"></nav>
+</div>
+
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#183451">
+<link rel="manifest" href="/admin.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VIZELLO Admin">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
+<script>try{var _t=localStorage.getItem('vz-theme');if(_t==='dark'||_t==='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>VIZELLO — Admin</title>
+<style>
+  /* tokens de cor e modo escuro em /theme.css (compartilhado com o app do morador) */
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none;-ms-overflow-style:none}
+  *::-webkit-scrollbar{display:none;width:0;height:0}
+  /* mapa (Leaflet) */
+  .mapwrap{position:fixed;inset:0;z-index:80;background:var(--surface);display:none;flex-direction:column}
+  .mapwrap.show{display:flex}
+  .maphead{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;background:var(--bg);color:#eaf3f7}
+  .maphead h2{font-size:17px;margin:0;flex:1;font-weight:700}
+  .maphead .mapclose{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);color:#fff;display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+  #mapEl{flex:1;width:100%;background:#dfe6ea}
+  .mapfoot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  .mapfoot .hint{flex:1;font-size:13px;color:var(--muted)}
+  .leaflet-container{font:inherit}
+  /* relatório imprimível */
+  .relwrap{position:fixed;inset:0;z-index:90;background:var(--app-bg);overflow-y:auto;display:none}
+  .relwrap.show{display:block}
+  .relbar{position:sticky;top:0;display:flex;gap:10px;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;background:var(--bg);z-index:2}
+  .reldoc{max-width:760px;margin:16px auto 40px;background:#fff;padding:32px;box-shadow:var(--shadow);border-radius:10px}
+  .relhead{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--bg);padding-bottom:16px;margin-bottom:8px}
+  .relhead h1{font-size:20px;margin:0} .relhead p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .reldoc h2{font-size:15px;margin:22px 0 8px;color:var(--brand-ink)}
+  .relgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .relgrid>div{background:var(--chip);border-radius:10px;padding:10px 12px}
+  .relgrid small{display:block;color:var(--brand-ink);font-size:11.5px} .relgrid b{font-size:18px;color:var(--ink)}
+  .reldoc table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .reldoc th,.reldoc td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .reldoc th{color:var(--muted);font-weight:700}
+  .relfoot{margin-top:24px;color:var(--muted);font-size:12px;text-align:center}
+  @media print{
+    body{background:#fff}
+    body *{visibility:hidden}
+    #relWrap,#relWrap *{visibility:visible}
+    #relWrap{position:absolute;inset:0;overflow:visible;background:#fff}
+    .relnoprint{display:none!important}
+    .reldoc{box-shadow:none;margin:0;max-width:100%;padding:0}
+  }
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+  html,body{margin:0;min-height:100%}
+  body{font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--app-bg)}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select{font:inherit}
+  input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;min-height:46px}
+  a{color:var(--brand-ink)}
+  .hide{display:none!important}
+  /* ===== responsividade global ===== */
+  html,body{max-width:100%;overflow-x:hidden}
+  img,svg,video,canvas{max-width:100%;height:auto}
+  input,textarea,select{max-width:100%}
+  pre,code,textarea{overflow-wrap:anywhere;word-break:break-word}
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media(max-width:400px){ .metrics,.mini{grid-template-columns:1fr!important} }
+
+  /* login */
+  /* flex + margin:auto centra o cartão nos dois eixos e rola sem cortar
+     o topo quando a tela é baixa (paisagem / teclado aberto) */
+  .center{min-height:100dvh;display:flex;padding:24px;overflow-y:auto;background:linear-gradient(165deg,#12586b 0%,#0e4a5a 46%,#0a3644 100%)}
+  .card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);width:100%;max-width:400px;padding:26px;margin:auto}
+  /* logo (nova) nos cartões de login/recuperação */
+  .loginlogo{display:block;margin:2px auto 6px;width:190px;max-width:70%;height:auto}
+  .center .brand.tagline{justify-content:center;margin-bottom:4px}
+  .center .brand.tagline .tag{font-size:11px;font-weight:800;background:var(--ink);color:#fff;padding:3px 10px;border-radius:999px;letter-spacing:1px}
+  @media(min-width:681px){ .center .card{max-width:420px;padding:32px} }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;color:var(--ink);letter-spacing:-.3px}
+  .center .brand{justify-content:center}
+  .wordmark{font-family:'Luckiest Guy',Inter,system-ui,cursive;font-weight:400;font-size:30px;letter-spacing:.5px;line-height:1;padding-top:3px;display:inline-flex}
+  .wordmark i{font-style:normal;transform:rotate(var(--tw,0deg));transform-origin:50% 60%}
+  .wordmark i:nth-child(1){color:var(--wm-orange);--tw:-4deg}
+  .wordmark i:nth-child(2){color:var(--wm-gold);--tw:2deg}
+  .wordmark i:nth-child(3){color:var(--wm-gold);--tw:-3deg}
+  .wordmark i:nth-child(4){color:var(--wm-blue);--tw:3deg}
+  .wordmark i:nth-child(5){color:var(--wm-navy);--tw:-2deg}
+  .wordmark i:nth-child(6){color:var(--wm-orange);--tw:3deg}
+  .wordmark i:nth-child(7){color:var(--wm-gold);--tw:-3deg}
+  .brand .tag{font-size:11px;font-weight:800;background:var(--ink);color:#fff;padding:2px 8px;border-radius:999px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14px;margin:6px 0 18px}
+  label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+  .field{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--field-bg);outline:none}
+  .field:focus{border-color:var(--brand)}
+  .btn{width:100%;padding:13px;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;margin-top:18px;transition:filter .15s}
+  .btn:active{filter:brightness(.93)} .btn:disabled{opacity:.55}
+  .btn.secondary{background:var(--chip);color:var(--brand-ink)}
+  .btn.ghost{background:transparent;color:var(--brand-ink);margin-top:8px;font-weight:600}
+  .btn.small{width:auto;margin:0;padding:9px 15px;font-size:14px}
+  .btn.danger{background:#fdecea;color:var(--danger)}
+  .err{background:#fdecea;color:var(--danger);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:14px;display:none}
+  .err.show{display:block}
+  .ok{background:#e6f5ee;color:var(--ok);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:14px;display:none}
+  .ok.show{display:block}
+
+  /* shell */
+  header.top{background:var(--bg);color:#eaf3f7;padding:16px 22px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}
+  header.top .brand{color:#eaf3f7}
+  header.top .wordmark{--wm-navy:#eef4f8;font-size:24px}
+  header.top .toplogo{height:34px;width:auto;display:block}
+  header.top .brand .tag{font-size:10px;font-weight:800;background:rgba(255,255,255,.16);color:#eaf3f7;padding:3px 8px;border-radius:999px;letter-spacing:1px}
+  header.top .who{margin-left:auto;text-align:right;font-size:13px;color:#9fc0cd}
+  header.top .who b{display:block;color:#eaf3f7;font-size:14px}
+  main{max-width:1000px;margin:0 auto;padding:22px 18px calc(96px + env(safe-area-inset-bottom))}
+  /* bottom nav (padronizado com o app do morador) */
+  nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:25}
+  nav.bottom .navinner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:clamp(9px,2.9vw,11px);font-weight:600;padding:6px 1px}
+  nav.bottom button .ic{display:flex;align-items:center;justify-content:center;height:23px}
+  nav.bottom button .ic svg{display:block}
+  /* rótulo nunca quebra linha nem transborda: encolhe com reticências */
+  nav.bottom button .lbl{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;letter-spacing:-.2px}
+  nav.bottom button.active{color:var(--brand)}
+  @media(min-width:1040px){ nav.bottom button{font-size:12px} }
+  .adsec{display:none} .adsec.on{display:block}
+  /* integridade do sistema */
+  .health-hero{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .health-dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 22%,transparent)}
+  .health-hero b{font-size:17px} .health-hero small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .st-ok{color:#1a8a5e} .st-warn{color:#b67d16} .st-fail{color:#cc4133}
+  @media(prefers-color-scheme:dark){.st-ok{color:#3fb383}.st-warn{color:#d5a13f}.st-fail{color:#e2695c}}
+  .chk{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+  .chk .cdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:currentColor}
+  .chk .cbody{flex:1;min-width:0} .chk .cbody b{font-size:14px;font-weight:600} .chk .cbody small{display:block;color:var(--muted);font-size:12.5px}
+  .chk .cpill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:999px;border:1px solid currentColor}
+  @media(min-width:1040px){ header.top{padding-left:max(22px,calc((100% - 1000px)/2));padding-right:max(22px,calc((100% - 1000px)/2))} }
+  .h{font-size:20px;font-weight:800;margin:6px 2px 14px;letter-spacing:-.3px}
+  .h small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
+
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+  @media(max-width:640px){.metrics{grid-template-columns:1fr 1fr}}
+  .metric{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .metric small{color:var(--muted);font-size:12.5px} .metric b{display:block;font-size:26px;margin-top:4px;letter-spacing:-.5px}
+
+  .bar{display:flex;gap:10px;align-items:center;margin:2px 2px 12px;flex-wrap:wrap}
+  .bar .search{flex:1;min-width:180px}
+  .selfield{width:auto;min-width:150px;padding:10px 12px;margin:0;min-height:0}
+
+  /* strip de insights derivados */
+  .mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:-10px 0 22px}
+  @media(max-width:640px){.mini{grid-template-columns:1fr 1fr}}
+  .mini .m2{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .mini small{color:var(--muted);font-size:11.5px;display:block}
+  .mini b{font-size:19px;letter-spacing:-.3px}
+  .mini b.warn{color:var(--brand)}
+
+  /* gráfico de crescimento */
+  .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:22px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .chartcard .ct{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .bars{display:flex;align-items:stretch;gap:8px;height:96px}
+  .bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .bars .val{font-size:11px;font-weight:700;height:14px}
+  .bars .bwrap{flex:1;display:flex;align-items:flex-end;width:100%}
+  .bars .b{width:100%;background:var(--accent);border-radius:6px 6px 0 0;min-height:2px}
+  .bars .b.zero{background:var(--line)}
+  .bars .b.proj{background:var(--sand)}
+  .bars .lbl{font-size:10.5px;color:var(--muted);text-transform:capitalize}
+  /* legenda com marcador colorido */
+  .meta .lg{display:inline-flex;align-items:center;gap:5px}
+  .meta .lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  /* DRE: receita x despesa lado a lado */
+  .dre-series{display:flex;align-items:flex-end;gap:8px;height:92px;margin-top:4px}
+  .dre-series .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .dre-series .pair{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:3px;width:100%}
+  .dre-series .rb,.dre-series .db{width:42%;min-height:2px;border-radius:4px 4px 0 0}
+  .dre-series .rb{background:var(--accent)} .dre-series .db{background:var(--brand)}
+  .dre-series .lbl{font-size:10.5px;color:var(--muted);text-transform:capitalize}
+
+  /* segmentos (filtro) */
+  .seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px}
+  .seg button{padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
+  .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(15,43,61,.12)}
+
+  /* card clicável + detalhe */
+  .clickable{cursor:pointer;border-radius:12px;transition:background .12s;position:relative}
+  .clickable:hover{background:#faf6ee}
+  .detailhint{font-size:12px;font-weight:700;color:var(--brand);margin-top:8px;opacity:.85}
+  .badge.warn2{background:#fdeee2;color:var(--brand)}
+  .drow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .drow:last-child{border-bottom:none}
+  .drow .k{color:var(--muted)} .drow .v{font-weight:600;text-align:right}
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+  .dcard{background:var(--chip);border-radius:12px;padding:11px 13px}
+  .dcard small{display:block;color:var(--brand-ink);font-size:11.5px} .dcard b{font-size:18px;color:var(--ink)}
+  .dcard.bad b{color:var(--danger)}
+  .dsec{margin-top:16px} .dsec .t{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+  .personrow{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13.5px;border-bottom:1px solid var(--line)}
+  .personrow:last-child{border-bottom:none}
+  .personrow .rl{margin-left:auto;font-size:11px;font-weight:700;color:var(--brand-ink);background:var(--chip);padding:2px 8px;border-radius:999px}
+  .auditrow{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .auditrow:last-child{border-bottom:none}
+  .auditrow .aw{font-weight:600} .auditrow .at{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+  .auditrow .ae{color:var(--muted);font-size:12px}
+  .scrollbox{max-height:220px;overflow-y:auto}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
+  .tile .row{display:flex;align-items:center;gap:10px}
+  .tile h3{margin:0;font-size:16px}
+  .meta{color:var(--muted);font-size:12.5px;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--brand-ink)}
+  .badge.ok{background:#e6f5ee;color:var(--ok)} .badge.off{background:#f0f0f0;color:#888}
+  .badge.dngr{background:#fdecea;color:var(--danger)} .badge.trial{background:#eef2f6;color:#5a6b78}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px}
+  .empty .big{font-size:40px}
+  .spin{width:24px;height:24px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:48px auto}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--surface);width:100%;max-width:440px;border-radius:var(--r);padding:22px;box-shadow:var(--shadow);max-height:90dvh;overflow-y:auto}
+  .modal h2{margin:0 0 4px;font-size:19px}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:32px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .switch{cursor:pointer;width:46px;height:26px;border-radius:999px;background:#cdd8de;position:relative;transition:background .15s;flex:0 0 auto}
+  .switch.on{background:var(--ok)}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch.on::after{left:23px}
+  .chk-item{font-size:13.5px;padding:5px 0;line-height:1.45;color:var(--ink)}
+  code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="center">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="brand tagline"><span class="tag">ADMIN</span></div>
+    <div class="sub" style="text-align:center">Painel de operação da plataforma.</div>
+    <label>E-mail</label>
+    <input id="email" class="field" type="email" autocomplete="email" placeholder="voce@empresa.com">
+    <label>Senha</label>
+    <input id="pass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div id="loginErr" class="err"></div>
+    <div id="loginMsg" class="ok"></div>
+    <button id="loginBtn" class="btn">Entrar</button>
+    <div style="text-align:center;margin-top:12px"><button id="forgotBtn" type="button" style="color:var(--brand-ink);font-weight:700">Esqueci minha senha</button></div>
+  </div>
+</div>
+
+<!-- DEFINIR NOVA SENHA (recuperação) -->
+<div id="reset" class="center hide">
+  <div class="card">
+    <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
+    <div class="brand tagline"><span class="tag">ADMIN</span></div>
+    <div class="sub" style="margin-top:10px;text-align:center">Defina uma nova senha para sua conta.</div>
+    <label>Nova senha</label>
+    <input id="rsPass" class="field" type="password" autocomplete="new-password" placeholder="••••••••">
+    <label>Confirmar nova senha</label>
+    <input id="rsPass2" class="field" type="password" autocomplete="new-password" placeholder="••••••••">
+    <div id="rsErr" class="err"></div>
+    <div id="rsMsg" class="ok"></div>
+    <button id="rsSave" class="btn">Salvar nova senha</button>
+    <button id="rsCancel" class="btn ghost" type="button">Cancelar</button>
+  </div>
+</div>
+
+<!-- SEM ACESSO -->
+<div id="denied" class="center hide">
+  <div class="card" style="text-align:center">
+    <div class="brand" style="justify-content:center"><span class="logo">🔒</span> Acesso restrito</div>
+    <div class="sub" style="margin-top:12px">Sua conta não é um operador da plataforma. Fale com um administrador para receber acesso.</div>
+    <button id="deniedOut" class="btn ghost">Sair</button>
+  </div>
+</div>
+
+<!-- 2FA OBRIGATÓRIO -->
+<div id="force" class="center hide">
+  <div class="card" id="forceCard"><div class="spin"></div></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hide">
+  <header class="top">
+    <div class="brand"><img class="toplogo" src="/logo-white.png?v=2" alt="VIZELLO"> <span class="tag">ADMIN</span></div>
+    <div class="who"><b id="whoName">—</b><span id="whoEmail">—</span></div>
+    <button class="btn small secondary" id="logoutBtn" style="margin-left:14px">Sair</button>
+  </header>
+  <main id="view"><div class="spin"></div></main>
+  <nav class="bottom" id="adminNav"></nav>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="mapwrap" id="mapWrap">
+  <div class="maphead"><h2 id="mapTitle">Mapa</h2><button class="mapclose" id="mapClose" aria-label="Fechar">✕</button></div>
+  <div id="mapEl"></div>
+  <div class="mapfoot" id="mapFoot"></div>
+</div>
+<div class="relwrap" id="relWrap"></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// mesma config do app (publishable key é pública)
+const SUPABASE_URL  = "https://bklvbhsaxcmrnjxjbzjh.supabase.co";
+const SUPABASE_ANON = "sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa";
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// --- Segurança do painel ---
+const REQUIRE_2FA = true;   // operadores obrigados a ter 2FA ativo p/ acessar
+const IDLE_MIN    = 30;     // logout automático após N min de inatividade
+
+const S = { user:null };
+const $ = s => document.querySelector(s);
+const view = () => $("#view");
+function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+function modal(html){ $("#modal").innerHTML=html; $("#modalBg").classList.add("show"); }
+function closeModal(){ $("#modalBg").classList.remove("show"); const f=S._onClose; S._onClose=null; if(f) f(); }
+$("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
+// confirmação com modal próprio (substitui o confirm() nativo)
+function confirmar(msg,{danger=false,ok="Confirmar"}={}){
+  return new Promise(res=>{
+    const done=v=>{ S._onClose=null; closeModal(); res(v); };
+    modal(`<h2>Confirmar</h2><p class="sub">${esc(msg)}</p>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="btn secondary" id="cfNo">Cancelar</button>
+        <button class="btn ${danger?"danger":""}" id="cfYes">${esc(ok)}</button></div>`);
+    $("#cfYes").addEventListener("click",()=>done(true));
+    $("#cfNo").addEventListener("click",()=>done(false));
+    S._onClose=()=>res(false);
+  });
+}
+async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error){ if(fn!=="log_evento") logEvento("error","rpc:"+fn,error.message,{code:error.code}); throw error; } return data; }
+// ---- Observabilidade (best-effort) ----
+const _logDedup=new Set();
+async function logEvento(nivel,contexto,mensagem,detalhe){
+  try{
+    if(!S.user) return;
+    const key=(contexto||"")+"|"+String(mensagem||"").slice(0,120);
+    if(_logDedup.has(key)) return; _logDedup.add(key); setTimeout(()=>_logDedup.delete(key),60000);
+    await sb.rpc("log_evento",{p_nivel:nivel||"error",p_contexto:contexto||null,p_mensagem:String(mensagem||"").slice(0,500),p_detalhe:detalhe||null,p_url:(location.hash||location.pathname||"").slice(0,300),p_app:"admin",p_cond:null});
+  }catch(_){}
+}
+window.addEventListener("error",e=>{ logEvento("error","window.onerror",e.message||"erro",{src:e.filename,line:e.lineno}); });
+window.addEventListener("unhandledrejection",e=>{ const r=e.reason; logEvento("error","unhandledrejection",(r&&(r.message||r))||"promise rejeitada",(r&&r.stack)?{stack:String(r.stack).slice(0,400)}:null); });
+function fmtDate(iso){ return iso? new Date(iso).toLocaleDateString("pt-BR") : ""; }
+function fmtMoney(v){ return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
+function fmtDateTime(iso){ return iso? new Date(iso).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—"; }
+function tempoRel(iso){ if(!iso) return "nunca"; const d=(Date.now()-new Date(iso).getTime())/86400000;
+  if(d<1) return "hoje"; if(d<2) return "ontem"; if(d<30) return `há ${Math.floor(d)} dias`; return fmtDate(iso); }
+const ROLE_LABEL={super_admin:"Dono",sindico:"Síndico",conselho:"Conselho",portaria:"Portaria",morador:"Morador"};
+const ACAO_LABEL={condominio_criar:"Criou condomínio",condominio_editar:"Editou dados",condominio_suspender:"Suspendeu",
+  condominio_reativar:"Reativou",sindico_definir:"Definiu síndico",operador_add:"Adicionou operador",operador_remove:"Removeu operador"};
+
+function show(id){ for(const s of ["login","reset","denied","force","app"]) $("#"+s).classList.toggle("hide", s!==id); }
+
+// ---------- AUTH ----------
+function loginErr(m){ const e=$("#loginErr"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function loginMsg(m){ const e=$("#loginMsg"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+$("#loginBtn").addEventListener("click", async ()=>{
+  const email=$("#email").value.trim(), pass=$("#pass").value;
+  if(!email||!pass){ loginErr("Preencha e-mail e senha."); return; }
+  $("#loginBtn").disabled=true; loginErr("");
+  try{
+    const {error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error) throw error;
+    await boot();
+  }catch(e){
+    const m=(e?.message||"").toLowerCase();
+    loginErr(m.includes("invalid login")?"E-mail ou senha incorretos.":(e?.message||"Erro ao entrar."));
+  }
+  $("#loginBtn").disabled=false;
+});
+$("#pass").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#loginBtn").click(); });
+
+// ---------- Esqueci minha senha ----------
+$("#forgotBtn")?.addEventListener("click", async ()=>{
+  const email=$("#email").value.trim();
+  if(!email){ loginErr("Digite seu e-mail acima e toque em \"Esqueci minha senha\"."); return; }
+  loginErr(""); loginMsg(""); $("#forgotBtn").disabled=true;
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    if(error) throw error;
+    loginMsg("Enviamos um link para "+email+". Abra o e-mail para redefinir a senha.");
+  }catch(e){ const m=(e?.message||"").toLowerCase(); loginErr(m.includes("rate")||m.includes("too many")?"Muitas tentativas. Aguarde alguns minutos.":(e?.message||"Erro ao enviar.")); }
+  $("#forgotBtn").disabled=false;
+});
+// ---------- Definir nova senha ----------
+function rsErr(m){ const e=$("#rsErr"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function rsMsg(m){ const e=$("#rsMsg"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+$("#rsSave")?.addEventListener("click", async ()=>{
+  const p1=$("#rsPass").value, p2=$("#rsPass2").value;
+  if(!p1||p1.length<6){ rsErr("A senha precisa ter ao menos 6 caracteres."); return; }
+  if(p1!==p2){ rsErr("As senhas não conferem."); return; }
+  rsErr(""); $("#rsSave").disabled=true;
+  try{
+    const {error}=await sb.auth.updateUser({password:p1});
+    if(error) throw error;
+    rsMsg("Senha atualizada! Entrando…");
+    setTimeout(()=>boot().catch(e=>console.error(e)),700);
+  }catch(e){ rsErr(e?.message||"Erro ao salvar."); $("#rsSave").disabled=false; }
+});
+$("#rsCancel")?.addEventListener("click", async ()=>{ try{ await sb.auth.signOut(); }catch(_){} location.hash=""; show("login"); });
+sb.auth.onAuthStateChange((event)=>{ if(event==="PASSWORD_RECOVERY"){ rsErr(""); rsMsg(""); $("#rsPass").value=""; $("#rsPass2").value=""; show("reset"); } });
+
+async function logout(){ pararIdle(); await sb.auth.signOut(); S.user=null; show("login"); }
+$("#logoutBtn").addEventListener("click",logout);
+$("#deniedOut").addEventListener("click",logout);
+
+// ---------- TIMEOUT DE INATIVIDADE ----------
+let idleTimer=null, lastAct=0;
+function resetIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(idleLogout, IDLE_MIN*60*1000); }
+function pararIdle(){ clearTimeout(idleTimer); idleTimer=null; }
+async function idleLogout(){
+  if(!S.user) return;
+  pararIdle(); await sb.auth.signOut(); S.user=null; show("login");
+  loginErr(`Sessão encerrada por inatividade (${IDLE_MIN} min). Entre novamente.`);
+}
+function onActivity(){ if(!S.user||!idleTimer) return; const n=Date.now(); if(n-lastAct<5000) return; lastAct=n; resetIdle(); }
+["click","keydown","mousemove","touchstart","scroll"].forEach(ev=>document.addEventListener(ev,onActivity,{passive:true}));
+
+// ---------- BOOT ----------
+async function boot(){
+  const {data:{user}} = await sb.auth.getUser();
+  if(!user){ show("login"); return; }
+  if(await mfaPendente()){ showAdminMfa(); return; }
+  S.user=user;
+  let ok=false;
+  try{ ok = await rpc("plataforma_sou_admin"); }catch(_){ ok=false; }
+  if(!ok){ show("denied"); return; }
+  if(REQUIRE_2FA && !(await temTotpVerificado())){ showForce2FA(); return; }
+  $("#whoEmail").textContent=user.email;
+  show("app");
+  resetIdle();
+  await renderDashboard();
+}
+
+// ---------- MFA / 2FA ----------
+async function mfaPendente(){
+  try{ const {data}=await sb.auth.mfa.getAuthenticatorAssuranceLevel(); return !!data && data.currentLevel==="aal1" && data.nextLevel==="aal2"; }
+  catch(_){ return false; }
+}
+async function temTotpVerificado(){
+  try{ const {data}=await sb.auth.mfa.listFactors(); return (data?.totp||[]).some(x=>x.status==="verified"); }
+  catch(_){ return false; }
+}
+// 2FA obrigatório: bloqueia o painel até o operador ativar (enroll + verify)
+async function showForce2FA(){
+  show("force");
+  const card=$("#forceCard"); card.innerHTML='<div class="spin"></div>';
+  try{
+    const {data:f}=await sb.auth.mfa.listFactors();
+    for(const x of (f?.all||[])) if(x.factor_type==="totp" && x.status!=="verified"){ try{ await sb.auth.mfa.unenroll({factorId:x.id}); }catch(_){} }
+    const {data,error}=await sb.auth.mfa.enroll({factorType:"totp",friendlyName:"CondoAdmin "+Date.now()});
+    if(error) throw error;
+    const factorId=data.id, qr=data.totp.qr_code, secret=data.totp.secret;
+    card.innerHTML=`<img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO"><div class="brand tagline"><span class="tag">ADMIN</span></div>
+      <div class="sub" style="text-align:center">🔐 Segurança obrigatória: ative a verificação em duas etapas para acessar o painel.</div>
+      <div style="display:flex;justify-content:center;margin:10px 0"><img src="${qr.replace(/"/g,"&quot;")}" style="width:190px;height:190px;background:#fff;border-radius:10px"></div>
+      <p class="sub" style="text-align:center;word-break:break-all">ou digite a chave no app: <b>${esc(secret)}</b></p>
+      <label>Código do app autenticador</label>
+      <input id="fCode" class="field" inputmode="numeric" maxlength="6" placeholder="000000" style="font-size:22px;letter-spacing:8px;text-align:center">
+      <div id="fErr" class="err"></div>
+      <button class="btn" id="fOk">Ativar e entrar</button>
+      <button class="btn ghost" id="fSair">Sair</button>`;
+    $("#fSair").addEventListener("click",logout);
+    const go=async()=>{
+      const code=$("#fCode").value.trim(); if(code.length<6) return;
+      $("#fOk").disabled=true; $("#fErr").classList.remove("show");
+      try{ const {data:ch,error:e1}=await sb.auth.mfa.challenge({factorId}); if(e1) throw e1;
+        const {error:e2}=await sb.auth.mfa.verify({factorId,challengeId:ch.id,code}); if(e2) throw e2;
+        await boot();
+      }catch(_){ $("#fOk").disabled=false; const e=$("#fErr"); e.textContent="Código inválido. Tente de novo."; e.classList.add("show"); }
+    };
+    $("#fOk").addEventListener("click",go);
+    $("#fCode").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+  }catch(e){
+    card.innerHTML=`<p class="empty">Falha ao iniciar o 2FA: ${esc(e.message||"erro")}</p><button class="btn ghost" id="fSair2">Sair</button>`;
+    $("#fSair2").addEventListener("click",logout);
+  }
+}
+async function showAdminMfa(){
+  show("login");
+  let factorId=null;
+  try{ const {data}=await sb.auth.mfa.listFactors(); factorId=(data?.totp||[]).find(f=>f.status==="verified")?.id; }catch(_){}
+  if(!factorId){ S.user=(await sb.auth.getUser()).data.user; const ok=await rpc("plataforma_sou_admin").catch(()=>false); if(!ok){ show("denied"); return; } $("#whoEmail").textContent=S.user.email; show("app"); await renderDashboard(); return; }
+  modal(`<h2>Verificação em duas etapas</h2><p class="sub">Digite o código do seu app autenticador.</p>
+    <input id="amCode" class="field" inputmode="numeric" maxlength="6" placeholder="000000" style="font-size:22px;letter-spacing:8px;text-align:center">
+    <div id="amErr" class="err"></div>
+    <div style="display:flex;gap:10px;margin-top:12px"><button class="btn secondary" id="amSair">Sair</button><button class="btn" id="amOk">Confirmar</button></div>`);
+  $("#amSair").addEventListener("click",()=>{ closeModal(); logout(); });
+  const go2=async()=>{
+    const code=$("#amCode").value.trim(); if(code.length<6) return;
+    $("#amOk").disabled=true; $("#amErr").classList.remove("show");
+    try{ const {data:ch,error:e1}=await sb.auth.mfa.challenge({factorId}); if(e1) throw e1;
+      const {error:e2}=await sb.auth.mfa.verify({factorId,challengeId:ch.id,code}); if(e2) throw e2;
+      closeModal(); await boot();
+    }catch(_){ $("#amOk").disabled=false; const e=$("#amErr"); e.textContent="Código inválido. Tente de novo."; e.classList.add("show"); }
+  };
+  $("#amOk").addEventListener("click",go2);
+  $("#amCode").addEventListener("keydown",e=>{ if(e.key==="Enter") go2(); });
+}
+async function ativarMFAAdmin(){
+  try{
+    const {data:f}=await sb.auth.mfa.listFactors();
+    for(const x of (f?.all||[])) if(x.factor_type==="totp" && x.status!=="verified"){ try{ await sb.auth.mfa.unenroll({factorId:x.id}); }catch(_){} }
+    const {data,error}=await sb.auth.mfa.enroll({factorType:"totp",friendlyName:"CondoAdmin "+Date.now()});
+    if(error) throw error;
+    const factorId=data.id, qr=data.totp.qr_code, secret=data.totp.secret;
+    modal(`<h2>Ativar 2FA</h2><p class="sub">Escaneie o QR no seu app autenticador e digite o código.</p>
+      <div style="display:flex;justify-content:center;margin:10px 0"><img src="${qr.replace(/"/g,"&quot;")}" style="width:190px;height:190px;background:#fff;border-radius:10px"></div>
+      <p class="sub" style="text-align:center;word-break:break-all">ou a chave: <b>${esc(secret)}</b></p>
+      <label>Código</label><input id="ameCode" class="field" inputmode="numeric" maxlength="6" placeholder="000000" style="font-size:22px;letter-spacing:8px;text-align:center">
+      <div id="ameErr" class="err"></div>
+      <div style="display:flex;gap:10px;margin-top:12px"><button class="btn secondary" id="ameCancel">Cancelar</button><button class="btn" id="ameOk">Ativar</button></div>`);
+    $("#ameCancel").addEventListener("click",closeModal);
+    $("#ameOk").addEventListener("click",async()=>{
+      const code=$("#ameCode").value.trim(); if(code.length<6) return;
+      $("#ameOk").disabled=true; $("#ameErr").classList.remove("show");
+      try{ const {data:ch,error:e1}=await sb.auth.mfa.challenge({factorId}); if(e1) throw e1;
+        const {error:e2}=await sb.auth.mfa.verify({factorId,challengeId:ch.id,code}); if(e2) throw e2;
+        closeModal(); toast("2FA ativado 🔐"); renderDashboard();
+      }catch(_){ $("#ameOk").disabled=false; const e=$("#ameErr"); e.textContent="Código inválido."; e.classList.add("show"); }
+    });
+  }catch(e){ toast(e.message||"Falha ao ativar 2FA"); }
+}
+async function desativarMFA(){
+  try{ const {data:f}=await sb.auth.mfa.listFactors();
+    for(const x of (f?.all||[])) if(x.factor_type==="totp"){ try{ await sb.auth.mfa.unenroll({factorId:x.id}); }catch(_){} }
+    toast("2FA desativado"); renderDashboard();
+  }catch(e){ toast(e.message||"Falha"); }
+}
+
+// ---------- DASHBOARD ----------
+async function renderDashboard(){
+  view().innerHTML='<div class="spin"></div>';
+  let m={}, conds=[], admins=[], audit=[], fat={}, planos=[], broadcasts=[], tickets=[], rel={}, mensal=[], dre={}, despesas=[], imobs=[];
+  try{
+    [m,conds,admins,audit,fat,planos,broadcasts,tickets,rel,mensal,dre,despesas,imobs] = await Promise.all([
+      rpc("plataforma_metricas"), rpc("plataforma_condominios"), rpc("plataforma_admins_listar"),
+      rpc("plataforma_audit_listar",{p_limit:20}).catch(()=>[]),
+      rpc("plataforma_faturamento").catch(()=>({})),
+      rpc("plataforma_planos_listar").catch(()=>[]),
+      rpc("plataforma_broadcasts_listar",{p_limit:10}).catch(()=>[]),
+      rpc("plataforma_tickets_listar").catch(()=>[]),
+      rpc("plataforma_relatorio").catch(()=>({})),
+      rpc("plataforma_mensalidades").catch(()=>[]),
+      rpc("plataforma_dre",{p_meses:6}).catch(()=>({})),
+      rpc("plataforma_despesas_listar").catch(()=>[]),
+      rpc("plataforma_imobiliarias").catch(()=>[])
+    ]);
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  S._planos=planos; S._rel=rel;
+  S._fin={ fat, rel, mensal, dre, despesas };
+  const me = admins.find(a=>a.user_id===S.user.id);
+  if(me?.nome) $("#whoName").textContent=me.nome; else $("#whoName").textContent="Operador";
+  S._papel = me?.papel || "admin"; S._suporte = S._papel==="suporte";
+  $("#whoRole")?.remove();
+  if(S._suporte){ const w=document.querySelector("header.top .who"); if(w) w.insertAdjacentHTML("beforeend",'<span id="whoRole" class="badge" style="display:inline-block;margin-top:3px">Suporte · somente leitura</span>'); }
+  let mfaOn=false; try{ const {data:mf}=await sb.auth.mfa.listFactors(); mfaOn=(mf?.totp||[]).some(x=>x.status==="verified"); }catch(_){}
+
+  // ---- insights derivados (sem backend) ----
+  const now=new Date();
+  const suspensos = conds.filter(c=>!c.ativo).length;
+  const semSindico = conds.filter(c=>!(c.sindicos&&c.sindicos.length)).length;
+  const novosMes = conds.filter(c=>{ const d=new Date(c.created_at); return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth(); }).length;
+  const mediaUn = conds.length ? Math.round(conds.reduce((s,c)=>s+(c.unidades||0),0)/conds.length) : 0;
+
+  let html=`<section class="adsec" data-ad="inicio">
+    <div class="metrics">
+      <div class="metric"><small>Condomínios</small><b>${m.condominios||0}</b></div>
+      <div class="metric"><small>Ativos</small><b>${m.condominios_ativos||0}</b></div>
+      <div class="metric"><small>Unidades</small><b>${m.unidades||0}</b></div>
+      <div class="metric"><small>Usuários</small><b>${m.usuarios||0}</b></div>
+    </div>
+    <div class="mini">
+      <div class="m2"><small>Suspensos</small><b class="${suspensos?"warn":""}">${suspensos}</b></div>
+      <div class="m2"><small>Sem síndico</small><b class="${semSindico?"warn":""}">${semSindico}</b></div>
+      <div class="m2"><small>Novos no mês</small><b>${novosMes}</b></div>
+      <div class="m2"><small>Média un./cond.</small><b>${mediaUn}</b></div>
+    </div>
+    <div class="h">🏘️ Imobiliárias <small>Assinaturas da vertical de locação</small></div>
+    <div class="mini">
+      <div class="m2"><small>Imobiliárias</small><b>${m.imobiliarias||0}</b></div>
+      <div class="m2"><small>Imóveis (locados)</small><b>${m.imob_imoveis||0} <small style="font-weight:600;color:var(--muted)">(${m.imob_locados||0})</small></b></div>
+      <div class="m2"><small>MRR imobiliárias</small><b>${fmtMoney(fat.mrr_imobiliarias)}</b></div>
+      <div class="m2"><small>Sem plano</small><b class="${fat.sem_assinatura_imob?"warn":""}">${fat.sem_assinatura_imob||0}</b></div>
+    </div>
+    <div class="h">Faturamento <small>Assinaturas dos condomínios</small></div>
+    <div class="mini">
+      <div class="m2"><small>MRR (ativas)</small><b>${fmtMoney(fat.mrr)}</b></div>
+      <div class="m2"><small>Em risco (atrasadas)</small><b class="${fat.atrasadas?"warn":""}">${fmtMoney(fat.receita_risco)}</b></div>
+      <div class="m2"><small>Em trial</small><b>${fat.trial||0}</b></div>
+      <div class="m2"><small>Sem plano</small><b class="${fat.sem_assinatura?"warn":""}">${fat.sem_assinatura||0}</b></div>
+    </div>
+    ${(fat.por_plano&&fat.por_plano.length)?`<div class="meta" style="margin:-8px 2px 20px">${fat.por_plano.map(p=>`<span>${esc(p.plano)}: <b style="color:var(--ink)">${p.qtd}</b> · ${fmtMoney(p.receita)}</span>`).join("")}</div>`:""}
+    ${mrrChart(rel.mrr_serie||[])}
+    <div class="h">Atendimento <small>Tempo de resposta dos chamados</small></div>
+    <div class="mini">
+      <div class="m2"><small>Chamados</small><b>${(rel.tickets&&rel.tickets.total)||0}</b></div>
+      <div class="m2"><small>Abertos</small><b class="${(rel.tickets&&rel.tickets.abertos)?"warn":""}">${(rel.tickets&&rel.tickets.abertos)||0}</b></div>
+      <div class="m2"><small>1ª resposta (méd)</small><b>${fmtHoras(rel.tickets&&rel.tickets.tempo_resposta_h)}</b></div>
+      <div class="m2"><small>Resolução (méd)</small><b>${fmtHoras(rel.tickets&&rel.tickets.tempo_resolucao_h)}</b></div>
+    </div>
+    <div class="bar"><button class="btn small secondary" id="btnRelatorio">📄 Gerar relatório (PDF)</button></div>
+    ${growthChart(conds)}
+    <div id="atencaoWrap"></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="financeiro">
+    <div class="h">💰 Financeiro <small>Mensalidades, faturamento, inadimplência e DRE</small></div>
+    <div id="finKpis"></div>
+    ${!S._suporte?'<div class="bar"><button class="btn small" id="btnFaturas">🧾 Mensalidades (PIX) — gerar/cobrar</button><button class="btn small secondary" id="btnCfgCobr">⚙️ Cobrança &amp; Mercado Pago</button></div>':''}
+    <div class="bar"><div class="seg" id="finSeg">
+      <button data-f="resumo" class="on">Visão geral</button>
+      <button data-f="mensalidades">Mensalidades</button>
+      <button data-f="inadimplencia">Inadimplência</button>
+      <button data-f="contas">Contas a pagar</button>
+    </div></div>
+    <div id="finBody"><div class="spin"></div></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="condominios">
+    <div class="h">Condomínios <small>Todos os clientes da plataforma</small></div>
+    <div class="bar">
+      <input id="q" class="field search" placeholder="Buscar por nome ou cidade...">
+      <button class="btn small secondary" id="btnMapa">🗺️ Mapa</button>
+      <button class="btn small secondary" id="expCsv">⬇️ CSV</button>
+      ${!S._suporte?'<button class="btn small" id="novoCond">➕ Novo condomínio</button>':''}
+    </div>
+    <div class="bar">
+      <div class="seg" id="segFiltro">
+        <button data-f="todos" class="on">Todos</button>
+        <button data-f="ativos">Ativos</button>
+        <button data-f="suspensos">Suspensos</button>
+      </div>
+      <select id="ordena" class="field selfield">
+        <option value="recentes">Mais recentes</option>
+        <option value="nome">Nome (A–Z)</option>
+        <option value="unidades">Mais unidades</option>
+        <option value="membros">Mais membros</option>
+      </select>
+      <span id="condCount" class="meta" style="margin:0"></span>
+    </div>
+    <div id="condList"></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="imobiliarias">
+    <div class="h">🏘️ Imobiliárias <small>Assinaturas das imobiliárias (mensalidade da Vizello)</small></div>
+    <div class="metrics">
+      <div class="metric"><small>Imobiliárias</small><b>${m.imobiliarias||0}</b></div>
+      <div class="metric"><small>Imóveis</small><b>${m.imob_imoveis||0}</b></div>
+      <div class="metric"><small>MRR imob.</small><b>${fmtMoney(fat.mrr_imobiliarias)}</b></div>
+      <div class="metric"><small>Sem plano</small><b class="${fat.sem_assinatura_imob?"warn":""}">${fat.sem_assinatura_imob||0}</b></div>
+    </div>
+    <div class="bar">
+      <input id="qImob" class="field search" placeholder="Buscar por nome ou cidade...">
+      <span id="imobCount" class="meta" style="margin:0"></span>
+    </div>
+    <div id="imobList"></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="atendimento">
+    <div class="h">🎧 Atendimento <small>Chamados dos síndicos à VIZELLO</small></div>
+    <div class="bar"><button class="btn small secondary" id="btnSuporte">🔎 Buscar usuário</button></div>
+    <div class="bar"><div class="seg" id="tkSeg2">
+      <button data-s="" class="on">Todos</button>
+      <button data-s="aberto">Abertos</button>
+      <button data-s="em_andamento">Em andamento</button>
+      <button data-s="resolvido">Resolvidos</button>
+    </div></div>
+    <div id="ticketsWrap"></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="comunicados">
+    <div class="h">📣 Comunicados globais <small>Avisos enviados a todos</small></div>
+    ${!S._suporte?'<div class="bar"><button class="btn small" id="btnBroadcast">📣 Novo comunicado global</button></div>':'<p class="sub" style="margin:2px">Somente leitura (perfil suporte).</p>'}
+    <div id="broadcastList"></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="integridade">
+    <div class="h">Integridade do sistema <small>Saúde da plataforma em tempo real</small></div>
+    <div class="bar"><button class="btn small secondary" id="btnSaude">🔄 Reavaliar</button><span id="saudeAt" class="meta" style="margin:0"></span></div>
+    <div id="healthWrap"><div class="spin"></div></div>
+  </section>`;
+
+  html+=`<section class="adsec" data-ad="config">
+    <div class="h">Operadores da plataforma <small>Quem pode acessar este painel</small></div>
+    <div class="bar">
+      ${!S._suporte?'<button class="btn small secondary" id="addAdmin">➕ Adicionar operador</button>':''}
+      <button class="btn small secondary" id="admMfa" ${REQUIRE_2FA&&mfaOn?"disabled title='2FA obrigatório para operadores'":""}>${
+        REQUIRE_2FA ? (mfaOn?"🔐 2FA ativo (obrigatório)":"🔐 Ativar 2FA")
+                    : (mfaOn?"✅ 2FA ativo — desativar":"🔐 Ativar 2FA na minha conta")}</button>
+    </div>
+    <div id="adminList"></div>
+    <div class="h" style="margin-top:28px">Aparência</div>
+    <div class="bar"><button class="btn small secondary" id="admTema">${currentTheme()==="dark"?"☀️ Modo claro":"🌙 Modo escuro"}</button></div>
+    ${!isStandalone()?`<div class="h" style="margin-top:28px">Aplicativo <small>Instale o painel no seu aparelho</small></div>
+      <div class="bar"><button class="btn small secondary" id="admInstall">📲 Instalar o app</button></div>`:""}
+    <div class="h" style="margin-top:28px">Auditoria <small>Últimas ações no painel</small></div>
+    <div id="auditList"></div>
+  </section>`;
+
+  view().innerHTML=html;
+  S._conds=conds; S._q=""; S._filter="todos"; S._sort="recentes";
+  applyFilters();
+  S._imobs=imobs||[]; S._qImob="";
+  drawImobiliarias();
+  $("#qImob")?.addEventListener("input",e=>{ S._qImob=e.target.value.trim().toLowerCase(); drawImobiliarias(); });
+  drawAtencao(conds);
+  drawAdmins(admins);
+  drawBroadcasts(broadcasts);
+  drawAudit(audit);
+  S._finTab="resumo"; S._mensFilter="todas";
+  drawFinKpis(); drawFinBody();
+  $("#btnFaturas")?.addEventListener("click",gerenciarFaturas);
+  $("#btnCfgCobr")?.addEventListener("click",configCobranca);
+  $("#finSeg")?.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    S._finTab=b.dataset.f;
+    $("#finSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    drawFinBody();
+  }));
+  S._tickets=tickets; S._tkStatus="";
+  drawTicketsAdmin();
+  $("#tkSeg2").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    S._tkStatus=b.dataset.s;
+    $("#tkSeg2").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    drawTicketsAdmin();
+  }));
+  $("#btnBroadcast")?.addEventListener("click",comunicadoGlobal);
+  $("#btnSuporte").addEventListener("click",buscarUsuario);
+  $("#btnRelatorio")?.addEventListener("click",gerarRelatorio);
+  $("#q").addEventListener("input",e=>{ S._q=e.target.value.trim().toLowerCase(); applyFilters(); });
+  $("#segFiltro").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    S._filter=b.dataset.f;
+    $("#segFiltro").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    applyFilters();
+  }));
+  $("#ordena").addEventListener("change",e=>{ S._sort=e.target.value; applyFilters(); });
+  $("#expCsv").addEventListener("click",exportCSV);
+  $("#btnMapa")?.addEventListener("click",mapaGeral);
+  $("#novoCond")?.addEventListener("click",novoCondominio);
+  $("#admMfa").addEventListener("click",()=>{ if(REQUIRE_2FA&&mfaOn) return; mfaOn ? desativarMFA() : ativarMFAAdmin(); });
+  $("#addAdmin")?.addEventListener("click",addOperador);
+  $("#admInstall")?.addEventListener("click",promptInstall);
+  $("#btnSaude")?.addEventListener("click",drawIntegridade);
+  S._saudeLoaded=false;
+  $("#admTema")?.addEventListener("click",e=>{ toggleTheme(); e.currentTarget.textContent=currentTheme()==="dark"?"☀️ Modo claro":"🌙 Modo escuro"; });
+  buildAdminNav();
+  goAdmin(S._adminTab||"inicio");
+}
+
+const AD_SVG=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="23" height="23">${p}</svg>`;
+const AD_TABS=[
+  {id:"inicio",label:"Início",ic:AD_SVG('<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>')},
+  {id:"financeiro",label:"Financeiro",ic:AD_SVG('<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.5-.9-1.5-1.4-2.6-1.4-1.5 0-2.6.9-2.6 2.1 0 2.7 5.3 1.5 5.3 4.2 0 1.2-1.1 2.1-2.7 2.1-1.2 0-2.2-.5-2.7-1.4"/><path d="M12 6.4v11.2"/>')},
+  {id:"condominios",label:"Condomínios",ic:AD_SVG('<path d="M5 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16"/><path d="M14 9h4a1 1 0 0 1 1 1v11"/><path d="M8 8h2M8 12h2M8 16h2"/>')},
+  {id:"imobiliarias",label:"Imobiliárias",ic:AD_SVG('<path d="M3 9.5 12 3l9 6.5"/><path d="M5 21V10.5"/><path d="M19 21V10.5"/><path d="M5 21h14"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/>')},
+  {id:"atendimento",label:"Atendimento",ic:AD_SVG('<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M20 19a3 3 0 0 1-3 3h-2.5"/>')},
+  {id:"comunicados",label:"Comunicados",ic:AD_SVG('<path d="M4 10v4h3l7 4V6L7 10H4z"/><path d="M18 9a4 4 0 0 1 0 6"/>')},
+  {id:"integridade",label:"Sistema",ic:AD_SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>')},
+  {id:"config",label:"Config",ic:AD_SVG('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h7M15 18h5"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="18" r="2"/>')}
+];
+function buildAdminNav(){
+  const nav=$("#adminNav"); if(!nav) return;
+  nav.innerHTML=`<div class="navinner">${AD_TABS.map(t=>`<button data-tab="${t.id}" title="${t.label}"><span class="ic">${t.ic}</span><span class="lbl">${t.label}</span></button>`).join("")}</div>`;
+  nav.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>goAdmin(b.dataset.tab)));
+}
+function goAdmin(tab){
+  S._adminTab=tab;
+  document.querySelectorAll(".adsec").forEach(s=>s.classList.toggle("on",s.dataset.ad===tab));
+  const nav=$("#adminNav"); if(nav) nav.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  if(tab==="integridade" && !S._saudeLoaded){ S._saudeLoaded=true; drawIntegridade(); }
+  window.scrollTo(0,0);
+}
+async function drawIntegridade(){
+  const wrap=$("#healthWrap"); if(!wrap) return;
+  wrap.innerHTML='<div class="spin"></div>';
+  const t0=performance.now(); let h=null, err=null, lat=null;
+  try{ h=await rpc("plataforma_saude"); lat=Math.round(performance.now()-t0); }
+  catch(e){ err=e.message||"erro"; }
+  if(err){ wrap.innerHTML=`<div class="chk st-fail"><span class="cdot"></span><div class="cbody"><b>Falha ao consultar a saúde do sistema</b><small>${esc(err)}</small></div><span class="cpill">FALHA</span></div>`; return; }
+  const m=h.metricas||{}, seg=h.seguranca||{}, checks=h.checagens||[];
+  const rank={ok:0,warn:1,fail:2}; let worst="ok";
+  checks.forEach(c=>{ if((rank[c.status]??1)>rank[worst]) worst=c.status; });
+  const latStatus = lat==null?"warn":(lat<600?"ok":(lat<1500?"warn":"fail"));
+  if(rank[latStatus]>rank[worst]) worst=latStatus;
+  const heroCls={ok:"st-ok",warn:"st-warn",fail:"st-fail"}[worst];
+  const heroLbl={ok:"Tudo operacional",warn:"Atenção em alguns pontos",fail:"Ação necessária"}[worst];
+  const STLBL={ok:"OK",warn:"Atenção",fail:"Falha"};
+  const stCls={ok:"st-ok",warn:"st-warn",fail:"st-fail"};
+  $("#saudeAt").textContent="Atualizado "+fmtDateTime(h.gerado_em);
+
+  let out=`<div class="health-hero ${heroCls}"><span class="health-dot"></span>
+    <div><b>${heroLbl}</b><small>Latência do banco: ${lat} ms · ${seg.tabelas_rls}/${seg.tabelas} tabelas com RLS · ${seg.funcoes} funções no servidor</small></div></div>`;
+
+  out+=`<div class="metrics">
+    <div class="metric"><small>Condomínios ativos</small><b>${m.condominios_ativos||0}</b></div>
+    <div class="metric"><small>Usuários</small><b>${m.usuarios||0}</b></div>
+    <div class="metric"><small>Assinaturas de push</small><b>${m.push_subscriptions||0}</b></div>
+    <div class="metric"><small>Notificações (24h)</small><b>${m.notificacoes_24h||0}</b></div>
+  </div>`;
+  out+=`<div class="mini">
+    <div class="m2"><small>Unidades</small><b>${m.unidades||0}</b></div>
+    <div class="m2"><small>SOS ativos</small><b class="${m.sos_ativos?"warn":""}">${m.sos_ativos||0}</b></div>
+    <div class="m2"><small>Cobranças vencidas</small><b class="${m.cobrancas_vencidas?"warn":""}">${m.cobrancas_vencidas||0}</b></div>
+    <div class="m2"><small>Chamados abertos</small><b class="${m.tickets_abertos?"warn":""}">${m.tickets_abertos||0}</b></div>
+  </div>`;
+
+  out+=`<div class="h" style="margin-top:8px">Checagens</div>`;
+  const latChk={status:latStatus,nome:"Conexão com o banco de dados",detalhe:(lat!=null?lat+" ms de resposta":"sem medição")};
+  out+=[latChk,...checks].map(c=>{
+    const k=stCls[c.status]||"st-warn";
+    return `<div class="chk ${k}"><span class="cdot"></span>
+      <div class="cbody"><b>${esc(c.nome)}</b><small>${esc(c.detalhe||"")}</small></div>
+      <span class="cpill">${STLBL[c.status]||esc(c.status)}</span></div>`;
+  }).join("");
+
+  // ---- Erros recentes do app (observabilidade) ----
+  let logs=null; try{ logs=await rpc("plataforma_logs_listar",{p_limit:40}); }catch(_){}
+  if(logs){
+    const e24=logs.erros_24h||0, e1=logs.erros_1h||0, itens=logs.itens||[];
+    const alerta = e1>0 || e24>=10;
+    out+=`<div class="h" style="margin-top:22px">Erros do app <small>Rastreio de erros do cliente (30 dias)</small></div>`;
+    out+=`<div class="mini"><div class="m2"><small>Última 1h</small><b class="${e1?"warn":""}">${e1}</b></div>
+      <div class="m2"><small>Últimas 24h</small><b class="${alerta?"warn":""}">${e24}</b></div>
+      <div class="m2" style="grid-column:span 2"><small>Status</small><b style="color:${alerta?"var(--danger)":"var(--ok)"}">${alerta?"⚠️ Investigar":"✅ Estável"}</b></div></div>`;
+    if(!itens.length) out+=`<p class="sub" style="margin:2px 2px 8px">Nenhum erro registrado. 🎉</p>`;
+    else out+=`<div class="scrollbox" style="max-height:320px">${itens.map(l=>`<div class="auditrow">
+      <div><b>${esc(l.contexto||l.nivel||"erro")}</b> <span class="ae">${esc((l.mensagem||"").slice(0,140))}</span>
+        <div class="ae">${esc(l.app||"")}${l.email?" · "+esc(l.email):""}${l.url?" · "+esc(l.url):""}</div></div>
+      <span class="at">${esc(tempoRel(l.created_at))}</span></div>`).join("")}</div>`;
+  }
+
+  wrap.innerHTML=out;
+}
+
+// filtro + busca + ordenação (client-side)
+function applyFilters(){
+  let list=(S._conds||[]).slice();
+  if(S._q) list=list.filter(c=>(c.nome||"").toLowerCase().includes(S._q)||(c.cidade||"").toLowerCase().includes(S._q));
+  if(S._filter==="ativos") list=list.filter(c=>c.ativo);
+  else if(S._filter==="suspensos") list=list.filter(c=>!c.ativo);
+  const s=S._sort;
+  list.sort((a,b)=> s==="nome" ? (a.nome||"").localeCompare(b.nome||"","pt")
+    : s==="unidades" ? (b.unidades-a.unidades)
+    : s==="membros" ? (b.membros-a.membros)
+    : new Date(b.created_at)-new Date(a.created_at));
+  const cc=$("#condCount"); if(cc) cc.textContent=`${list.length} de ${(S._conds||[]).length}`;
+  drawConds(list);
+}
+
+// gráfico: novos condomínios por mês (últimos 8 meses)
+function growthChart(conds){
+  const now=new Date(), months=[];
+  for(let i=7;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({y:d.getFullYear(),m:d.getMonth(),count:0,label:d.toLocaleDateString("pt-BR",{month:"short"}).replace(".","")}); }
+  conds.forEach(c=>{ const d=new Date(c.created_at); const slot=months.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth()); if(slot) slot.count++; });
+  const max=Math.max(1,...months.map(x=>x.count));
+  return `<div class="chartcard"><div class="ct">📈 Novos condomínios por mês</div><div class="bars">${
+    months.map(x=>`<div class="col"><div class="val">${x.count||""}</div>
+      <div class="bwrap"><div class="b ${x.count?"":"zero"}" style="height:${x.count?Math.round(x.count/max*100):0}%"></div></div>
+      <div class="lbl">${esc(x.label)}</div></div>`).join("")}</div></div>`;
+}
+function fmtHoras(h){ if(h==null) return "—"; h=Number(h); return h<24?`${h}h`:`${(h/24).toFixed(1)}d`; }
+function mesLabel(ym){ const p=(ym||"").split("-"); if(p.length<2) return ym||""; return new Date(+p[0],+p[1]-1,1).toLocaleDateString("pt-BR",{month:"short"}).replace(".",""); }
+function mrrChart(serie){
+  if(!serie||!serie.length) return "";
+  const max=Math.max(1,...serie.map(x=>Number(x.mrr)||0));
+  return `<div class="chartcard"><div class="ct">📈 MRR por mês <small style="color:var(--muted)">(reconstruído)</small></div><div class="bars">${
+    serie.map(x=>{ const v=Number(x.mrr)||0; return `<div class="col"><div class="val" style="font-size:9px">${v?("R$"+Math.round(v)):""}</div>
+      <div class="bwrap"><div class="b ${v?"":"zero"}" style="height:${v?Math.round(v/max*100):0}%"></div></div>
+      <div class="lbl">${esc(mesLabel(x.mes))}</div></div>`; }).join("")}</div></div>`;
+}
+// ================= FINANCEIRO =================
+function parseBRL(s){ s=(s||"").toString().trim(); if(!s) return NaN; if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); return parseFloat(s); }
+function fmtBRLInput(v){ return v==null?"":String(v).replace(".",","); }
+async function reloadFinance(){
+  try{
+    const [mensal,dre,despesas,fat] = await Promise.all([
+      rpc("plataforma_mensalidades").catch(()=>[]),
+      rpc("plataforma_dre",{p_meses:6}).catch(()=>({})),
+      rpc("plataforma_despesas_listar").catch(()=>[]),
+      rpc("plataforma_faturamento").catch(()=>({}))
+    ]);
+    S._fin={...(S._fin||{}), mensal, dre, despesas, fat};
+  }catch(e){ toast(e.message||"Erro ao atualizar"); }
+  drawFinKpis(); drawFinBody();
+}
+function drawFinKpis(){
+  const el=$("#finKpis"); if(!el) return;
+  const f=S._fin||{}, fat=f.fat||{}, dre=f.dre||{}, ma=dre.mes_atual||{};
+  const ativas=fat.ativas||0, mrr=fat.mrr||0;
+  const ticket= ativas? mrr/ativas : 0;
+  const resultado=(ma.receita||0)-(ma.despesa_prevista||0);
+  el.innerHTML=`
+    <div class="metrics">
+      <div class="metric"><small>MRR — receita recorrente</small><b>${fmtMoney(mrr)}</b></div>
+      <div class="metric"><small>Projeção anual (ARR)</small><b>${fmtMoney(mrr*12)}</b></div>
+      <div class="metric"><small>Inadimplência</small><b class="${fat.receita_risco?"warn":""}">${fmtMoney(fat.receita_risco)}</b></div>
+      <div class="metric"><small>Resultado do mês</small><b style="color:${resultado>=0?"var(--ok)":"var(--danger)"}">${fmtMoney(resultado)}</b></div>
+    </div>
+    <div class="mini">
+      <div class="m2"><small>Assinaturas ativas</small><b>${ativas}</b></div>
+      <div class="m2"><small>Ticket médio</small><b>${fmtMoney(ticket)}</b></div>
+      <div class="m2"><small>Em trial</small><b>${fat.trial||0}</b></div>
+      <div class="m2"><small>Sem plano</small><b class="${fat.sem_assinatura?"warn":""}">${fat.sem_assinatura||0}</b></div>
+    </div>`;
+}
+function drawFinBody(){
+  const el=$("#finBody"); if(!el) return;
+  const t=S._finTab||"resumo";
+  if(t==="resumo") el.innerHTML=projChart()+dreCard()+porPlanoCard();
+  else if(t==="mensalidades") el.innerHTML=finMensalidades();
+  else if(t==="inadimplencia") el.innerHTML=finInadimplencia();
+  else if(t==="contas") el.innerHTML=finContas();
+  wireFinBody();
+}
+function projChart(){
+  const f=S._fin||{}, serie=(f.rel&&f.rel.mrr_serie)||[], mrr=(f.fat&&f.fat.mrr)||0;
+  const hist=serie.map(x=>({label:mesLabel(x.mes), v:Number(x.mrr)||0, proj:false}));
+  const now=new Date(), fut=[];
+  for(let i=1;i<=6;i++){ const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    fut.push({label:d.toLocaleDateString("pt-BR",{month:"short"}).replace(".",""), v:mrr, proj:true}); }
+  const all=hist.concat(fut), max=Math.max(1,...all.map(x=>x.v));
+  return `<div class="chartcard"><div class="ct">📈 Faturamento — histórico e projeção <small style="color:var(--muted)">(projeção a MRR atual)</small></div>
+    <div class="bars">${all.map(x=>`<div class="col"><div class="val" style="font-size:9px">${x.v?("R$"+Math.round(x.v)):""}</div>
+      <div class="bwrap"><div class="b ${x.v?(x.proj?"proj":""):"zero"}" style="height:${x.v?Math.round(x.v/max*100):0}%"></div></div>
+      <div class="lbl">${esc(x.label)}</div></div>`).join("")}</div>
+    <div class="meta" style="margin-top:12px"><span class="lg"><i style="background:var(--accent)"></i>Realizado</span><span class="lg"><i style="background:var(--sand)"></i>Projeção</span></div>
+  </div>`;
+}
+function dreCard(){
+  const dre=(S._fin&&S._fin.dre)||{}, ma=dre.mes_atual||{}, serie=dre.serie||[];
+  const receita=ma.receita||0, desp=ma.despesa_prevista||0, resultado=receita-desp;
+  const margem= receita? Math.round(resultado/receita*100) : 0;
+  const cats=ma.por_categoria||[];
+  const maxAbs=Math.max(1,...serie.map(x=>Math.max(Number(x.receita)||0,Number(x.despesa)||0)));
+  return `<div class="chartcard">
+    <div class="ct">🧾 DRE — Demonstrativo do mês</div>
+    <div class="dgrid" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="dcard"><small>Receita</small><b>${fmtMoney(receita)}</b></div>
+      <div class="dcard"><small>Despesas</small><b>${fmtMoney(desp)}</b></div>
+      <div class="dcard ${resultado<0?"bad":""}"><small>Resultado · ${margem}%</small><b style="color:${resultado>=0?"var(--ok)":"var(--danger)"}">${fmtMoney(resultado)}</b></div>
+    </div>
+    ${cats.length?`<div class="dsec"><div class="t">Despesas por categoria</div>${cats.map(c=>`<div class="drow"><span class="k">${esc(c.categoria)}</span><span class="v">${fmtMoney(c.valor)}</span></div>`).join("")}</div>`:""}
+    <div class="dsec"><div class="t">Receita × Despesa (6 meses)</div>
+      <div class="dre-series">${serie.map(x=>{const r=Number(x.receita)||0,d=Number(x.despesa)||0;
+        return `<div class="col"><div class="pair"><div class="rb" style="height:${Math.round(r/maxAbs*100)}%" title="Receita ${fmtMoney(r)}"></div><div class="db" style="height:${Math.round(d/maxAbs*100)}%" title="Despesa ${fmtMoney(d)}"></div></div><div class="lbl">${esc(mesLabel(x.mes))}</div></div>`;}).join("")}</div>
+      <div class="meta" style="margin-top:10px"><span class="lg"><i style="background:var(--accent)"></i>Receita</span><span class="lg"><i style="background:var(--brand)"></i>Despesa</span></div>
+    </div>
+  </div>`;
+}
+function porPlanoCard(){
+  const fat=(S._fin&&S._fin.fat)||{}, pp=fat.por_plano||[];
+  if(!pp.length) return "";
+  const tot=pp.reduce((s,x)=>s+(Number(x.receita)||0),0)||1;
+  return `<div class="chartcard"><div class="ct">🏷️ Receita por plano</div>${pp.map(p=>`
+    <div style="margin-bottom:11px"><div class="drow" style="border:none;padding:2px 0"><span class="k">${esc(p.plano)} · ${p.qtd}</span><span class="v">${fmtMoney(p.receita)}</span></div>
+    <div style="height:8px;background:var(--chip);border-radius:999px;overflow:hidden"><div style="height:100%;width:${Math.round((Number(p.receita)||0)/tot*100)}%;background:var(--accent)"></div></div></div>`).join("")}</div>`;
+}
+function statusMens(s){ return ({ativa:["Ativa","ok"],atrasada:["Atrasada","dngr"],trial:["Trial","trial"],cancelada:["Cancelada","off"],sem_plano:["Sem plano","off"]})[s]||[s,""]; }
+function finMensalidades(){
+  const arr=(S._fin&&S._fin.mensal)||[], f=S._mensFilter||"todas";
+  const LBL={todas:"Todas",ativa:"Ativas",atrasada:"Atrasadas",trial:"Trial",sem_plano:"Sem plano"};
+  const filt= f==="todas"?arr:arr.filter(x=>x.status===f);
+  const seg=`<div class="bar"><div class="seg" id="mensSeg">${["todas","ativa","atrasada","trial","sem_plano"].map(k=>`<button data-f="${k}" class="${k===f?"on":""}">${LBL[k]}</button>`).join("")}</div></div>`;
+  if(!filt.length) return seg+`<p class="empty" style="padding:24px">Nenhuma mensalidade neste filtro.</p>`;
+  const rows=filt.map(x=>{const [lbl,cls]=statusMens(x.status);
+    return `<div class="tile"><div class="row"><div style="flex:1">
+        <h3>${esc(x.condominio||"—")}</h3>
+        <div class="meta"><span>${esc([x.cidade,x.uf].filter(Boolean).join(" · ")||"—")}</span><span>${x.unidades||0} un.</span><span>${esc(x.plano||"—")}</span></div>
+      </div><div style="text-align:right"><b style="font-size:17px">${fmtMoney(x.valor_mensal||0)}</b><div style="margin-top:4px"><span class="badge ${cls}">${lbl}</span></div></div></div>
+      ${!S._suporte?`<div class="bar" style="margin:10px 0 0"><button class="btn small secondary" data-plano="${x.condominio_id}">Definir plano/assinatura</button></div>`:""}
+    </div>`;}).join("");
+  return seg+rows;
+}
+function finInadimplencia(){
+  const arr=(S._fin&&S._fin.mensal)||[];
+  const atras=arr.filter(x=>x.status==="atrasada"), semplano=arr.filter(x=>x.status==="sem_plano");
+  const totalRisco=atras.reduce((s,x)=>s+(Number(x.valor_mensal)||0),0);
+  let h=`<div class="dgrid"><div class="dcard ${totalRisco?"bad":""}"><small>Receita em risco</small><b>${fmtMoney(totalRisco)}</b></div>
+    <div class="dcard"><small>Condomínios atrasados</small><b>${atras.length}</b></div></div>`;
+  h+= atras.length? atras.map(x=>`<div class="tile"><div class="row"><div style="flex:1">
+        <h3>${esc(x.condominio)}</h3><div class="meta"><span>${esc(x.plano||"—")}</span><span>Desde ${fmtDate(x.inicio)||"—"}</span></div></div>
+      <div style="text-align:right"><b>${fmtMoney(x.valor_mensal)}</b><div style="margin-top:4px"><span class="badge dngr">Atrasada</span></div></div></div>
+      ${!S._suporte?`<div class="bar" style="margin:10px 0 0"><button class="btn small" data-marcarpg="${x.condominio_id}">✔ Registrar pagamento</button><button class="btn small secondary" data-plano="${x.condominio_id}">Alterar</button></div>`:""}
+    </div>`).join("") : `<p class="empty" style="padding:24px"><span class="big">🎉</span><br>Nenhuma assinatura atrasada.</p>`;
+  if(semplano.length){ h+=`<div class="dsec" style="margin-top:22px"><div class="t">Sem plano (${semplano.length}) — potencial não faturado</div>${semplano.map(x=>`<div class="drow"><span class="k">${esc(x.condominio)}</span><span class="v">${!S._suporte?`<button class="btn small secondary" data-plano="${x.condominio_id}">Definir plano</button>`:"—"}</span></div>`).join("")}</div>`; }
+  return h;
+}
+function finContas(){
+  const dre=(S._fin&&S._fin.dre)||{}, c=dre.contas||{}, arr=(S._fin&&S._fin.despesas)||[];
+  let h=`<div class="mini">
+    <div class="m2"><small>A vencer</small><b>${fmtMoney(c.a_vencer_valor)}</b></div>
+    <div class="m2"><small>Vencidas</small><b class="${c.vencidas_valor?"warn":""}">${fmtMoney(c.vencidas_valor)}</b></div>
+    <div class="m2"><small>Pagas no mês</small><b>${fmtMoney(c.pagas_mes_valor)}</b></div>
+    <div class="m2"><small>Lançamentos</small><b>${arr.length}</b></div>
+  </div>`;
+  if(!S._suporte) h+=`<div class="bar"><button class="btn small" id="btnNovaDesp">➕ Nova despesa</button><button class="btn small secondary" id="btnGerarRec">🔁 Gerar recorrentes do mês</button></div>`;
+  h+= arr.length? arr.map(d=>{const pago=d.status==="pago", venc=!!d.vencida;
+    return `<div class="tile"><div class="row"><div style="flex:1">
+        <h3>${esc(d.descricao)}</h3><div class="meta"><span>${esc(d.categoria)}</span>${d.fornecedor?`<span>${esc(d.fornecedor)}</span>`:""}<span>Venc. ${fmtDate(d.vencimento)}</span>${d.recorrente?'<span class="badge">↻ mensal</span>':""}</div></div>
+      <div style="text-align:right"><b>${fmtMoney(d.valor)}</b><div style="margin-top:4px"><span class="badge ${pago?"ok":(venc?"dngr":"trial")}">${pago?"Pago":(venc?"Vencida":"Pendente")}</span></div></div></div>
+      ${!S._suporte?`<div class="bar" style="margin:10px 0 0">${pago?`<button class="btn small secondary" data-reabrir="${d.id}">↩ Reabrir</button>`:`<button class="btn small" data-pagar="${d.id}">✔ Marcar paga</button>`}<button class="btn small danger" data-deldesp="${d.id}">Excluir</button></div>`:""}
+    </div>`;}).join("") : `<p class="empty" style="padding:24px">Nenhuma despesa lançada.${!S._suporte?' Toque em “Nova despesa”.':""}</p>`;
+  return h;
+}
+function wireFinBody(){
+  const el=$("#finBody"); if(!el) return;
+  $("#mensSeg")?.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ S._mensFilter=b.dataset.f; drawFinBody(); }));
+  $("#btnNovaDesp")?.addEventListener("click",novaDespesa);
+  $("#btnGerarRec")?.addEventListener("click",async ()=>{
+    if(!await confirmar("Gerar as despesas recorrentes deste mês agora? As já lançadas não são duplicadas.",{ok:"Gerar"})) return;
+    try{ const n=await rpc("plataforma_despesas_recorrentes_gerar_agora"); toast(n>0?`${n} despesa(s) gerada(s) 🧾`:"Tudo já estava lançado neste mês."); await reloadFinance(); }
+    catch(e){ toast(e.message||"Erro"); }
+  });
+  el.querySelectorAll("[data-plano]").forEach(b=>b.addEventListener("click",()=>definirPlano(b.dataset.plano)));
+  el.querySelectorAll("[data-marcarpg]").forEach(b=>b.addEventListener("click",()=>marcarAssinaturaAtiva(b.dataset.marcarpg)));
+  el.querySelectorAll("[data-pagar]").forEach(b=>b.addEventListener("click",()=>despesaStatus(b.dataset.pagar,"pago")));
+  el.querySelectorAll("[data-reabrir]").forEach(b=>b.addEventListener("click",()=>despesaStatus(b.dataset.reabrir,"pendente")));
+  el.querySelectorAll("[data-deldesp]").forEach(b=>b.addEventListener("click",()=>despesaRemover(b.dataset.deldesp)));
+}
+async function despesaStatus(id,st){ try{ await rpc("plataforma_despesa_status",{p_id:id,p_status:st}); toast(st==="pago"?"Marcada como paga":"Reaberta"); await reloadFinance(); }catch(e){ toast(e.message||"Erro"); } }
+async function despesaRemover(id){ if(!await confirmar("Excluir esta despesa?",{danger:true,ok:"Excluir"})) return; try{ await rpc("plataforma_despesa_remover",{p_id:id}); toast("Despesa excluída"); await reloadFinance(); }catch(e){ toast(e.message||"Erro"); } }
+function novaDespesa(){
+  if(S._suporte) return;
+  const cats=["Infraestrutura","Ferramentas","Marketing","Folha","Impostos","Taxas","Serviços","Outros"];
+  modal(`<h2>Nova despesa</h2>
+    <label>Descrição</label><input id="dpDesc" class="field" placeholder="Ex.: Supabase Pro">
+    <div style="display:flex;gap:10px"><div style="flex:1"><label>Valor (R$)</label><input id="dpValor" class="field" inputmode="decimal" placeholder="0,00"></div>
+      <div style="flex:1"><label>Vencimento</label><input id="dpVenc" class="field" type="date"></div></div>
+    <div style="display:flex;gap:10px"><div style="flex:1"><label>Categoria</label><select id="dpCat" class="field">${cats.map(c=>`<option>${c}</option>`).join("")}</select></div>
+      <div style="flex:1"><label>Fornecedor</label><input id="dpForn" class="field" placeholder="opcional"></div></div>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer"><span class="switch" id="dpRec"></span> Despesa recorrente (mensal)</label>
+    <div id="dpErr" class="err"></div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn secondary" id="dpCancel">Cancelar</button><button class="btn" id="dpSave">Salvar</button></div>`);
+  $("#dpVenc").value=new Date().toISOString().slice(0,10);
+  let rec=false; $("#dpRec").addEventListener("click",()=>{ rec=!rec; $("#dpRec").classList.toggle("on",rec); });
+  $("#dpCancel").addEventListener("click",closeModal);
+  $("#dpSave").addEventListener("click",async ()=>{
+    const desc=$("#dpDesc").value.trim(), valor=parseBRL($("#dpValor").value), vencv=$("#dpVenc").value, err=$("#dpErr");
+    const fail=m=>{ err.textContent=m; err.classList.add("show"); };
+    if(!desc) return fail("Informe a descrição.");
+    if(isNaN(valor)||valor<0) return fail("Valor inválido.");
+    if(!vencv) return fail("Informe o vencimento.");
+    $("#dpSave").disabled=true;
+    try{
+      await rpc("plataforma_despesa_criar",{p_descricao:desc,p_valor:valor,p_vencimento:vencv,p_categoria:$("#dpCat").value,p_fornecedor:$("#dpForn").value.trim()||null,p_recorrente:rec});
+      closeModal(); toast("Despesa lançada");
+      S._finTab="contas"; $("#finSeg")?.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.f==="contas"));
+      await reloadFinance();
+    }catch(e){ fail(e.message||"Erro ao salvar"); $("#dpSave").disabled=false; }
+  });
+}
+async function configCobranca(){
+  modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2><div class="spin"></div>`);
+  let c={cobranca_ativa:false,dia_vencimento:10,multa_pct:0,juros_mes_pct:0};
+  try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p class="sub">${esc(e.message)}</p><div class="bar"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`); return; }
+  const whUrl="https://bklvbhsaxcmrnjxjbzjh.supabase.co/functions/v1/mp-mensalidade-webhook";
+  modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2>
+    <div class="tile" style="padding:14px">
+      <label style="display:flex;align-items:center;gap:10px;margin:0;font-size:15px;color:var(--ink);font-weight:700">
+        <input type="checkbox" id="ccAtiva" ${c.cobranca_ativa?"checked":""} style="width:20px;height:20px"> Cobrança de mensalidades ativa</label>
+      <p class="sub" style="margin:8px 2px 0">Quando ligada, as faturas do mês são geradas automaticamente no dia 1º e o cron é reativado. Desligada, nada é cobrado.</p>
+    </div>
+    <div class="fld-row" style="display:flex;gap:10px">
+      <div style="flex:1"><label>Dia de vencimento</label><input id="ccDia" class="field" type="number" min="1" max="28" value="${c.dia_vencimento||10}"></div>
+      <div style="flex:1"><label>Multa (%)</label><input id="ccMulta" class="field" type="number" min="0" step="0.1" value="${c.multa_pct||0}"></div>
+      <div style="flex:1"><label>Juros (%/mês)</label><input id="ccJuros" class="field" type="number" min="0" step="0.1" value="${c.juros_mes_pct||0}"></div>
+    </div>
+    <p class="sub" style="margin:6px 2px 0">Multa e juros são aplicados sobre a mensalidade quando a fatura está vencida (juros pró-rata por dia).</p>
+    <div id="ccErr" class="err"></div>
+    <div class="bar" style="margin-top:14px"><button class="btn" id="ccSave">Salvar configuração</button></div>
+
+    <div class="h" style="font-size:16px;margin-top:22px">📋 Checklist — Mercado Pago da Vizello</div>
+    <div class="tile" style="padding:14px">
+      <div class="chk-item">1. Crie/entre na aplicação em <b>mercadopago.com.br/developers</b> (conta da Vizello).</div>
+      <div class="chk-item">2. Copie o <b>Access Token de produção</b> → secret <code>MP_PLATAFORMA_ACCESS_TOKEN</code>.</div>
+      <div class="chk-item">3. Em Webhooks, gere a <b>assinatura secreta</b> → secret <code>MP_PLATAFORMA_WEBHOOK_SECRET</code>.</div>
+      <div class="chk-item">4. Defina os 2 secrets no Supabase → <b>Edge Functions → Secrets</b>.</div>
+      <div class="chk-item">5. Registre o webhook (evento <b>payment</b>):</div>
+      <div style="background:var(--chip);border-radius:8px;padding:8px 10px;font-size:12px;word-break:break-all;margin:6px 0 10px">${esc(whUrl)}</div>
+      <div class="chk-item">6. Teste com uma fatura (botão “Mensalidades (PIX)”) antes de ligar a cobrança.</div>
+      <button class="btn small secondary" id="ccCopyWh" style="margin-top:6px">📋 Copiar URL do webhook</button>
+    </div>
+    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`);
+  $("#ccCopyWh").onclick=()=>{ try{ navigator.clipboard.writeText(whUrl); toast("URL copiada ✅"); }catch(_){ toast("Copie manualmente."); } };
+  $("#ccSave").onclick=async()=>{
+    const dia=parseInt($("#ccDia").value,10); if(!(dia>=1&&dia<=28)){ $("#ccErr").textContent="Dia de vencimento deve ser entre 1 e 28."; $("#ccErr").classList.add("show"); return; }
+    $("#ccSave").disabled=true;
+    try{ await rpc("plataforma_config_salvar",{p_cobranca_ativa:$("#ccAtiva").checked,p_dia_vencimento:dia,p_multa_pct:parseFloat($("#ccMulta").value)||0,p_juros_mes_pct:parseFloat($("#ccJuros").value)||0});
+      closeModal(); toast("Configuração salva ✅"); }
+    catch(e){ $("#ccErr").textContent=e.message||"Erro"; $("#ccErr").classList.add("show"); $("#ccSave").disabled=false; }
+  };
+}
+function gerenciarFaturas(){
+  const comp=new Date().toISOString().slice(0,7);
+  modal(`<h2>🧾 Mensalidades (PIX)</h2><p class="sub">Gere as faturas do mês e acompanhe os pagamentos. O cliente paga por PIX (conta Mercado Pago da Vizello) no próprio app; a baixa é automática.</p>
+    <label>Competência</label><input id="ftComp" class="field" value="${comp}" placeholder="AAAA-MM">
+    <div class="bar" style="margin-top:10px"><button class="btn small" id="ftGerar">Gerar faturas do mês</button><button class="btn small secondary" id="ftListar">Atualizar</button></div>
+    <div id="ftOut" style="margin-top:10px"><div class="spin"></div></div>
+    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`);
+  async function listar(){ const el=$("#ftOut"); el.innerHTML='<div class="spin"></div>';
+    try{ const fs=await rpc("plataforma_faturas_listar",{p_competencia:$("#ftComp").value.trim()});
+      if(!fs.length){ el.innerHTML='<p class="sub">Nenhuma fatura nesta competência. Clique em “Gerar faturas do mês”.</p>'; return; }
+      const pend=fs.filter(f=>f.status==="pendente").length, pago=fs.filter(f=>f.status==="pago").length;
+      el.innerHTML=`<div class="meta" style="margin:0 2px 8px"><span>${fs.length} fatura(s)</span><span>${pago} paga(s)</span><span>${pend} pendente(s)</span></div>`+
+        fs.map(f=>`<div class="drow"><span class="k" style="flex:1">${esc(f.cliente||"—")} <span class="badge">${f.tipo==="condominio"?"Condo":"Imob"}</span></span><span class="v">${fmtMoney(f.valor)} · <span class="badge">${esc(f.status)}</span></span></div>`).join("");
+    }catch(e){ el.innerHTML=`<p class="sub">${esc(e.message)}</p>`; } }
+  $("#ftGerar").onclick=async()=>{ $("#ftGerar").disabled=true; try{ const n=await rpc("plataforma_faturas_gerar",{p_competencia:$("#ftComp").value.trim()}); toast(`${n} fatura(s) gerada(s)`); await listar(); }catch(e){ toast(e.message); } $("#ftGerar").disabled=false; };
+  $("#ftListar").onclick=listar;
+  listar();
+}
+function definirPlano(cond){
+  if(S._suporte) return;
+  const arr=(S._fin&&S._fin.mensal)||[], cur=arr.find(x=>x.condominio_id===cond)||{}, planos=S._planos||[];
+  modal(`<h2>Plano / assinatura</h2><p class="sub">${esc(cur.condominio||"")}</p>
+    <label>Plano</label><select id="apPlano" class="field">${planos.map(p=>`<option value="${p.id}" data-v="${p.valor_mensal}" ${p.id===cur.plano_id?"selected":""}>${esc(p.nome)} · ${fmtMoney(p.valor_mensal)}</option>`).join("")}</select>
+    <label>Status</label><select id="apStatus" class="field">${["ativa","trial","atrasada","cancelada"].map(s=>`<option value="${s}" ${s===cur.status?"selected":""}>${s}</option>`).join("")}</select>
+    <label>Valor mensal (R$)</label><input id="apValor" class="field" inputmode="decimal" value="${cur.valor_mensal!=null?fmtBRLInput(cur.valor_mensal):""}">
+    <div id="apErr" class="err"></div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn secondary" id="apCancel">Cancelar</button><button class="btn" id="apSave">Salvar</button></div>`);
+  const sel=$("#apPlano");
+  sel.addEventListener("change",()=>{ const o=sel.options[sel.selectedIndex]; if(o) $("#apValor").value=fmtBRLInput(o.dataset.v); });
+  $("#apCancel").addEventListener("click",closeModal);
+  $("#apSave").addEventListener("click",async ()=>{
+    const plano=sel.value, status=$("#apStatus").value, valor=parseBRL($("#apValor").value);
+    if(!plano){ const er=$("#apErr"); er.textContent="Selecione um plano."; er.classList.add("show"); return; }
+    $("#apSave").disabled=true;
+    try{ await rpc("plataforma_assinatura_definir",{p_cond:cond,p_plano_id:plano,p_status:status,p_valor:isNaN(valor)?null:valor});
+      closeModal(); toast("Assinatura atualizada"); await reloadFinance(); }
+    catch(e){ const er=$("#apErr"); er.textContent=e.message||"Erro"; er.classList.add("show"); $("#apSave").disabled=false; }
+  });
+}
+async function marcarAssinaturaAtiva(cond){
+  const arr=(S._fin&&S._fin.mensal)||[], cur=arr.find(x=>x.condominio_id===cond); if(!cur) return;
+  if(!cur.plano_id){ definirPlano(cond); return; }
+  if(!await confirmar(`Registrar pagamento de ${esc(cur.condominio)} e marcar a assinatura como ativa?`,{ok:"Registrar"})) return;
+  try{ await rpc("plataforma_assinatura_definir",{p_cond:cond,p_plano_id:cur.plano_id,p_status:"ativa",p_valor:cur.valor_mensal}); toast("Pagamento registrado"); await reloadFinance(); }
+  catch(e){ toast(e.message||"Erro"); }
+}
+function gerarRelatorio(){
+  const r=S._rel||{}; const met=r.metricas||{}, tk=r.tickets||{};
+  const money=v=>fmtMoney(v);
+  const linhaSerie=(s,fmt)=>(s||[]).map(x=>`<tr><td>${esc(mesLabel(x.mes))}/${(x.mes||"").slice(0,4)}</td><td style="text-align:right">${fmt(x)}</td></tr>`).join("");
+  $("#relWrap").innerHTML=`
+    <div class="relbar relnoprint">
+      <button class="btn small secondary" id="relClose">‹ Voltar</button>
+      <button class="btn small" id="relPrint">🖨️ Imprimir / Salvar PDF</button>
+    </div>
+    <div class="reldoc">
+      <div class="relhead"><img src="/logo-dark.png?v=2" alt="VIZELLO" style="height:42px;width:auto;flex:0 0 auto">
+        <div><h1>Relatório da plataforma</h1><p>Gerado em ${esc(fmtDateTime(r.gerado_em))}</p></div></div>
+      <h2>Visão geral</h2>
+      <div class="relgrid">
+        <div><small>Condomínios</small><b>${met.condominios||0}</b></div>
+        <div><small>Ativos</small><b>${met.ativos||0}</b></div>
+        <div><small>Unidades</small><b>${met.unidades||0}</b></div>
+        <div><small>Usuários</small><b>${met.usuarios||0}</b></div>
+        <div><small>MRR atual</small><b>${money(r.mrr_atual)}</b></div>
+        <div><small>Chamados abertos</small><b>${tk.abertos||0}</b></div>
+      </div>
+      <h2>MRR por mês</h2>
+      <table><thead><tr><th>Mês</th><th style="text-align:right">MRR</th></tr></thead><tbody>${linhaSerie(r.mrr_serie,x=>money(x.mrr))}</tbody></table>
+      <h2>Novos condomínios por mês</h2>
+      <table><thead><tr><th>Mês</th><th style="text-align:right">Novos</th></tr></thead><tbody>${linhaSerie(r.novos_serie,x=>x.qtd)}</tbody></table>
+      <h2>Receita por plano</h2>
+      <table><thead><tr><th>Plano</th><th style="text-align:right">Assinaturas</th><th style="text-align:right">Receita</th></tr></thead><tbody>${(r.por_plano||[]).map(p=>`<tr><td>${esc(p.plano)}</td><td style="text-align:right">${p.qtd}</td><td style="text-align:right">${money(p.receita)}</td></tr>`).join("")||'<tr><td colspan="3">Sem assinaturas.</td></tr>'}</tbody></table>
+      <h2>Atendimento (chamados à plataforma)</h2>
+      <table><tbody>
+        <tr><td>Total de chamados</td><td style="text-align:right">${tk.total||0}</td></tr>
+        <tr><td>Abertos / Em andamento / Resolvidos</td><td style="text-align:right">${tk.abertos||0} / ${tk.em_andamento||0} / ${tk.resolvidos||0}</td></tr>
+        <tr><td>Tempo médio de 1ª resposta</td><td style="text-align:right">${fmtHoras(tk.tempo_resposta_h)}</td></tr>
+        <tr><td>Tempo médio de resolução</td><td style="text-align:right">${fmtHoras(tk.tempo_resolucao_h)}</td></tr>
+      </tbody></table>
+      <p class="relfoot">VIZELLO · relatório gerado automaticamente.</p>
+    </div>`;
+  $("#relWrap").classList.add("show");
+  $("#relClose").onclick=()=>$("#relWrap").classList.remove("show");
+  $("#relPrint").onclick=()=>window.print();
+}
+
+// export CSV da lista atual
+function exportCSV(){
+  const list=S._conds||[];
+  if(!list.length) return toast("Nada para exportar.");
+  const head=["Nome","Cidade","UF","Status","Unidades","Membros","Síndicos","Criado em"];
+  const rows=list.map(c=>[c.nome,c.cidade||"",c.uf||"",c.ativo?"Ativo":"Suspenso",c.unidades,c.membros,(c.sindicos||[]).join(" | "),fmtDate(c.created_at)]);
+  const csv=[head,...rows].map(r=>r.map(x=>`"${String(x??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=`vizello-condominios-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast("CSV exportado ⬇️");
+}
+
+const ASSIN_LABEL={trial:"Trial",ativa:"Ativa",atrasada:"Atrasada",cancelada:"Cancelada"};
+function assinBadge(c){
+  const plano=c.plano?`<span class="badge">${esc(c.plano)}</span>`:'<span class="badge warn2">sem plano</span>';
+  const s=c.assinatura_status; if(!s) return plano;
+  const cls={ativa:"ok",atrasada:"dngr",cancelada:"off",trial:"trial"}[s]||"";
+  return `${plano} <span class="badge ${cls}">${ASSIN_LABEL[s]||s}</span>`;
+}
+function atencaoReasons(c){
+  const r=[];
+  if(!(c.sindicos&&c.sindicos.length)) r.push("sem síndico");
+  if(!c.unidades) r.push("sem unidades");
+  if(Number(c.total_vencido)>0) r.push(`${fmtMoney(c.total_vencido)} vencido`);
+  if(c.assinatura_status==="atrasada") r.push("assinatura atrasada");
+  const dias=c.ultima_atividade?Math.floor((Date.now()-new Date(c.ultima_atividade).getTime())/86400000):null;
+  if(dias===null) r.push("sem atividade"); else if(dias>30) r.push(`inativo há ${dias}d`);
+  return r;
+}
+function drawAtencao(conds){
+  const el=$("#atencaoWrap"); if(!el) return;
+  const items=conds.filter(c=>c.ativo).map(c=>({c,reasons:atencaoReasons(c)})).filter(x=>x.reasons.length);
+  if(!items.length){ el.innerHTML=""; return; }
+  items.sort((a,b)=>b.reasons.length-a.reasons.length);
+  el.innerHTML=`<div class="h">⚠️ Precisam de atenção <small>${items.length} condomínio(s) com pendências</small></div>
+    ${items.slice(0,8).map(({c,reasons})=>`<div class="tile" style="padding:12px 16px;border-radius:0;border-left:3px solid var(--warn)">
+      <div class="clickable" data-detail="${c.id}">
+        <h3 style="font-size:15px">${esc(c.nome)}</h3>
+        <div class="meta" style="margin-top:6px">${reasons.map(r=>`<span class="badge warn2">${esc(r)}</span>`).join("")}</div>
+      </div></div>`).join("")}`;
+  el.querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>abrirDetalhe(b.dataset.detail)));
+}
+function drawBroadcasts(list){
+  const el=$("#broadcastList"); if(!el) return;
+  if(!list||!list.length){ el.innerHTML='<div class="tile" style="text-align:center;color:var(--muted);padding:20px">Nenhum comunicado enviado ainda.</div>'; return; }
+  el.innerHTML=list.map(b=>`<div class="tile" style="padding:12px 16px">
+    <h3 style="font-size:15px">${esc(b.titulo)}</h3>
+    ${b.corpo?`<div style="color:var(--muted);font-size:13px;margin-top:3px">${esc(b.corpo)}</div>`:""}
+    <div class="meta" style="margin-top:8px"><span class="badge">${b.alvo==="todos"?"Todos":"Síndicos"}</span><span>👥 ${b.destinatarios}</span><span>${esc(fmtDateTime(b.created_at))}</span>${b.enviado_por?`<span>por ${esc(b.enviado_por)}</span>`:""}</div>
+  </div>`).join("");
+}
+function comunicadoGlobal(){
+  modal(`<h2>📣 Comunicado global</h2><p class="sub">Envia uma notificação (e e-mail/push, se configurados) aos destinatários escolhidos.</p>
+    <label>Enviar para</label>
+    <select id="bcAlvo" class="field selfield" style="width:100%"><option value="sindicos">Só síndicos</option><option value="todos">Todos os moradores</option></select>
+    <label>Título</label><input id="bcTit" class="field" placeholder="Ex.: Manutenção programada">
+    <label>Mensagem</label><textarea id="bcCorpo" class="field" rows="4" placeholder="Detalhes do comunicado..."></textarea>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="bcCancel">Cancelar</button>
+      <button class="btn" id="bcSend">Enviar</button></div>`);
+  $("#bcCancel").addEventListener("click",closeModal);
+  $("#bcSend").addEventListener("click",async()=>{
+    const tit=$("#bcTit").value.trim(); if(!tit) return toast("Informe o título.");
+    const corpo=$("#bcCorpo").value.trim()||null, alvo=$("#bcAlvo").value;
+    const ok=await confirmar(`Enviar "${tit}" para ${alvo==="todos"?"TODOS os moradores":"todos os síndicos"}?`,{ok:"Enviar"});
+    if(!ok) return;
+    try{ const r=await rpc("plataforma_broadcast",{p_titulo:tit,p_corpo:corpo,p_alvo:alvo});
+      toast(`Enviado para ${r.destinatarios} pessoa(s) ✅`); renderDashboard();
+    }catch(e){ toast(e.message); }
+  });
+}
+function buscarUsuario(){
+  modal(`<h2>🔎 Buscar usuário</h2><p class="sub">Encontre uma pessoa por e-mail em qualquer condomínio.</p>
+    <label>E-mail</label><input id="buEmail" class="field" type="email" placeholder="pessoa@email.com">
+    <div id="buErr" class="err"></div><div id="buRes"></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="buClose">Fechar</button>
+      <button class="btn" id="buGo">Buscar</button></div>`);
+  $("#buClose").addEventListener("click",closeModal);
+  const go=async()=>{
+    const email=$("#buEmail").value.trim(); if(!email) return;
+    $("#buGo").disabled=true; $("#buErr").classList.remove("show"); $("#buRes").innerHTML='<div class="spin"></div>';
+    try{ const u=await rpc("plataforma_usuario_buscar",{p_email:email}); $("#buGo").disabled=false;
+      if(!u.encontrado){ $("#buRes").innerHTML=""; const e=$("#buErr"); e.textContent="Nenhum usuário com esse e-mail."; e.classList.add("show"); return; }
+      $("#buRes").innerHTML=`<div class="dsec"><div class="drow"><span class="k">Nome</span><span class="v">${esc(u.nome||"—")}</span></div>
+        <div class="drow"><span class="k">E-mail</span><span class="v">${esc(u.email)}</span></div>
+        ${u.telefone?`<div class="drow"><span class="k">Telefone</span><span class="v">${esc(u.telefone)}</span></div>`:""}
+        <div class="drow"><span class="k">Operador da plataforma</span><span class="v">${u.is_operador?"Sim":"Não"}</span></div>
+        <div class="drow"><span class="k">Conta desde</span><span class="v">${esc(fmtDate(u.criado_em))}</span></div></div>
+        <div class="dsec"><div class="t">Vínculos (${(u.vinculos||[]).length})</div>
+        ${(u.vinculos||[]).length?u.vinculos.map(v=>`<div class="personrow clickable" data-detail="${v.condominio_id}">${esc(v.condominio)} ${v.unidade?`<span style="color:var(--muted);font-size:12px">${esc(v.unidade)}</span>`:""} <span class="rl">${ROLE_LABEL[v.role]||v.role}${v.ativo?"":" · inativo"}</span></div>`).join(""):'<div style="color:var(--muted);padding:6px 0">Nenhum vínculo.</div>'}</div>`;
+      $("#buRes").querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>{ closeModal(); abrirDetalhe(b.dataset.detail); }));
+    }catch(e){ $("#buGo").disabled=false; $("#buRes").innerHTML=""; const el=$("#buErr"); el.textContent=e.message; el.classList.add("show"); }
+  };
+  $("#buGo").addEventListener("click",go);
+  $("#buEmail").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+}
+
+const TK_CAT={geral:"Geral",financeiro:"Financeiro",tecnico:"Técnico",duvida:"Dúvida",sugestao:"Sugestão",reclamacao:"Reclamação",outro:"Outro"};
+function tkStatusBadge(s){
+  const map={aberto:["#fff4e0","#c9622a","Aberto"],em_andamento:["#e2eff2","#00596b","Em andamento"],resolvido:["#e6f5ee","#1e9e6a","Resolvido"],fechado:["#f0f0f0","#888","Fechado"]};
+  const [bg,c,l]=map[s]||map.aberto; return `<span class="badge" style="background:${bg};color:${c}">${l}</span>`;
+}
+function tkPrioBadge(p){ const map={alta:["#fdecea","#c0392b","Alta"],baixa:["#f0f0f0","#888","Baixa"]}; const v=map[p]; return v?`<span class="badge" style="background:${v[0]};color:${v[1]}">${v[2]}</span>`:""; }
+async function signPaths(paths){
+  if(!paths||!paths.length) return {};
+  const {data}=await sb.storage.from("anexos").createSignedUrls(paths,3600);
+  const map={}; (data||[]).forEach(s=>{ if(s.signedUrl) map[s.path]=s.signedUrl; }); return map;
+}
+function drawTicketsAdmin(){
+  const el=$("#ticketsWrap"); if(!el) return;
+  let list=(S._tickets||[]); if(S._tkStatus) list=list.filter(t=>t.status===S._tkStatus);
+  if(!list.length){ el.innerHTML='<div class="tile" style="text-align:center;color:var(--muted);padding:20px">Nenhum chamado.</div>'; return; }
+  el.innerHTML=list.map(t=>`<div class="tile" style="padding:12px 16px">
+    <div class="clickable" data-tk="${t.id}">
+      <h3 style="font-size:15px">${esc(t.assunto)}</h3>
+      <div class="meta" style="margin-top:6px">${tkStatusBadge(t.status)}${tkPrioBadge(t.prioridade)}<span class="badge">${TK_CAT[t.categoria]||t.categoria}</span></div>
+      <div class="meta" style="margin-top:6px"><span>🏢 ${esc(t.condominio||"—")}</span><span>👤 ${esc(t.abridor||"")}</span><span>💬 ${t.msgs}</span><span>${esc(fmtDateTime(t.last_msg_at))}</span></div>
+    </div></div>`).join("");
+  el.querySelectorAll("[data-tk]").forEach(b=>b.addEventListener("click",()=>abrirTicketAdmin(b.dataset.tk)));
+}
+function tkBubble(m,signed){
+  const anex=(m.anexos||[]).map(a=>({...a,url:signed[a.path]}));
+  const side=m.eu?"flex-end":"flex-start", bg=m.eu?"var(--brand)":"var(--chip)", col=m.eu?"#fff":"var(--ink)";
+  const thumbs=anex.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${anex.map(a=>(a.mime||"").startsWith("image/")?`<a href="${a.url}" target="_blank" rel="noopener"><img src="${a.url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></a>`:`<a href="${a.url}" target="_blank" rel="noopener" class="badge">📎 ${esc((a.nome||"arquivo").slice(0,18))}</a>`).join("")}</div>`:"";
+  return `<div style="align-self:${side};max-width:84%">
+    ${!m.eu?`<div style="font-size:11px;color:var(--muted);margin:0 0 3px 4px">${esc(m.autor)}</div>`:""}
+    <div style="background:${bg};color:${col};padding:10px 12px;border-radius:14px;font-size:14px;white-space:pre-wrap;word-break:break-word">${esc(m.corpo)}</div>
+    ${thumbs}
+    <div style="font-size:10.5px;color:var(--muted);text-align:${m.eu?"right":"left"};margin-top:3px">${esc(fmtDateTime(m.created_at))}</div>
+  </div>`;
+}
+async function abrirTicketAdmin(id){
+  modal('<div class="spin"></div>');
+  let d;
+  try{ d=await rpc("ticket_detalhe",{p_ticket:id}); }catch(e){ closeModal(); return toast(e.message); }
+  const paths=[]; (d.mensagens||[]).forEach(m=>(m.anexos||[]).forEach(a=>paths.push(a.path)));
+  const signed=await signPaths(paths);
+  const statusBtns=[];
+  if(d.status!=="em_andamento"&&d.status!=="fechado") statusBtns.push(`<button data-st="em_andamento">Em andamento</button>`);
+  if(d.status!=="resolvido") statusBtns.push(`<button data-st="resolvido">Marcar resolvido</button>`);
+  if(d.status==="resolvido") statusBtns.push(`<button data-st="aberto">Reabrir</button>`);
+  $("#modal").innerHTML=`
+    <h2 style="margin-bottom:2px">${esc(d.assunto)}</h2>
+    <div class="meta" style="margin-bottom:6px">${tkStatusBadge(d.status)}${tkPrioBadge(d.prioridade)}<span class="badge">${TK_CAT[d.categoria]||d.categoria}</span></div>
+    <div class="meta" style="margin-bottom:10px"><span>🏢 ${esc(d.condominio||"—")}</span><span>👤 ${esc(d.abridor||"")}</span></div>
+    <div id="tkThread" style="max-height:44vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0">
+      ${(d.mensagens||[]).map(m=>tkBubble(m,signed)).join("")}
+    </div>
+    ${d.status==="fechado"?'<p class="sub" style="text-align:center;margin-top:14px">Chamado fechado pelo síndico.</p>':
+    `<div style="margin-top:12px">
+      <textarea id="tkReply" class="field" rows="2" placeholder="Responder ao síndico..."></textarea>
+      <button class="btn" id="tkReplySend">Responder</button></div>`}
+    ${statusBtns.length?`<div class="bar" style="margin-top:12px"><div class="seg">${statusBtns.join("")}</div></div>`:""}
+    <button class="btn secondary" id="tkClose" style="margin-top:8px">Fechar</button>`;
+  const thread=$("#tkThread"); if(thread) thread.scrollTop=thread.scrollHeight;
+  $("#tkClose").addEventListener("click",closeModal);
+  const rs=$("#tkReplySend");
+  if(rs) rs.addEventListener("click",async()=>{
+    const corpo=$("#tkReply").value.trim(); if(!corpo) return toast("Escreva a resposta.");
+    rs.disabled=true;
+    try{ await rpc("ticket_mensagem_enviar",{p_ticket:id,p_corpo:corpo}); await renderDashboard(); abrirTicketAdmin(id); }
+    catch(e){ rs.disabled=false; toast(e.message); }
+  });
+  $("#modal").querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",async()=>{
+    try{ await rpc("ticket_status",{p_ticket:id,p_status:b.dataset.st}); toast("Status atualizado"); await renderDashboard(); abrirTicketAdmin(id); }
+    catch(e){ toast(e.message); }
+  }));
+}
+
+// ---------- MAPA (Leaflet / OpenStreetMap) ----------
+function closeMapWrap(){ $("#mapWrap").classList.remove("show"); if(S._map){ try{ S._map.remove(); }catch(_){}; S._map=null; } }
+function initMap(lat,lng,zoom){
+  if(S._map){ try{ S._map.remove(); }catch(_){}; S._map=null; }
+  const map=L.map("mapEl").setView([lat,lng],zoom);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+  S._map=map; setTimeout(()=>{ try{ map.invalidateSize(); }catch(_){} },160);
+  return map;
+}
+function mapaGeral(){
+  if(typeof L==="undefined") return toast("Mapa indisponível (sem conexão).");
+  $("#mapTitle").textContent="Mapa dos condomínios";
+  $("#mapWrap").classList.add("show");
+  const loc=(S._conds||[]).filter(c=>c.lat!=null&&c.lng!=null);
+  const semLoc=(S._conds||[]).length-loc.length;
+  const map=initMap(loc.length?loc[0].lat:-14.24, loc.length?loc[0].lng:-53.18, loc.length?13:4);
+  const bounds=[];
+  loc.forEach(c=>{
+    const mk=L.marker([c.lat,c.lng]).addTo(map);
+    mk.bindPopup(`<b>${esc(c.nome)}</b><br>${c.cidade?esc(c.cidade)+(c.uf?"/"+esc(c.uf):""):""}<br><a href="#" data-detail="${c.id}">Ver detalhes ›</a>`);
+    bounds.push([c.lat,c.lng]);
+  });
+  if(bounds.length>1) map.fitBounds(bounds,{padding:[50,50]});
+  map.on("popupopen",e=>{
+    const a=e.popup.getElement().querySelector("[data-detail]");
+    if(a) a.addEventListener("click",ev=>{ ev.preventDefault(); closeMapWrap(); abrirDetalhe(a.dataset.detail); });
+  });
+  $("#mapFoot").innerHTML=`<span class="hint">📍 ${loc.length} no mapa${semLoc?` · ${semLoc} sem localização`:""}</span>`;
+  $("#mapClose").onclick=closeMapWrap;
+}
+function mapaDefinir(cond){
+  if(typeof L==="undefined") return toast("Mapa indisponível (sem conexão).");
+  $("#mapTitle").textContent="Localização — "+(cond.nome||"condomínio");
+  $("#mapWrap").classList.add("show");
+  const hasLoc=cond.lat!=null&&cond.lng!=null;
+  const map=initMap(hasLoc?cond.lat:-14.24, hasLoc?cond.lng:-53.18, hasLoc?15:4);
+  let marker=hasLoc?L.marker([cond.lat,cond.lng],{draggable:true}).addTo(map):null;
+  const upd=()=>{ const ll=marker.getLatLng(); const el=$("#mapLatLng"); if(el) el.textContent=`${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`; };
+  map.on("click",e=>{ if(marker) marker.setLatLng(e.latlng); else { marker=L.marker(e.latlng,{draggable:true}).addTo(map); marker.on("dragend",upd); } upd(); });
+  if(marker) marker.on("dragend",upd);
+  const temEnd=!!(cond.endereco||cond.cidade);
+  $("#mapFoot").innerHTML=`<span class="hint">Toque no mapa para posicionar. <b id="mapLatLng">${hasLoc?cond.lat.toFixed(5)+", "+cond.lng.toFixed(5):"—"}</b></span>
+    ${temEnd?'<button class="btn small secondary" id="mapGeo" style="width:auto;margin:0">🔎 Pelo endereço</button>':""}
+    <button class="btn small" id="mapSave">Salvar</button>`;
+  $("#mapGeo")?.addEventListener("click",async()=>{
+    const b=$("#mapGeo"); b.disabled=true; b.textContent="Buscando…";
+    try{
+      const q=[cond.endereco,cond.cidade,cond.uf,"Brasil"].filter(Boolean).join(", ");
+      const ll=await geocodeEndereco(q);
+      if(!ll){ toast("Endereço não localizado. Posicione manualmente."); }
+      else{ if(marker) marker.setLatLng([ll.lat,ll.lng]); else { marker=L.marker([ll.lat,ll.lng],{draggable:true}).addTo(map); marker.on("dragend",upd); } map.setView([ll.lat,ll.lng],16); upd(); toast("Local encontrado — confira e salve."); }
+    }catch(e){ toast(e.message||"Falha na busca"); }
+    b.disabled=false; b.textContent="🔎 Pelo endereço";
+  });
+  $("#mapSave").onclick=async()=>{
+    if(!marker) return toast("Toque no mapa para marcar o local.");
+    const ll=marker.getLatLng(); $("#mapSave").disabled=true;
+    try{ await rpc("plataforma_condominio_local",{p_cond:cond.id,p_lat:ll.lat,p_lng:ll.lng});
+      toast("Localização salva ✅"); closeMapWrap(); await renderDashboard();
+    }catch(e){ $("#mapSave").disabled=false; toast(e.message); }
+  };
+  $("#mapClose").onclick=closeMapWrap;
+}
+
+function drawConds(conds){
+  const el=$("#condList");
+  if(!conds.length){ el.innerHTML='<div class="empty"><div class="big">🏢</div><p>Nenhum condomínio.</p></div>'; return; }
+  el.innerHTML=conds.map(c=>{
+    const sind=(c.sindicos&&c.sindicos.length)?c.sindicos.join(", "):"— sem síndico —";
+    const semSind = !(c.sindicos&&c.sindicos.length);
+    return `<div class="tile">
+      <div class="row">
+        <div class="clickable" data-detail="${c.id}" style="flex:1;min-width:0">
+          <h3>${esc(c.nome)} ${c.ativo?'<span class="badge ok">Ativo</span>':'<span class="badge off">Suspenso</span>'} ${semSind?'<span class="badge warn2">sem síndico</span>':""} ${assinBadge(c)}</h3>
+          <div class="meta">
+            ${c.cidade?`<span>📍 ${esc(c.cidade)}${c.uf?"/"+esc(c.uf):""}</span>`:""}
+            ${c.telefone?`<span>📞 ${esc(c.telefone)}</span>`:""}
+            <span>🏠 ${c.unidades} un.</span><span>👥 ${c.membros} membro(s)</span>
+            <span>👔 ${esc(sind)}</span><span>🗓️ ${fmtDate(c.created_at)}</span>
+            ${Number(c.total_vencido)>0?`<span style="color:var(--danger);font-weight:700">⚠ ${fmtMoney(c.total_vencido)} vencido</span>`:""}
+          </div>
+          <div class="detailhint">Ver detalhes ›</div>
+        </div>
+        ${!S._suporte?`<div class="switch ${c.ativo?"on":""}" data-toggle="${c.id}:${c.ativo?0:1}" title="${c.ativo?"Suspender":"Reativar"}"></div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>abrirDetalhe(b.dataset.detail)));
+  el.querySelectorAll("[data-toggle]").forEach(b=>b.addEventListener("click",async()=>{
+    const [id,ativo]=b.dataset.toggle.split(":");
+    const novoAtivo = ativo==="1";
+    if(!novoAtivo && !(await confirmar("Suspender este condomínio? Os moradores perdem o acesso até reativar.",{danger:true,ok:"Suspender"}))) return;
+    try{ await rpc("plataforma_condominio_status",{p_cond:id,p_ativo:novoAtivo}); toast(novoAtivo?"Condomínio reativado":"Condomínio suspenso"); renderDashboard(); }
+    catch(e){ toast(e.message); }
+  }));
+}
+
+function drawAdmins(admins){
+  const el=$("#adminList");
+  el.innerHTML=admins.map(a=>`<div class="tile" style="padding:12px 16px">
+    <div class="row"><div style="flex:1"><h3 style="font-size:15px">${esc(a.nome||a.email)} <span class="badge ${a.papel==="suporte"?"trial":"ok"}">${a.papel==="suporte"?"Suporte":"Admin"}</span></h3>
+      <div class="meta"><span>📧 ${esc(a.email)}</span><span>🗓️ ${fmtDate(a.created_at)}</span>${a.user_id===S.user.id?'<span class="badge">você</span>':""}</div></div>
+      ${(!S._suporte && a.user_id!==S.user.id)?`<button class="btn small danger" data-rmadmin="${a.user_id}">Remover</button>`:""}</div>
+  </div>`).join("");
+  el.querySelectorAll("[data-rmadmin]").forEach(b=>b.addEventListener("click",async()=>{
+    if(!(await confirmar("Remover este operador da plataforma?",{danger:true,ok:"Remover"}))) return;
+    try{ await rpc("plataforma_admin_remove",{p_user:b.dataset.rmadmin}); toast("Operador removido"); renderDashboard(); }
+    catch(e){ toast(e.message); }
+  }));
+}
+
+function drawImobiliarias(){
+  const el=$("#imobList"); if(!el) return;
+  const q=S._qImob||"";
+  const list=(S._imobs||[]).filter(i=> !q || (i.nome||"").toLowerCase().includes(q) || (i.cidade||"").toLowerCase().includes(q));
+  const cnt=$("#imobCount"); if(cnt) cnt.textContent = `${list.length} de ${(S._imobs||[]).length}`;
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="big">🏘️</div><p>Nenhuma imobiliária.</p></div>'; return; }
+  el.innerHTML=list.map(i=>{
+    const [slbl,scls]=statusMens(i.status);
+    return `<div class="tile">
+    <div class="row">
+      <div class="clickable" data-imob="${i.id}" style="flex:1;min-width:0">
+        <h3>${esc(i.nome)} <span class="badge ${scls}">${slbl}</span></h3>
+        <div class="meta">
+          ${i.cidade?`<span>📍 ${esc(i.cidade)}${i.uf?"/"+esc(i.uf):""}</span>`:""}
+          <span>💳 ${i.plano?esc(i.plano):"— sem plano —"}${i.valor_mensal!=null?" · "+fmtMoney(i.valor_mensal)+"/mês":""}</span>
+          <span>🏠 ${i.imoveis||0} imóvel(is)</span>
+          <span>🔑 ${i.locacoes_ativas||0} locação(ões)</span>
+          <span>👥 ${i.membros||0} membro(s)</span>
+          <span>🗓️ ${fmtDate(i.created_at)}</span>
+        </div>
+        <div class="detailhint">Ver ficha / definir plano ›</div>
+      </div>
+    </div>
+  </div>`;}).join("");
+  el.querySelectorAll("[data-imob]").forEach(b=>b.addEventListener("click",()=>{
+    const i=(S._imobs||[]).find(x=>x.id===b.dataset.imob); if(i) fichaImobiliaria(i);
+  }));
+}
+
+function fichaImobiliaria(d){
+  const [slbl,scls]=statusMens(d.status);
+  modal(`<h2>🏘️ Ficha da imobiliária</h2><p class="sub">${esc(d.nome)}</p>
+    <div class="h" style="margin-top:6px">Assinatura <small>Mensalidade paga à Vizello</small></div>
+    <div class="mini">
+      <div class="m2"><small>Plano</small><b style="font-size:15px">${d.plano?esc(d.plano):"—"}</b></div>
+      <div class="m2"><small>Mensalidade</small><b>${d.valor_mensal!=null?fmtMoney(d.valor_mensal):"—"}</b></div>
+      <div class="m2"><small>Status</small><b><span class="badge ${scls}">${slbl}</span></b></div>
+      <div class="m2"><small>Desde</small><b style="font-size:15px">${d.inicio?new Date(d.inicio).toLocaleDateString("pt-BR"):"—"}</b></div>
+    </div>
+    <div class="h" style="margin-top:16px">Tamanho <small>Referência para o plano</small></div>
+    <div class="metrics">
+      <div class="metric"><small>Imóveis</small><b>${d.imoveis||0}</b></div>
+      <div class="metric"><small>Locações ativas</small><b>${d.locacoes_ativas||0}</b></div>
+      <div class="metric"><small>Membros</small><b>${d.membros||0}</b></div>
+    </div>
+    <div class="meta" style="margin-top:14px">
+      ${d.cidade?`<span>📍 ${esc(d.cidade)}${d.uf?"/"+esc(d.uf):""}</span>`:""}
+      ${d.cnpj?`<span>🧾 CNPJ ${esc(d.cnpj)}</span>`:""}
+      <span>🗓️ Cadastrada em ${fmtDate(d.created_at)}</span>
+    </div>
+    <div class="bar" style="margin-top:18px">
+      <button class="btn secondary" onclick="closeModal()">Fechar</button>
+      ${!S._suporte?`<button class="btn" id="fiPlano">💳 Definir plano</button>`:""}
+    </div>`);
+  $("#fiPlano")?.addEventListener("click",()=>definirPlanoImob(d));
+}
+function definirPlanoImob(d){
+  if(S._suporte) return;
+  const planos=S._planos||[];
+  modal(`<h2>Plano / assinatura</h2><p class="sub">${esc(d.nome)} — imobiliária</p>
+    <label>Plano</label><select id="ipPlano" class="field">${planos.map(p=>`<option value="${p.id}" data-v="${p.valor_mensal}" ${p.id===d.plano_id?"selected":""}>${esc(p.nome)} · ${fmtMoney(p.valor_mensal)}</option>`).join("")}</select>
+    <label>Status</label><select id="ipStatus" class="field">${["ativa","trial","atrasada","cancelada"].map(s=>`<option value="${s}" ${s===d.status?"selected":""}>${s}</option>`).join("")}</select>
+    <label>Valor mensal (R$)</label><input id="ipValor" class="field" inputmode="decimal" value="${d.valor_mensal!=null?fmtBRLInput(d.valor_mensal):""}">
+    <div id="ipErr" class="err"></div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn secondary" id="ipCancel">Cancelar</button><button class="btn" id="ipSave">Salvar</button></div>`);
+  const sel=$("#ipPlano");
+  sel.addEventListener("change",()=>{ const o=sel.options[sel.selectedIndex]; if(o) $("#ipValor").value=fmtBRLInput(o.dataset.v); });
+  $("#ipCancel").addEventListener("click",closeModal);
+  $("#ipSave").addEventListener("click",async ()=>{
+    const plano=sel.value, status=$("#ipStatus").value, valor=parseBRL($("#ipValor").value);
+    if(!plano){ const er=$("#ipErr"); er.textContent="Selecione um plano."; er.classList.add("show"); return; }
+    $("#ipSave").disabled=true;
+    try{ await rpc("plataforma_assinatura_imob_definir",{p_imob:d.id,p_plano_id:plano,p_status:status,p_valor:isNaN(valor)?null:valor});
+      closeModal(); toast("Assinatura atualizada"); renderDashboard(); }
+    catch(e){ const er=$("#ipErr"); er.textContent=e.message||"Erro"; er.classList.add("show"); $("#ipSave").disabled=false; }
+  });
+}
+
+function drawAudit(audit){
+  const el=$("#auditList"); if(!el) return;
+  if(!audit||!audit.length){ el.innerHTML='<div class="tile" style="text-align:center;color:var(--muted);padding:22px">Sem ações registradas ainda.</div>'; return; }
+  el.innerHTML=`<div class="tile scrollbox">${audit.map(a=>{
+    const label=ACAO_LABEL[a.acao]||a.acao;
+    const alvo=a.condominio?esc(a.condominio):(a.detalhe&&a.detalhe.email?esc(a.detalhe.email):"");
+    return `<div class="auditrow"><span class="aw">${esc(label)}</span>
+      <span class="ae">${alvo?"· "+alvo:""}${a.actor_email?" · por "+esc(a.actor_email):""}</span>
+      <span class="at">${esc(fmtDateTime(a.created_at))}</span></div>`;
+  }).join("")}</div>`;
+}
+
+async function abrirDetalhe(id){
+  modal('<div class="spin"></div>');
+  let d;
+  try{ d=await rpc("plataforma_condominio_detalhe",{p_cond:id}); }
+  catch(e){ closeModal(); return toast(e.message); }
+  const fin=d.financeiro||{}, at=d.atividade||{};
+  const lc=(S._conds||[]).find(c=>c.id===id)||{};
+  const membros=d.membros||[], convites=d.convites||[], unidades=d.unidades||[];
+  const sindicos=membros.filter(m=>m.role==="sindico"||m.role==="super_admin");
+  const convSind=convites.filter(c=>c.role==="sindico");
+  $("#modal").innerHTML=`
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1;min-width:0"><h2 style="margin:0">${esc(d.nome)}</h2>
+        <div class="meta" style="margin-top:5px">
+          ${d.ativo?'<span class="badge ok">Ativo</span>':'<span class="badge off">Suspenso</span>'}
+          ${d.cidade?`<span>📍 ${esc(d.cidade)}${d.uf?"/"+esc(d.uf):""}</span>`:""}
+          <span>🗓️ desde ${esc(fmtDate(d.created_at))}</span></div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto">
+        ${!S._suporte?'<button class="btn small secondary" id="dEdit">✏️ Editar</button>':''}
+        ${!S._suporte?`<button class="btn small secondary" id="dLocal">📍 ${lc.lat!=null?"Local":"Localizar"}</button>`:''}
+        <button class="btn small secondary" id="dSup">🩺 Suporte</button>
+      </div>
+    </div>
+    ${(d.cnpj||d.endereco||d.cep||d.telefone)?`<div class="dsec"><div class="t">Dados cadastrais</div>
+      ${d.cnpj?`<div class="drow"><span class="k">CNPJ</span><span class="v">${esc(String(d.cnpj).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"))}</span></div>`:""}
+      ${d.endereco?`<div class="drow"><span class="k">Endereço</span><span class="v">${esc(d.endereco)}</span></div>`:""}
+      ${d.cep?`<div class="drow"><span class="k">CEP</span><span class="v">${esc(String(d.cep).replace(/^(\d{5})(\d{3})$/,"$1-$2"))}</span></div>`:""}
+      ${d.telefone?`<div class="drow"><span class="k">Telefone</span><span class="v">${esc(d.telefone)}</span></div>`:""}
+    </div>`:""}
+    <div class="dsec"><div class="t">Plano &amp; assinatura</div>
+      <div class="drow"><span class="k">Plano</span><span class="v">${lc.plano?esc(lc.plano):"— sem plano —"}</span></div>
+      <div class="drow"><span class="k">Status</span><span class="v">${lc.assinatura_status?(ASSIN_LABEL[lc.assinatura_status]||lc.assinatura_status):"—"}</span></div>
+      ${!S._suporte?'<button class="btn small" id="dPlano" style="margin-top:10px">💳 Definir plano / status</button>':''}
+    </div>
+    <div class="dsec"><div class="t">Onboarding <span style="font-weight:600;color:var(--muted)">${[sindicos.length>0,(d.unidades_total||0)>0,!!at.ultimo_comunicado,!!lc.assinatura_status].filter(Boolean).length}/4</span></div>
+      <div class="drow"><span class="k">${sindicos.length?"✅":"⬜"} Síndico vinculado</span></div>
+      <div class="drow"><span class="k">${(d.unidades_total||0)>0?"✅":"⬜"} Unidades cadastradas</span></div>
+      <div class="drow"><span class="k">${at.ultimo_comunicado?"✅":"⬜"} Primeiro comunicado publicado</span></div>
+      <div class="drow"><span class="k">${lc.assinatura_status?"✅":"⬜"} Plano/assinatura definido</span></div>
+    </div>
+    <div class="dsec"><div class="t">Financeiro</div><div class="dgrid">
+      <div class="dcard"><small>Cobranças abertas</small><b>${fin.abertas||0}</b></div>
+      <div class="dcard ${fin.vencidas?"bad":""}"><small>Vencidas</small><b>${fin.vencidas||0}</b></div>
+      <div class="dcard"><small>Total em aberto</small><b>${fmtMoney(fin.total_aberto)}</b></div>
+      <div class="dcard ${Number(fin.total_vencido)>0?"bad":""}"><small>Inadimplência</small><b>${fmtMoney(fin.total_vencido)}</b></div>
+    </div></div>
+    <div class="dsec"><div class="t">Atividade</div>
+      <div class="drow"><span class="k">Último comunicado</span><span class="v">${esc(tempoRel(at.ultimo_comunicado))}</span></div>
+      <div class="drow"><span class="k">Última ocorrência</span><span class="v">${esc(tempoRel(at.ultima_ocorrencia))}</span></div>
+      <div class="drow"><span class="k">Ocorrências abertas</span><span class="v">${at.ocorrencias_abertas||0}</span></div>
+      <div class="drow"><span class="k">Unidades / Membros</span><span class="v">${d.unidades_total} / ${d.membros_total}</span></div>
+    </div>
+    <div class="dsec"><div class="t">Síndico</div>
+      ${sindicos.length? sindicos.map(s=>`<div class="personrow">👔 ${esc(s.nome||s.email)} <span class="rl">${ROLE_LABEL[s.role]||s.role}</span></div>`).join("")
+        : '<div style="color:var(--brand);font-size:13.5px;padding:6px 0;font-weight:600">Nenhum síndico vinculado.</div>'}
+      ${convSind.map(c=>`<div class="personrow">✉️ ${esc(c.email)} <span class="rl">convite pendente</span></div>`).join("")}
+      ${!S._suporte?`<button class="btn small" id="dSind" style="margin-top:10px">${sindicos.length?"🔄 Trocar / reenviar síndico":"➕ Definir síndico"}</button>`:''}
+    </div>
+    <div class="dsec"><div class="t">Membros (${membros.length})</div>
+      <div class="scrollbox">${membros.length? membros.map(m=>`<div class="personrow">${esc(m.nome||m.email)} ${m.unidade?`<span style="color:var(--muted);font-size:12px">${esc(m.unidade)}</span>`:""} <span class="rl">${ROLE_LABEL[m.role]||m.role}</span></div>`).join("") : '<div style="color:var(--muted);padding:6px 0">Nenhum membro.</div>'}</div></div>
+    <div class="dsec"><div class="t">Unidades (${unidades.length})</div>
+      <div class="scrollbox">${unidades.length? unidades.map(u=>`<div class="personrow">🏠 ${esc((u.bloco?u.bloco+" ":"")+u.numero)} <span class="rl">${u.membros} morador(es)</span></div>`).join("") : '<div style="color:var(--muted);padding:6px 0">Nenhuma unidade cadastrada.</div>'}</div>
+      ${!S._suporte?`<button class="btn small secondary" id="dGerUn" style="margin-top:10px">➕ Gerar unidades em massa</button>`:""}</div>
+    <button class="btn secondary" id="dClose" style="margin-top:16px">Fechar</button>`;
+  $("#dClose").addEventListener("click",closeModal);
+  $("#dEdit")?.addEventListener("click",()=>editarCondominio(d));
+  $("#dSind")?.addEventListener("click",()=>definirSindico(d));
+  $("#dSup").addEventListener("click",()=>fichaSuporte(d));
+  $("#dLocal")?.addEventListener("click",()=>mapaDefinir({id:d.id,nome:d.nome,lat:lc.lat,lng:lc.lng,endereco:d.endereco,cidade:d.cidade,uf:d.uf}));
+  $("#dGerUn")?.addEventListener("click",()=>gerarUnidadesModal(d));
+  $("#dPlano")?.addEventListener("click",()=>assinaturaEditar(d,lc));
+}
+function gerarUnidadesModal(d){
+  modal(`<h2>Gerar unidades</h2><p class="sub">${esc(d.nome)} — cria as unidades em massa (duplicadas são ignoradas).</p>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1"><label style="margin-top:0">Blocos</label><input id="guBlocos" class="field" inputmode="numeric" value="1"></div>
+      <div style="flex:1"><label style="margin-top:0">Andares</label><input id="guAndares" class="field" inputmode="numeric" value="4"></div>
+      <div style="flex:1"><label style="margin-top:0">Aptos/andar</label><input id="guPorAndar" class="field" inputmode="numeric" value="4"></div>
+    </div>
+    <div id="guPrev" class="meta" style="margin:10px 2px 0"></div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn secondary" id="guCancel">Cancelar</button><button class="btn" id="guSave">Gerar</button></div>`);
+  const prev=()=>{ const n=gerarUnidades(+$("#guBlocos").value,+$("#guAndares").value,+$("#guPorAndar").value);
+    const ex=n.slice(0,4).map(u=>(u.bloco?u.bloco+"-":"")+u.numero).join(", ");
+    $("#guPrev").innerHTML=`Serão criadas <b style="color:var(--ink)">${n.length}</b> unidade(s). Ex.: ${esc(ex)}${n.length>4?"…":""}`; };
+  ["guBlocos","guAndares","guPorAndar"].forEach(id=>$("#"+id).addEventListener("input",prev)); prev();
+  $("#guCancel").addEventListener("click",closeModal);
+  $("#guSave").addEventListener("click",async()=>{
+    const lista=gerarUnidades(+$("#guBlocos").value,+$("#guAndares").value,+$("#guPorAndar").value);
+    if(!lista.length) return toast("Configure ao menos 1 unidade.");
+    $("#guSave").disabled=true; $("#guSave").textContent="Criando…";
+    try{ const n=await rpc("plataforma_unidades_criar",{p_cond:d.id,p_unidades:lista});
+      closeModal(); toast(`${n} unidade(s) criada(s) ✅`); abrirDetalhe(d.id); }
+    catch(e){ $("#guSave").disabled=false; $("#guSave").textContent="Gerar"; toast(e.message); }
+  });
+}
+
+function assinaturaEditar(d,lc){
+  const planos=S._planos||[];
+  modal(`<h2>Plano &amp; assinatura</h2><p class="sub">${esc(d.nome)}</p>
+    <label>Plano</label>
+    <select id="asPlano" class="field selfield" style="width:100%">
+      ${planos.map(p=>`<option value="${p.id}" ${lc&&lc.plano===p.nome?"selected":""}>${esc(p.nome)} — ${fmtMoney(p.valor_mensal)}</option>`).join("")}
+    </select>
+    <label>Status</label>
+    <select id="asStatus" class="field selfield" style="width:100%">
+      ${["trial","ativa","atrasada","cancelada"].map(s=>`<option value="${s}" ${lc&&lc.assinatura_status===s?"selected":""}>${ASSIN_LABEL[s]}</option>`).join("")}
+    </select>
+    <label>Valor mensal <span style="font-weight:400;color:var(--muted)">(vazio = valor do plano)</span></label>
+    <input id="asValor" class="field" inputmode="decimal" placeholder="Ex.: 149.90">
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="asCancel">Voltar</button>
+      <button class="btn" id="asSave">Salvar</button></div>`);
+  $("#asCancel").addEventListener("click",()=>abrirDetalhe(d.id));
+  $("#asSave").addEventListener("click",async()=>{
+    const plano=$("#asPlano").value, status=$("#asStatus").value;
+    const vRaw=$("#asValor").value.trim().replace(",","."); const valor=vRaw?Number(vRaw):null;
+    if(vRaw && (isNaN(valor)||valor<0)) return toast("Valor inválido.");
+    $("#asSave").disabled=true;
+    try{ await rpc("plataforma_assinatura_definir",{p_cond:d.id,p_plano_id:plano,p_status:status,p_valor:valor});
+      toast("Assinatura atualizada ✅"); await renderDashboard(); abrirDetalhe(d.id);
+    }catch(e){ $("#asSave").disabled=false; toast(e.message); }
+  });
+}
+
+async function fichaSuporte(d){
+  modal('<div class="spin"></div>');
+  let s;
+  try{ s=await rpc("plataforma_condominio_suporte",{p_cond:d.id,p_limit:8}); }
+  catch(e){ closeModal(); return toast(e.message); }
+  const com=s.comunicados||[], oc=s.ocorrencias||[], cb=s.cobrancas||{};
+  const OC_ST={aberta:"Aberta",em_andamento:"Em andamento",resolvida:"Resolvida",cancelada:"Cancelada"};
+  $("#modal").innerHTML=`<h2>🩺 Ficha de suporte</h2><p class="sub">${esc(d.nome)} — visão somente leitura</p>
+    <div class="dsec"><div class="t">Cobranças</div><div class="dgrid">
+      <div class="dcard"><small>Abertas</small><b>${cb.abertas||0}</b></div>
+      <div class="dcard ${cb.vencidas?"bad":""}"><small>Vencidas</small><b>${cb.vencidas||0}</b></div>
+      <div class="dcard"><small>Pagas (30d)</small><b>${cb.pagas_30d||0}</b></div>
+    </div></div>
+    <div class="dsec"><div class="t">Comunicados recentes (${com.length})</div>
+      <div class="scrollbox">${com.length?com.map(c=>`<div class="personrow">${c.prioridade==="urgente"?"🔴 ":""}${esc(c.titulo)} <span class="rl">${esc(fmtDate(c.publicado_em))}</span></div>`).join(""):'<div style="color:var(--muted);padding:6px 0">Nenhum.</div>'}</div></div>
+    <div class="dsec"><div class="t">Ocorrências recentes (${oc.length})</div>
+      <div class="scrollbox">${oc.length?oc.map(o=>`<div class="personrow">${esc(o.titulo)} <span class="rl">${OC_ST[o.status]||o.status}</span></div>`).join(""):'<div style="color:var(--muted);padding:6px 0">Nenhuma.</div>'}</div></div>
+    <button class="btn secondary" id="fsBack" style="margin-top:16px">Voltar</button>`;
+  $("#fsBack").addEventListener("click",()=>abrirDetalhe(d.id));
+}
+
+function editarCondominio(d){
+  modal(`<h2>Editar condomínio</h2>
+    <label>Nome</label><input id="edNome" class="field" value="${esc(d.nome)}">
+    <div style="display:flex;gap:10px"><div style="flex:2"><label>Cidade</label><input id="edCidade" class="field" value="${esc(d.cidade||"")}"></div>
+      <div style="flex:1"><label>UF</label><input id="edUf" class="field" maxlength="2" value="${esc(d.uf||"")}"></div></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="edCancel">Voltar</button>
+      <button class="btn" id="edSave">Salvar</button></div>`);
+  $("#edCancel").addEventListener("click",()=>abrirDetalhe(d.id));
+  $("#edSave").addEventListener("click",async()=>{
+    const nome=$("#edNome").value.trim(); if(!nome) return toast("Informe o nome.");
+    $("#edSave").disabled=true;
+    try{ await rpc("plataforma_condominio_editar",{p_cond:d.id,p_nome:nome,
+        p_cidade:$("#edCidade").value.trim()||null,p_uf:$("#edUf").value.trim()||null});
+      toast("Dados atualizados ✅"); renderDashboard(); abrirDetalhe(d.id);
+    }catch(e){ $("#edSave").disabled=false; toast(e.message); }
+  });
+}
+
+function definirSindico(d){
+  const tem=(d.membros||[]).some(m=>m.role==="sindico"||m.role==="super_admin");
+  modal(`<h2>${tem?"Trocar / reenviar síndico":"Definir síndico"}</h2>
+    <p class="sub">Informe o e-mail. Se já houver conta no VIZELLO, vincula na hora; senão, envia um convite pendente.</p>
+    <label>E-mail do síndico</label><input id="siEmail" class="field" type="email" placeholder="sindico@email.com">
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="siCancel">Voltar</button>
+      <button class="btn" id="siSave">Confirmar</button></div>`);
+  $("#siCancel").addEventListener("click",()=>abrirDetalhe(d.id));
+  $("#siSave").addEventListener("click",async()=>{
+    const email=$("#siEmail").value.trim(); if(!email) return toast("Informe o e-mail.");
+    $("#siSave").disabled=true;
+    try{ const r=await rpc("plataforma_condominio_sindico_definir",{p_cond:d.id,p_email:email});
+      toast(r.status==="sindico_vinculado"?"Síndico vinculado ✅":"Convite enviado ✉️");
+      renderDashboard(); abrirDetalhe(d.id);
+    }catch(e){ $("#siSave").disabled=false; toast(e.message); }
+  });
+}
+
+function maskCnpj(v){ v=(v||"").replace(/\D/g,"").slice(0,14);
+  return v.replace(/^(\d{2})(\d)/,"$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3")
+          .replace(/\.(\d{3})(\d)/,".$1/$2").replace(/(\d{4})(\d)/,"$1-$2"); }
+async function buscarCnpj(){
+  const raw=($("#ncCnpj").value||"").replace(/\D/g,""), st=$("#ncCnpjSt"), btn=$("#ncBuscar");
+  const setSt=(m,c)=>{ st.innerHTML=m; st.style.color=c; };
+  if(raw.length!==14){ setSt("Digite os 14 dígitos do CNPJ.","var(--danger)"); return; }
+  setSt("Buscando dados na Receita…","var(--muted)"); btn.disabled=true;
+  try{
+    const res=await fetch(`https://brasilapi.com.br/api/cnpj/v1/${raw}`);
+    if(!res.ok) throw new Error(res.status===404?"CNPJ não encontrado na base.":"Falha na consulta ("+res.status+").");
+    const d=await res.json();
+    const nome=(d.razao_social&&d.razao_social.trim())||(d.nome_fantasia&&d.nome_fantasia.trim())||"";
+    $("#ncNome").value=nome;
+    $("#ncCidade").value=d.municipio||"";
+    $("#ncUf").value=(d.uf||"").toUpperCase();
+    let end=[d.logradouro,d.numero].filter(Boolean).join(", ");
+    if(d.complemento&&d.complemento.trim()) end+=` - ${d.complemento.trim()}`;
+    if(d.bairro) end+=` - ${d.bairro}`;
+    if(d.cep) end+=` - CEP ${String(d.cep).replace(/(\d{5})(\d{3})/,"$1-$2")}`;
+    $("#ncEnd").value=end.replace(/^[,\s-]+/,"").trim();
+    const cep=$("#ncCep"); if(cep) cep.value=d.cep?String(d.cep).replace(/\D/g,"").replace(/(\d{5})(\d{3})/,"$1-$2"):"";
+    const tel=$("#ncTel"); if(tel && d.ddd_telefone_1){ const t=String(d.ddd_telefone_1).replace(/\D/g,""); tel.value=t.length>=10?t.replace(/^(\d{2})(\d{4,5})(\d{4})$/,"($1) $2-$3"):d.ddd_telefone_1; }
+    const situ=(d.descricao_situacao_cadastral||"").toUpperCase();
+    if(situ && situ!=="ATIVA") setSt(`⚠️ Dados preenchidos — situação cadastral: <b>${esc(situ)}</b>`,"var(--warn)");
+    else setSt("✅ Dados preenchidos. Confira e cadastre.","var(--ok)");
+  }catch(e){
+    setSt(/Failed to fetch|NetworkError/i.test(e.message)?"Sem conexão com o serviço de CNPJ. Preencha manualmente.":esc(e.message),"var(--danger)");
+  }
+  btn.disabled=false;
+}
+// --- Geocoding (endereço -> lat/lng via Nominatim/OpenStreetMap) ---
+async function geocodeEndereco(q){
+  if(!q||!q.trim()) return null;
+  const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&addressdetails=0&q=${encodeURIComponent(q.trim())}`;
+  const res=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!res.ok) throw new Error("Falha no geocoding ("+res.status+")");
+  const arr=await res.json();
+  if(!arr||!arr.length) return null;
+  const lat=parseFloat(arr[0].lat), lng=parseFloat(arr[0].lon);
+  return (isFinite(lat)&&isFinite(lng))?{lat,lng}:null;
+}
+// --- Gerador de unidades em massa ---
+function letraBloco(i){ let s="",n=i+1; while(n>0){ n--; s=String.fromCharCode(65+(n%26))+s; n=Math.floor(n/26); } return s; }
+function gerarUnidades(blocos, andares, porAndar){
+  blocos=Math.max(1,Math.min(50,blocos|0)); andares=Math.max(1,Math.min(99,andares|0)); porAndar=Math.max(1,Math.min(99,porAndar|0));
+  const out=[];
+  for(let b=0;b<blocos;b++){ const bloco= blocos>1? letraBloco(b): null;
+    for(let a=1;a<=andares;a++) for(let u=1;u<=porAndar;u++) out.push({bloco, numero:String(a*100+u)}); }
+  return out;
+}
+function novoCondominio(){
+  modal(`<h2>Novo condomínio</h2><p class="sub">Informe o CNPJ para puxar os dados automaticamente — ou preencha à mão.</p>
+    <label>CNPJ</label>
+    <div style="display:flex;gap:8px"><input id="ncCnpj" class="field" inputmode="numeric" placeholder="00.000.000/0000-00" style="flex:1">
+      <button class="btn small" id="ncBuscar" style="width:auto;margin:0;white-space:nowrap">🔍 Buscar</button></div>
+    <div id="ncCnpjSt" class="meta" style="margin:6px 2px 2px;min-height:16px"></div>
+    <label>Nome / Razão social</label><input id="ncNome" class="field" placeholder="Residencial Bela Vista">
+    <label>Endereço</label><input id="ncEnd" class="field" placeholder="Rua, nº - bairro - CEP">
+    <div style="display:flex;gap:10px"><div style="flex:1"><label>CEP</label><input id="ncCep" class="field" inputmode="numeric" placeholder="00000-000"></div>
+      <div style="flex:1"><label>Telefone</label><input id="ncTel" class="field" inputmode="tel" placeholder="(00) 00000-0000"></div></div>
+    <div style="display:flex;gap:10px"><div style="flex:2"><label>Cidade</label><input id="ncCidade" class="field" placeholder="Petrópolis"></div>
+      <div style="flex:1"><label>UF</label><input id="ncUf" class="field" maxlength="2" placeholder="RJ"></div></div>
+    <label>E-mail do síndico (opcional)</label><input id="ncSind" class="field" type="email" placeholder="sindico@email.com">
+    <div class="dsec" style="margin-top:18px;background:var(--chip);border-radius:12px;padding:12px 13px">
+      <label style="display:flex;align-items:center;gap:10px;margin:0;cursor:pointer;color:var(--ink)"><span class="switch" id="ncGerUn"></span> <b>Gerar unidades automaticamente</b></label>
+      <div id="ncUnBox" class="hide" style="margin-top:12px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1"><label style="margin-top:0">Blocos</label><input id="ncBlocos" class="field" inputmode="numeric" value="1"></div>
+          <div style="flex:1"><label style="margin-top:0">Andares</label><input id="ncAndares" class="field" inputmode="numeric" value="4"></div>
+          <div style="flex:1"><label style="margin-top:0">Aptos/andar</label><input id="ncPorAndar" class="field" inputmode="numeric" value="4"></div>
+        </div>
+        <div id="ncUnPrev" class="meta" style="margin:8px 2px 0"></div>
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;color:var(--ink)"><span class="switch on" id="ncGeo"></span> Localizar no mapa pelo endereço</label>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn secondary" id="ncCancel">Cancelar</button>
+      <button class="btn" id="ncSave">Cadastrar</button></div>`);
+  $("#ncCnpj").addEventListener("input",e=>{ e.target.value=maskCnpj(e.target.value); });
+  $("#ncCnpj").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); buscarCnpj(); } });
+  $("#ncBuscar").addEventListener("click",buscarCnpj);
+  let gerUn=false, geo=true;
+  const prev=()=>{ const n=gerarUnidades(+$("#ncBlocos").value,+$("#ncAndares").value,+$("#ncPorAndar").value);
+    const ex=n.slice(0,3).map(u=>(u.bloco?u.bloco+"-":"")+u.numero).join(", ");
+    $("#ncUnPrev").innerHTML=`Serão criadas <b style="color:var(--ink)">${n.length}</b> unidade(s). Ex.: ${esc(ex)}${n.length>3?"…":""}`+(n.length>1500?' <span style="color:var(--warn)">(muitas — pode demorar)</span>':""); };
+  $("#ncGerUn").addEventListener("click",()=>{ gerUn=!gerUn; $("#ncGerUn").classList.toggle("on",gerUn); $("#ncUnBox").classList.toggle("hide",!gerUn); if(gerUn) prev(); });
+  ["ncBlocos","ncAndares","ncPorAndar"].forEach(id=>$("#"+id).addEventListener("input",prev));
+  $("#ncGeo").addEventListener("click",()=>{ geo=!geo; $("#ncGeo").classList.toggle("on",geo); });
+  $("#ncCep").addEventListener("input",e=>{ e.target.value=e.target.value.replace(/\D/g,"").slice(0,8).replace(/(\d{5})(\d)/,"$1-$2"); });
+  $("#ncCancel").addEventListener("click",closeModal);
+  $("#ncSave").addEventListener("click",async()=>{
+    const nome=$("#ncNome").value.trim(); if(!nome) return toast("Informe o nome.");
+    const cnpj=($("#ncCnpj").value||"").replace(/\D/g,"");
+    if(cnpj && cnpj.length!==14) return toast("CNPJ inválido (14 dígitos).");
+    const endereco=$("#ncEnd").value.trim(), cidade=$("#ncCidade").value.trim(), uf=$("#ncUf").value.trim();
+    const btn=$("#ncSave"); btn.disabled=true; btn.textContent="Cadastrando…";
+    try{
+      const r=await rpc("plataforma_condominio_criar",{p_nome:nome,p_cidade:cidade||null,p_uf:uf||null,
+        p_sindico_email:$("#ncSind").value.trim()||null,p_cnpj:cnpj||null,p_endereco:endereco||null,
+        p_cep:($("#ncCep").value||"").replace(/\D/g,"")||null,p_telefone:$("#ncTel").value.trim()||null});
+      let extra="";
+      if(gerUn){
+        const lista=gerarUnidades(+$("#ncBlocos").value,+$("#ncAndares").value,+$("#ncPorAndar").value);
+        if(lista.length){ btn.textContent="Criando unidades…";
+          try{ const n=await rpc("plataforma_unidades_criar",{p_cond:r.id,p_unidades:lista}); extra=` · ${n} unidade(s)`; }
+          catch(e){ console.error(e); extra=" · (falha ao gerar unidades)"; } }
+      }
+      if(geo && (endereco||cidade)){ btn.textContent="Localizando…";
+        try{ const q=[endereco,cidade,uf,"Brasil"].filter(Boolean).join(", ");
+          const ll=await geocodeEndereco(q);
+          if(ll){ await rpc("plataforma_condominio_local",{p_cond:r.id,p_lat:ll.lat,p_lng:ll.lng}); extra+=" · 📍 no mapa"; } }
+        catch(e){ console.error(e); }
+      }
+      closeModal();
+      toast((r.status==="sindico_vinculado"?"Criado e síndico vinculado ✅"
+        : r.status==="sindico_convidado"?"Criado; síndico convidado ✉️"
+        : "Condomínio criado ✅")+extra);
+      renderDashboard();
+    }catch(e){ btn.disabled=false; btn.textContent="Cadastrar"; toast(e.message); }
+  });
+}
+
+function addOperador(){
+  modal(`<h2>Adicionar operador</h2><p class="sub">A pessoa precisa já ter uma conta no VIZELLO.</p>
+    <label>E-mail</label><input id="aoEmail" class="field" type="email" placeholder="pessoa@empresa.com">
+    <label>Papel</label>
+    <select id="aoPapel" class="field selfield" style="width:100%">
+      <option value="admin">Admin — acesso total</option>
+      <option value="suporte">Suporte — somente leitura + atendimento</option>
+    </select>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn secondary" id="aoCancel">Cancelar</button>
+      <button class="btn" id="aoSave">Adicionar</button></div>`);
+  $("#aoCancel").addEventListener("click",closeModal);
+  $("#aoSave").addEventListener("click",async()=>{
+    const email=$("#aoEmail").value.trim(); if(!email) return toast("Informe o e-mail.");
+    try{ await rpc("plataforma_admin_add",{p_email:email,p_papel:$("#aoPapel").value}); closeModal(); toast("Operador adicionado ✅"); renderDashboard(); }
+    catch(e){ toast(e.message); }
+  });
+}
+
+// ---------- PWA (instalável) ----------
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{})); }
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredPrompt=e; });
+const isStandalone=()=> window.matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
+async function promptInstall(){
+  if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; return; }
+  toast('Abra o menu do navegador e escolha "Instalar app" / "Adicionar à tela inicial".');
+}
+
+// ---------- TEMA (claro/escuro) ----------
+function currentTheme(){ return document.documentElement.getAttribute("data-theme")||"light"; }
+function applyTheme(t){ document.documentElement.setAttribute("data-theme",t); try{ localStorage.setItem("vz-theme",t); }catch(_){}; const el=document.querySelector('meta[name=theme-color]'); if(el) el.content=t==="dark"?"#0d1f30":"#183451"; }
+function toggleTheme(){ applyTheme(currentTheme()==="dark"?"light":"dark"); }
+
+// ---------- INIT ----------
+// Link de recuperação de senha: aguarda o evento PASSWORD_RECOVERY (tela de nova senha).
+if(!/[#&]type=recovery/.test(location.hash)) boot().catch(e=>{ console.error(e); show("login"); });
+</script>
+</body>
+</html>

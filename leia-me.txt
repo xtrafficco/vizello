@@ -1,0 +1,44 @@
+VIZELLO — pasta de publicação (site estático)
+=============================================
+
+Esta pasta contém APENAS o que vai para o host web. Migrações SQL, Edge
+Functions, testes e documentação NÃO entram aqui (são backend, já em produção).
+
+ESTRUTURA (3 apps + página legal) — cada arquivo é ÚNICO e roteia por papel/persona:
+  condominio.html   Condomínio: login → escolhe Morador/Síndico/Portaria (inline)
+  imobiliaria.html  Imobiliária: login → detecta Gestor / Inquilino / Proprietário
+  admin.html        Painel da plataforma (Vizello)
+  privacidade.html  Política de privacidade
+
+ROTAS (HTTPS) — já configuradas em _redirects (Netlify/Cloudflare) e vercel.json:
+  /              → condominio.html         (também /login /morador /sindico /portaria)
+  /imobiliaria   → imobiliaria.html        (também /morador-imob /proprietario, com ?c=<token>)
+  /admin         → admin.html
+  /privacidade   → privacidade.html
+
+COMO SUBIR (escolha 1 host com HTTPS):
+  - Netlify:  app.netlify.com/drop → arraste ESTA pasta inteira.
+  - Cloudflare Pages: Create → Upload assets → suba estes arquivos.
+  - Vercel:   `npx vercel` dentro desta pasta (vercel.json cuida das rotas).
+
+IMPORTANTE:
+  1) HTTPS é obrigatório (PWA, notificações e Web Push só funcionam sob HTTPS).
+  2) Suba a PASTA INTEIRA (caminhos absolutos: /app.css, /app.js, /sw.js, etc.).
+  3) Supabase → Authentication → URL Configuration:
+       Site URL: https://SEU-DOMINIO
+       Redirect URLs: https://SEU-DOMINIO/**
+     (os links de confirmação/recuperação abrem no arquivo único, que trata recovery.)
+  4) Service Worker: cache "condoapp-v16" (novas versões chegam sozinhas no próximo load).
+
+BACKEND — SECRETS das Edge Functions (Supabase → Project Settings → Edge Functions):
+  Web Push (interfone/avisos com app fechado):
+    VAPID_PUBLIC / VAPID_PRIVATE / VAPID_SUBJECT (mailto:avisos@SEU-DOMINIO)
+  E-mail (avisos + convite de inquilino/proprietário):
+    RESEND_API_KEY, EMAIL_FROM (ex.: "VIZELLO <no-reply@seu-dominio>")
+  MENSALIDADES da Vizello via PIX (conta Mercado Pago da VIZELLO):
+    MP_PLATAFORMA_ACCESS_TOKEN     (Access Token de produção da conta Vizello)
+    MP_PLATAFORMA_WEBHOOK_SECRET   (assinatura secreta do webhook no painel MP)
+    → Registre no painel MP (webhooks, evento "payment"):
+      https://<PROJECT_REF>.supabase.co/functions/v1/mp-mensalidade-webhook
+
+Sem os secrets, os recursos ficam inativos com aviso amigável (não quebram o app).

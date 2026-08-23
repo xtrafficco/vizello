@@ -1,0 +1,16 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/condominio.html" },
+    { "source": "/login", "destination": "/condominio.html" },
+    { "source": "/condominio", "destination": "/condominio.html" },
+    { "source": "/morador", "destination": "/condominio.html" },
+    { "source": "/sindico", "destination": "/condominio.html" },
+    { "source": "/portaria", "destination": "/condominio.html" },
+    { "source": "/privacidade", "destination": "/privacidade.html" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/imobiliaria", "destination": "/imobiliaria.html" },
+    { "source": "/morador-imob", "destination": "/imobiliaria.html" },
+    { "source": "/proprietario", "destination": "/imobiliaria.html" }
+  ]
+}

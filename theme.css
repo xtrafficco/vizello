@@ -1,0 +1,24 @@
+/* =====================================================================
+   VIZELLO — Design tokens compartilhados (morador + admin)
+   Paleta: Deep Tide / Citrus Sun / Golden Sand / Coral Reef
+   Fonte única da paleta e do modo escuro (data-theme="dark" no <html>).
+   ===================================================================== */
+:root{
+  --bg:#183451; --bg2:#0f2942; --surface:#ffffff; --ink:#183451; --muted:#6a7d8a;
+  --line:#e7e0d4; --brand:#a9501c; --brand-ink:#8a3f14; --accent:#ffbe54;
+  --sand:#d4af83; --ok:#1e9e6a; --warn:#c9622a; --danger:#c0392b; --chip:#f6edde;
+  --shadow:0 6px 24px rgba(24,52,81,.14);
+  --r:16px;
+  --app-bg:#eef4f5; --field-bg:#fbfdfe;
+  /* cores das letras do wordmark (logo) */
+  --wm-orange:#c85a1e; --wm-gold:#e0a11c; --wm-blue:#2e6e92; --wm-navy:#183451;
+}
+:root[data-theme="dark"]{
+  --bg:#0d1f30; --bg2:#0a1826; --surface:#16283a; --ink:#e7eef4; --muted:#93a7b6;
+  --line:#2a3f52; --brand:#d1712f; --brand-ink:#f0b183; --accent:#ffbe54;
+  --sand:#d4af83; --ok:#3cc190; --warn:#e08a4a; --danger:#e2645a; --chip:#22384b;
+  --shadow:0 6px 24px rgba(0,0,0,.45);
+  --app-bg:#0a1826; --field-bg:#1b2f43;
+  --wm-navy:#e7eef4; /* letra navy do wordmark fica clara no escuro */
+}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
