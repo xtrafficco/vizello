@@ -202,7 +202,7 @@ try{ localStorage.removeItem("vz-login-target"); }catch(_){}  // limpa preferên
   const form=$("#authForm"); if(!form||$("#privNote")) return;
   const d=document.createElement("div");
   d.id="privNote"; d.className="switch"; d.style.cssText="margin-top:10px;font-size:12.5px";
-  d.innerHTML='Ao criar conta, você concorda com a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.';
+  d.innerHTML='Ao criar conta, você concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.';
   form.appendChild(d);
 })();
 
@@ -870,7 +870,8 @@ async function renderComunicados(){
   const readSet=new Set((reads||[]).map(r=>r.comunicado_id));
   const anexMap=await fetchAnexos("comunicado",(coms||[]).map(c=>c.id));
 
-  let html=`<div class="h">Avisos <small>Comunicados do seu condomínio</small></div>`;
+  const _nome=(S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email&&S.user.email.split("@")[0])||"";
+  let html=`<div class="h">${_nome?`Olá, ${esc(_nome)} <small>Avisos do seu condomínio</small>`:`Avisos <small>Comunicados do seu condomínio</small>`}</div>`;
   // Banner de emergência: a emergência mais recente das últimas 24h
   const agora=Date.now();
   const emerg=(coms||[]).find(c=>c.prioridade==="emergencia" && (agora-new Date(c.publicado_em).getTime())<24*3600*1000);

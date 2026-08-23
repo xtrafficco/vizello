@@ -106,6 +106,14 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   .drow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
   .drow:last-child{border-bottom:none} .drow .k{color:var(--muted)} .drow .v{font-weight:600;text-align:right}
+  nav.bottom button .ic{display:flex;align-items:center;justify-content:center;height:22px}
+  nav.bottom button .ic svg{display:block}
+  .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .svc-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:0 1px 2px rgba(15,43,61,.04);cursor:pointer}
+  .svc-card:hover{border-color:var(--brand)}
+  .svc-card .svc-ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--chip);color:var(--brand)}
+  .svc-card .svc-t{font-weight:700;font-size:15px;color:var(--ink)}
+  .svc-card .svc-d{font-size:12.5px;color:var(--muted)}
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:flex-end;justify-content:center;z-index:40}
   .modal-bg.show{display:flex}
@@ -160,6 +168,7 @@
     <label>Senha</label><input id="suPass" class="field" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
     <div id="suErr" class="err"></div><div id="suMsg" class="ok"></div>
     <button id="suBtn" class="btn">Criar conta</button>
+    <div class="switch-txt" style="font-size:12px;margin-top:8px">Ao criar conta, você concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</div>
     <div class="switch-txt">Já tem conta? <button id="goLogin">Entrar</button></div>
   </div>
 </div>
@@ -218,6 +227,16 @@ const $=s=>document.querySelector(s);
 const view=()=>$("#view");
 function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+function nomeUsuario(){ return (S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email&&S.user.email.split("@")[0])||"Você"; }
+function saudacao(){ return "Olá, "+nomeUsuario(); }
+// Link "adicionar à agenda" (Google Calendar / celular) a partir de uma data
+function calLink({title,details,location,start,minutes=60}){
+  const z=n=>String(n).padStart(2,"0");
+  const fmt=d=>`${d.getUTCFullYear()}${z(d.getUTCMonth()+1)}${z(d.getUTCDate())}T${z(d.getUTCHours())}${z(d.getUTCMinutes())}00Z`;
+  const s=new Date(start), e=new Date(s.getTime()+minutes*60000);
+  const q=new URLSearchParams({action:"TEMPLATE",text:title||"Compromisso",dates:`${fmt(s)}/${fmt(e)}`,details:details||"",location:location||""});
+  return "https://calendar.google.com/calendar/render?"+q.toString();
+}
 function modal(html){ $("#modal").innerHTML=html; $("#modalBg").classList.add("show"); }
 function closeModal(){ $("#modalBg").classList.remove("show"); }
 $("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
@@ -330,30 +349,245 @@ async function aceitarConviteAtual(){
 }
 function enterApp(){
   $("#whoImob").textContent=S.imob.nome;
-  $("#whoUser").textContent=S.user.email;
+  $("#whoUser").textContent=saudacao();
   $("#topOut").onclick=logout;
   show("app"); buildNav(); go(S.tab||"inicio");
 }
 
+// ---- ícones SVG (padrão do admin/condomínio) ----
+const SVG=(p,sz=22)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="${sz}" height="${sz}">${p}</svg>`;
+const IC={
+  inicio: SVG('<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>'),
+  imoveis: SVG('<path d="M3 9.5 12 3l9 6.5"/><path d="M5 21V10.5"/><path d="M19 21V10.5"/><path d="M5 21h14"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/>'),
+  locatarios: SVG('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 7.6a3 3 0 0 1 0 5.8"/><path d="M18.6 20a5 5 0 0 0-3-4.6"/>'),
+  financeiro: SVG('<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.5-.9-1.5-1.4-2.6-1.4-1.5 0-2.6.9-2.6 2.1 0 2.7 5.3 1.5 5.3 4.2 0 1.2-1.1 2.1-2.7 2.1-1.2 0-2.2-.5-2.7-1.4"/><path d="M12 6.4v11.2"/>'),
+  servicos: SVG('<rect x="4" y="4" width="6.5" height="6.5" rx="1.4"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"/>'),
+  donos: SVG('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+  leads: SVG('<circle cx="11" cy="11" r="6.5"/><path d="M20.5 20.5 16 16"/>'),
+  vistorias: SVG('<rect x="6" y="4" width="12" height="16.5" rx="2"/><path d="M9 3.4h6v2.2H9z"/><path d="M8.7 11l1.4 1.4L13 9.6"/><path d="M8.7 16l1.4 1.4L13 14.6"/>'),
+  mapa: SVG('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/>'),
+  comissoes: SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>'),
+  anuncios: SVG('<path d="M4 10v4h3l7 4V6L7 10H4z"/><path d="M18 9a4 4 0 0 1 0 6"/>'),
+  config: SVG('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h7M15 18h5"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="18" r="2"/>'),
+  atendimento: SVG('<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M20 19a3 3 0 0 1-3 3h-2.5"/>'),
+};
+
+// Abas principais (enxutas) + hub "Serviços" com o resto.
 const TABS=[
-  {id:"inicio",ic:"📊",label:"Início"},
-  {id:"imoveis",ic:"🏠",label:"Imóveis"},
-  {id:"vistorias",ic:"📋",label:"Vistorias"},
-  {id:"proprietarios",ic:"👤",label:"Donos"},
-  {id:"leads",ic:"🤝",label:"Leads"},
-  {id:"mapa",ic:"🗺️",label:"Mapa"},
-  {id:"financeiro",ic:"💰",label:"Financeiro"},
-  {id:"config",ic:"⚙️",label:"Config"},
+  {id:"inicio",ic:IC.inicio,label:"Início"},
+  {id:"imoveis",ic:IC.imoveis,label:"Imóveis"},
+  {id:"locatarios",ic:IC.locatarios,label:"Locatários"},
+  {id:"financeiro",ic:IC.financeiro,label:"Financeiro"},
+  {id:"servicos",ic:IC.servicos,label:"Serviços"},
 ];
+// Itens dentro de Serviços (acessados pelo hub)
+const HUB=[
+  {id:"donos",ic:IC.donos,label:"Donos",desc:"Proprietários e seus imóveis"},
+  {id:"leads",ic:IC.leads,label:"Leads",desc:"Interessados e visitas"},
+  {id:"atendimento",ic:IC.atendimento,label:"Atendimento",desc:"Chamados dos moradores"},
+  {id:"vistorias",ic:IC.vistorias,label:"Vistorias",desc:"Laudos de entrada/saída"},
+  {id:"comissoes",ic:IC.comissoes,label:"Comissões & Repasses",desc:"Relatório para os donos"},
+  {id:"mapa",ic:IC.mapa,label:"Mapa",desc:"Imóveis no mapa"},
+  {id:"anuncios",ic:IC.anuncios,label:"Anúncios (OLX/ZAP)",desc:"Publicar nos portais"},
+  {id:"config",ic:IC.config,label:"Configurações",desc:"Imobiliária, recebimento, equipe"},
+];
+const HUB_IDS=HUB.map(h=>h.id);
 function buildNav(){
   $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`;
   $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 }
 function go(tab){
   S.tab=tab;
-  $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  const navId = HUB_IDS.includes(tab) ? "servicos" : tab;
+  $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===navId));
   window.scrollTo(0,0);
-  ({inicio:renderInicio,imoveis:renderImoveis,vistorias:renderVistorias,proprietarios:renderProprietarios,leads:renderLeads,mapa:renderMapa,financeiro:renderFinanceiro,config:renderConfig}[tab]||renderInicio)();
+  const R={inicio:renderInicio,imoveis:renderImoveis,locatarios:renderLocatarios,financeiro:renderFinanceiro,
+    servicos:renderServicos,donos:renderProprietarios,proprietarios:renderProprietarios,leads:renderLeads,
+    vistorias:renderVistorias,comissoes:renderComissoes,mapa:renderMapa,anuncios:renderAnuncios,atendimento:renderAtendimentoImob,config:renderConfig};
+  (R[tab]||renderInicio)();
+}
+function renderServicos(){
+  view().innerHTML=`<div class="h">🧩 Serviços</div>
+    <div class="svc-grid">${HUB.map(h=>`<button class="svc-card" data-svc="${h.id}">
+      <span class="svc-ic">${h.ic}</span><span class="svc-t">${h.label}</span><span class="svc-d">${h.desc}</span></button>`).join("")}</div>`;
+  view().querySelectorAll("[data-svc]").forEach(b=>b.onclick=()=>go(b.dataset.svc));
+}
+
+// ---------- LOCATÁRIOS (lista + histórico) ----------
+async function renderLocatarios(){
+  view().innerHTML=`<div class="h">👥 Locatários <small>Inquilinos e histórico</small></div><div class="spin"></div>`;
+  let locs=[];
+  try{
+    const {data,error}=await sb.from("locacoes").select("*, imoveis(titulo,endereco,cidade,uf)").eq("imobiliaria_id",S.imob.id).order("inicio",{ascending:false});
+    if(error) throw error; locs=data||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  if(!locs.length){ view().innerHTML=`<div class="h">👥 Locatários</div><div class="empty"><div class="big">👥</div><p>Nenhum locatário ainda. Eles aparecem quando você cria uma locação num imóvel.</p></div>`; return; }
+  // agrupa por CPF (ou nome, se sem CPF)
+  const grupos={};
+  locs.forEach(l=>{ const key=(l.locatario_cpf&&l.locatario_cpf.replace(/\D/g,""))||("nome:"+(l.locatario_nome||"").toLowerCase().trim()); (grupos[key]=grupos[key]||[]).push(l); });
+  const hoje=new Date().toISOString().slice(0,10);
+  const cards=Object.values(grupos).map(arr=>{
+    arr.sort((a,b)=>String(b.inicio||"").localeCompare(String(a.inicio||"")));
+    const t=arr[0], recorrente=arr.length>1, ativa=arr.find(l=>l.ativo);
+    const hist=arr.map(l=>{ const im=l.imoveis||{}; const enc=!l.ativo||(l.fim&&l.fim<hoje);
+      return `<div class="drow"><span class="k">${esc(im.titulo||"Imóvel")}${l.inicio?` · ${fmtDate(l.inicio)}`:""}${l.fim?`–${fmtDate(l.fim)}`:(l.ativo?" · atual":"")}</span><span class="v"><span class="badge ${enc?"":"pago"}">${enc?"Encerrada":"Ativa"}</span> ${fmtMoney(l.valor_mensal)}</span></div>`;
+    }).join("");
+    return `<div class="tile">
+      <div class="row"><h3 style="flex:1;font-size:16px">${esc(t.locatario_nome||"Locatário")}</h3>${recorrente?`<span class="badge">🔁 recorrente (${arr.length})</span>`:(ativa?`<span class="badge pago">ativo</span>`:`<span class="badge">ex-locatário</span>`)}</div>
+      <div class="meta">${t.locatario_cpf?`<span>🪪 ${esc(t.locatario_cpf)}</span>`:""}${t.locatario_telefone?`<span>📞 ${esc(t.locatario_telefone)}</span>`:""}${t.locatario_email?`<span>✉️ ${esc(t.locatario_email)}</span>`:""}</div>
+      <div style="margin-top:8px">${hist}</div></div>`;
+  }).join("");
+  view().innerHTML=`<div class="h">👥 Locatários <small>${Object.keys(grupos).length} pessoa(s)</small></div>${cards}`;
+}
+
+// ---------- COMISSÕES & REPASSES (relatório) ----------
+async function renderComissoes(){
+  const comp=S._compComissao||new Date().toISOString().slice(0,7);
+  view().innerHTML=`<div class="h">📊 Comissões & Repasses <small>Relatório mensal</small></div>
+    <div class="bar"><input id="cmComp" class="field" type="month" value="${comp}" style="max-width:180px"></div><div id="cmBody"><div class="spin"></div></div>`;
+  $("#cmComp").onchange=()=>{ S._compComissao=$("#cmComp").value; renderComissoes(); };
+  let lanc=[], imv=[];
+  try{
+    const [{data:l},{data:i}]=await Promise.all([
+      sb.from("imob_lancamentos").select("*, imoveis(titulo,taxa_admin_pct,proprietario_id)").eq("imobiliaria_id",S.imob.id).eq("competencia",comp),
+      sb.from("imoveis").select("id,titulo,taxa_admin_pct").eq("imobiliaria_id",S.imob.id)
+    ]);
+    lanc=l||[]; imv=i||[];
+  }catch(e){ $("#cmBody").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  const alugueis=lanc.filter(x=>x.tipo==="receita"&&x.categoria==="aluguel");
+  const repasses=lanc.filter(x=>x.tipo==="despesa"&&x.categoria==="repasse");
+  if(!alugueis.length){ $("#cmBody").innerHTML=`<div class="empty"><div class="big">📊</div><p>Sem aluguéis lançados em ${esc(comp)}.</p></div>`; return; }
+  let totAluguel=0, totComissao=0, totRepasse=0, totRecebido=0;
+  const rows=alugueis.map(a=>{
+    const im=a.imoveis||{}; const taxa=Number(im.taxa_admin_pct)||0;
+    const comissao=+(Number(a.valor)*taxa/100).toFixed(2); const repasse=+(Number(a.valor)-comissao).toFixed(2);
+    totAluguel+=Number(a.valor); totComissao+=comissao; totRepasse+=repasse; if(a.status==="pago") totRecebido+=Number(a.valor);
+    const repFeito=repasses.find(r=>r.imovel_id===a.imovel_id);
+    return `<div class="tile"><div class="row"><h3 style="flex:1;font-size:15px">${esc(im.titulo||"Imóvel")}</h3><span class="badge ${a.status==="pago"?"pago":"pendente"}">${a.status==="pago"?"recebido":"a receber"}</span></div>
+      <div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(a.valor)}</span></div>
+      <div class="drow"><span class="k">Comissão (${taxa||0}%)</span><span class="v">${fmtMoney(comissao)}</span></div>
+      <div class="drow"><span class="k">Repasse ao dono</span><span class="v">${fmtMoney(repasse)} ${repFeito?`<span class="badge pago">repassado</span>`:`<span class="badge pendente">pendente</span>`}</span></div></div>`;
+  }).join("");
+  $("#cmBody").innerHTML=`<div class="tile" style="background:var(--chip)">
+      <div class="drow"><span class="k">Total em aluguéis</span><span class="v">${fmtMoney(totAluguel)}</span></div>
+      <div class="drow"><span class="k">Recebido</span><span class="v">${fmtMoney(totRecebido)}</span></div>
+      <div class="drow"><span class="k">Comissão da imobiliária</span><span class="v"><b>${fmtMoney(totComissao)}</b></span></div>
+      <div class="drow"><span class="k">A repassar aos donos</span><span class="v"><b>${fmtMoney(totRepasse)}</b></span></div>
+    </div>${rows}
+    <p class="sub" style="margin-top:8px">A comissão usa a <b>taxa de administração</b> de cada imóvel. Ajuste-a no cadastro do imóvel.</p>`;
+}
+
+// ---------- ANÚNCIOS (OLX / ZAP / VivaReal) ----------
+function feedXML(imoveis){
+  const esc2=s=>String(s??"").replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+  const itens=imoveis.filter(i=>i.status==="disponivel").map(i=>`  <Listing>
+    <ListingID>${esc2(i.id)}</ListingID>
+    <Title>${esc2(i.titulo)}</Title>
+    <TransactionType>${i.finalidade==="venda"?"For Sale":"For Rent"}</TransactionType>
+    <PropertyType>${esc2(i.tipo||"Residential / Others")}</PropertyType>
+    <Details>
+      <Description>${esc2(i.obs||i.titulo)}</Description>
+      <ListPrice>${i.finalidade==="venda"?(i.valor_venda||0):(i.valor_aluguel||0)}</ListPrice>
+      <Bedrooms>${i.quartos||0}</Bedrooms>
+      <Garage>${i.vagas||0}</Garage>
+      <LivingArea unit="square metres">${i.area||0}</LivingArea>
+      <Location>
+        <Address>${esc2(i.endereco||"")}</Address>
+        <City>${esc2(i.cidade||"")}</City>
+        <State>${esc2(i.uf||"")}</State>
+        <PostalCode>${esc2(i.cep||"")}</PostalCode>
+      </Location>
+    </Details>
+  </Listing>`).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<Listings xmlns="http://www.vivareal.com/schemas/1.0/VRSync">\n  <Provider>VIZELLO</Provider>\n${itens}\n</Listings>`;
+}
+async function renderAnuncios(){
+  view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div><div class="spin"></div>`;
+  let imv=[]; try{ imv=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  const disp=imv.filter(i=>i.status==="disponivel");
+  view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div>
+    <div class="tile"><p style="margin:0 0 8px">Os portais (ZAP, VivaReal, OLX) publicam seus imóveis lendo um <b>feed XML</b> no padrão VRSync. O Vizello monta esse feed a partir dos seus imóveis <b>disponíveis</b>.</p>
+      <div class="drow"><span class="k">Imóveis disponíveis</span><span class="v">${disp.length}</span></div>
+      <div class="drow"><span class="k">Formato</span><span class="v">VRSync (ZAP/VivaReal/OLX)</span></div>
+    </div>
+    <div class="bar"><button class="btn small" id="anPrev">👁️ Ver prévia do feed</button><button class="btn small secondary" id="anCopy">📋 Copiar XML</button></div>
+    <div class="tile" style="background:#fff8e6;border-color:#ece79a"><b>⚙️ Falta ligar (1 passo no servidor)</b>
+      <p class="sub" style="text-align:left;margin:6px 0 0">Para os portais buscarem sozinhos, publique o feed numa URL pública (Edge Function <code>feed-imoveis</code>) e cadastre essa URL no painel do ZAP/OLX. O arquivo da função já está no projeto (<code>supabase/functions/feed-imoveis</code>).</p></div>
+    <div id="anXml"></div>`;
+  const xml=feedXML(imv);
+  $("#anPrev").onclick=()=>{ $("#anXml").innerHTML=`<textarea class="field" rows="14" readonly style="font-size:11px;font-family:monospace">${esc(xml)}</textarea>`; };
+  $("#anCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(xml); toast("XML copiado ✅"); }catch(_){ toast("Use 'Ver prévia' e copie manualmente."); } };
+}
+
+// ---------- ATENDIMENTO (tickets) ----------
+const TK_ST={aberto:["Aberto","pendente"],em_andamento:["Em andamento","locado"],resolvido:["Resolvido","pago"],fechado:["Fechado",""]};
+const TK_CAT={manutencao:"🔧 Manutenção",financeiro:"💰 Financeiro",documentos:"📄 Documentos",outro:"❓ Outro"};
+async function renderAtendimentoImob(){
+  view().innerHTML=`<div class="h">🎧 Atendimento <small>Chamados dos moradores</small></div><div id="tkList"><div class="spin"></div></div>`;
+  let tks=[];
+  try{ const {data,error}=await sb.from("imob_tickets").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("updated_at",{ascending:false}); if(error) throw error; tks=data||[]; }
+  catch(e){ $("#tkList").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  if(!tks.length){ $("#tkList").innerHTML=`<div class="empty"><div class="big">🎧</div><p>Nenhum chamado ainda. Os moradores abrem chamados pelo portal deles.</p></div>`; return; }
+  $("#tkList").innerHTML=tks.map(t=>`<button class="tile" data-tk="${t.id}" style="width:100%;text-align:left">
+      <div class="row"><h3 style="flex:1;font-size:15px">${esc(t.assunto)}</h3><span class="badge ${TK_ST[t.status]?TK_ST[t.status][1]:""}">${TK_ST[t.status]?TK_ST[t.status][0]:t.status}</span></div>
+      <div class="meta"><span>${TK_CAT[t.categoria]||t.categoria}</span>${t.imoveis?`<span>🏠 ${esc(t.imoveis.titulo)}</span>`:""}<span>${t.papel_autor==="proprietario"?"👤 Proprietário":"🔑 Locatário"}</span><span>🕑 ${fmtDate(t.updated_at)}</span></div>
+    </button>`).join("");
+  view().querySelectorAll("[data-tk]").forEach(b=>b.onclick=()=>abrirTicketImob(b.dataset.tk,true));
+}
+async function abrirTicketImob(id, gestor){
+  modal('<h2>Chamado</h2><div class="spin"></div>');
+  let t=null, msgs=[];
+  try{
+    const {data:td}=await sb.from("imob_tickets").select("*, imoveis(titulo)").eq("id",id).single(); t=td;
+    const {data:md}=await sb.from("imob_ticket_msgs").select("*").eq("ticket_id",id).order("created_at"); msgs=md||[];
+  }catch(e){ closeModal(); toast(e.message||"Erro"); return; }
+  if(!t){ closeModal(); toast("Chamado não encontrado"); return; }
+  const thread=msgs.map(m=>`<div class="tile" style="padding:10px 12px;margin:0 0 8px;${m.is_gestor?"background:var(--chip)":""}">
+      <div class="meta" style="margin-bottom:2px"><span>${m.is_gestor?"🏢 Imobiliária":"👤 Morador"}</span><span>${fmtDate(m.created_at)}</span></div>
+      <div style="white-space:pre-wrap">${esc(m.corpo)}</div></div>`).join("")||'<p class="sub">Sem mensagens ainda.</p>';
+  modal(`<h2>${esc(t.assunto)}</h2>
+    <div class="meta" style="margin-bottom:10px"><span>${TK_CAT[t.categoria]||t.categoria}</span>${t.imoveis?`<span>🏠 ${esc(t.imoveis.titulo)}</span>`:""}<span class="badge ${TK_ST[t.status]?TK_ST[t.status][1]:""}">${TK_ST[t.status]?TK_ST[t.status][0]:t.status}</span></div>
+    <div style="max-height:40vh;overflow:auto">${thread}</div>
+    ${t.status!=="fechado"?`<label style="margin-top:10px">Responder</label><textarea id="tkMsg" class="field" rows="3" placeholder="Escreva uma mensagem..."></textarea>
+    <div id="tkErr" class="err"></div>
+    <div class="bar" style="margin-top:8px"><button class="btn" id="tkSend">Enviar</button>
+      ${gestor?`<button class="btn small secondary" data-st="em_andamento">Em andamento</button><button class="btn small secondary" data-st="resolvido">Resolver</button><button class="btn small secondary" data-st="fechado">Fechar</button>`:`<button class="btn small secondary" data-st="fechado">Encerrar chamado</button>`}</div>`
+    :`<p class="sub">Este chamado está fechado.</p>`}
+    <button class="btn ghost" id="tkClose" style="margin-top:8px">Voltar</button>`);
+  $("#tkClose").onclick=closeModal;
+  $("#tkSend")?.addEventListener("click",async()=>{
+    const corpo=$("#tkMsg").value.trim(); if(!corpo){ setMsg("#tkErr","Escreva uma mensagem.","err"); return; }
+    $("#tkSend").disabled=true;
+    try{ const {error}=await sb.from("imob_ticket_msgs").insert({ticket_id:id,corpo,is_gestor:!!gestor}); if(error) throw error;
+      if(gestor && t.status==="aberto"){ await sb.from("imob_tickets").update({status:"em_andamento"}).eq("id",id); }
+      closeModal(); toast("Mensagem enviada ✅"); if(gestor) renderAtendimentoImob();
+    }catch(e){ setMsg("#tkErr",e.message||"Erro","err"); $("#tkSend").disabled=false; }
+  });
+  document.querySelectorAll("[data-st]").forEach(b=>b.onclick=async()=>{
+    try{ await sb.from("imob_tickets").update({status:b.dataset.st}).eq("id",id); closeModal(); toast("Status atualizado"); if(gestor) renderAtendimentoImob(); }
+    catch(e){ toast(e.message||"Erro"); }
+  });
+}
+function novoTicketImob({imobiliaria_id, papel_autor, locacao_id, imovel_id}, onDone){
+  modal(`<h2>Abrir chamado</h2><p class="sub" style="text-align:left">Fale com a imobiliária pelo sistema. Você acompanha a resposta aqui mesmo.</p>
+    <label>Assunto</label><input id="ntAssunto" class="field" placeholder="Ex.: Vazamento na cozinha">
+    <label>Categoria</label><select id="ntCat" class="field">${Object.entries(TK_CAT).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select>
+    <label>Mensagem</label><textarea id="ntMsg" class="field" rows="4" placeholder="Descreva o que precisa..."></textarea>
+    <div id="ntErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="ntCancel">Cancelar</button><button class="btn" id="ntSave">Enviar chamado</button></div>`);
+  $("#ntCancel").onclick=closeModal;
+  $("#ntSave").onclick=async()=>{
+    const assunto=$("#ntAssunto").value.trim(), corpo=$("#ntMsg").value.trim();
+    if(!assunto){ setMsg("#ntErr","Informe o assunto.","err"); return; }
+    if(!corpo){ setMsg("#ntErr","Escreva a mensagem.","err"); return; }
+    $("#ntSave").disabled=true;
+    try{
+      const {data:tk,error}=await sb.from("imob_tickets").insert({imobiliaria_id,papel_autor:papel_autor||"locatario",locacao_id:locacao_id||null,imovel_id:imovel_id||null,assunto,categoria:$("#ntCat").value}).select("id").single();
+      if(error) throw error;
+      await sb.from("imob_ticket_msgs").insert({ticket_id:tk.id,corpo,is_gestor:false});
+      closeModal(); toast("Chamado enviado ✅"); if(onDone) onDone();
+    }catch(e){ setMsg("#ntErr",e.message||"Erro","err"); $("#ntSave").disabled=false; }
+  };
 }
 
 // ---------- DADOS ----------
@@ -757,6 +991,7 @@ function drawLeads(){
     </div></div>
     <div class="bar" style="margin:10px 0 0">
       ${prox?`<button class="btn small" data-adv="${l.id}">➡️ ${ETAPAS[prox]}</button>`:""}
+      ${visita?`<button class="btn small secondary" data-cal="${l.id}" title="Adicionar à agenda">📅 Agenda</button>`:""}
       ${l.telefone?`<button class="btn small secondary" data-wal="${l.id}" style="background:#25d366;color:#fff">📲</button>`:""}
       <button class="btn small secondary" data-edl="${l.id}">✏️</button>
       ${l.etapa!=="perdido"?`<button class="btn small secondary" data-lostl="${l.id}">✖</button>`:""}
@@ -765,6 +1000,8 @@ function drawLeads(){
   const byId={}; (S._leads||[]).forEach(l=>byId[l.id]=l);
   el.querySelectorAll("[data-adv]").forEach(b=>b.onclick=()=>advLead(byId[b.dataset.adv]));
   el.querySelectorAll("[data-wal]").forEach(b=>b.onclick=()=>{ const l=byId[b.dataset.wal]; const im=l.imoveis?` sobre o imóvel ${l.imoveis.titulo}`:""; window.open(`https://wa.me/${waPhone(l.telefone)}?text=${encodeURIComponent(`Olá ${l.nome}! Aqui é da ${S.imob.nome}${im}.`)}`,"_blank","noopener"); });
+  el.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>{ const l=byId[b.dataset.cal]; if(!l.visita_em) return; const im=l.imoveis||{};
+    window.open(calLink({title:`Visita — ${im.titulo||l.nome}`,details:`Visita com ${l.nome}${l.telefone?" ("+l.telefone+")":""} — ${S.imob.nome}`,location:im.endereco||"",start:l.visita_em}),"_blank","noopener"); });
   el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLead(byId[b.dataset.edl]));
   el.querySelectorAll("[data-lostl]").forEach(b=>b.onclick=async()=>{ try{ await sb.from("imob_leads").update({etapa:"perdido"}).eq("id",b.dataset.lostl); toast("Marcado como perdido"); renderLeads(); }catch(e){ toast(e.message); } });
   el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este interessado?","Excluir")) return; try{ await sb.from("imob_leads").delete().eq("id",b.dataset.dell); toast("Excluído"); renderLeads(); }catch(e){ toast(e.message); } });
@@ -1125,11 +1362,22 @@ function addItemVistoria(vistoriaId,dir,ordem){
   };
 }
 
+function fmtCnpj(v){ const d=String(v||"").replace(/\D/g,""); return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"):(v||""); }
 async function renderConfig(){
-  view().innerHTML=`<div class="h">⚙️ Configurações</div>
-    <div class="tile"><b>${esc(S.imob.nome)}</b>
-      <div class="meta"><span>${S.imob.cnpj?"CNPJ "+esc(S.imob.cnpj):"sem CNPJ"}</span>${S.imob.cidade?`<span>📍 ${esc(S.imob.cidade)}${S.imob.uf?"/"+esc(S.imob.uf):""}</span>`:""}<span class="badge">${esc(S.imob.papel)}</span></div>
-    </div>
+  view().innerHTML=`<div class="h">⚙️ Configurações</div><div id="cfCard"><div class="spin"></div></div>`;
+  let d={}; try{ const {data}=await sb.from("imobiliarias").select("*").eq("id",S.imob.id).single(); d=data||{}; }catch(_){ d={...S.imob}; }
+  const linha=(k,v)=> v?`<div class="drow"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
+  $("#cfCard").innerHTML=`<div class="tile">
+      <h3 style="font-size:17px">🏢 ${esc(d.nome||S.imob.nome)} <span class="badge">${esc(S.imob.papel||"")}</span></h3>
+      ${linha("CNPJ", d.cnpj?fmtCnpj(d.cnpj):"—")}
+      ${linha("Telefone", d.telefone)}
+      ${linha("E-mail", d.email)}
+      ${linha("Endereço", d.endereco)}
+      ${linha("CEP", d.cep)}
+      ${linha("Cidade/UF", d.cidade?`${d.cidade}${d.uf?"/"+d.uf:""}`:"")}
+    </div>`;
+  view().insertAdjacentHTML("beforeend",`<div id="cfRest"></div>`);
+  $("#cfRest").innerHTML=`
     <div class="bar"><button class="btn small secondary" id="cfEdit">✏️ Editar imobiliária</button><button class="btn small secondary" id="cfBanco">🏦 Dados de recebimento</button><button class="btn small secondary" id="cfIntegra">🔌 Integração de recebimento</button><button class="btn small secondary" id="cfAviso">📢 Avisos aos moradores</button>${S.imob.papel==="dono"?`<button class="btn small secondary" id="cfMembro">➕ Adicionar operador</button>`:""}</div>
     <div class="h" style="font-size:16px;margin-top:20px">Assinatura VIZELLO</div><div id="assinVzImob"><div class="spin"></div></div>
     <div class="h" style="font-size:16px;margin-top:20px">Equipe</div><div id="cfMembros"><div class="spin"></div></div>
@@ -1172,19 +1420,30 @@ async function pagarMensImob(id){
     $("#fatCopy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(qr); toast("Copiado ✅"); }catch(_){ toast("Copie o código manualmente."); } });
   }catch(e){ closeModal(); toast(e.message||"Erro"); }
 }
-function editarImob(){
+async function editarImob(){
+  modal('<h2>Editar imobiliária</h2><div class="spin"></div>');
+  let d={}; try{ const {data}=await sb.from("imobiliarias").select("*").eq("id",S.imob.id).single(); d=data||{}; }catch(_){ d={...S.imob}; }
   modal(`<h2>Editar imobiliária</h2>
-    <label>Nome</label><input id="eiNome" class="field" value="${esc(S.imob.nome)}">
-    <div class="fld-row"><div><label>Cidade</label><input id="eiCidade" class="field" value="${esc(S.imob.cidade||"")}"></div><div><label>UF</label><input id="eiUf" class="field" maxlength="2" value="${esc(S.imob.uf||"")}"></div></div>
+    <label>Nome</label><input id="eiNome" class="field" value="${esc(d.nome||"")}">
+    <label>CNPJ</label><input id="eiCnpj" class="field" value="${esc(d.cnpj||"")}" placeholder="00.000.000/0000-00">
+    <div class="fld-row"><div><label>Telefone/WhatsApp</label><input id="eiTel" class="field" type="tel" value="${esc(d.telefone||"")}"></div><div><label>E-mail</label><input id="eiEmail" class="field" type="email" value="${esc(d.email||"")}"></div></div>
+    <label>Endereço</label><input id="eiEnd" class="field" value="${esc(d.endereco||"")}" placeholder="Rua, nº, bairro">
+    <div class="fld-row"><div><label>CEP</label><input id="eiCep" class="field" value="${esc(d.cep||"")}"></div><div><label>Cidade</label><input id="eiCidade" class="field" value="${esc(d.cidade||"")}"></div><div><label>UF</label><input id="eiUf" class="field" maxlength="2" value="${esc(d.uf||"")}"></div></div>
     <div id="eiErr" class="err"></div>
     <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="eiCancel">Cancelar</button><button class="btn" id="eiSave">Salvar</button></div>`);
   $("#eiCancel").onclick=closeModal;
   $("#eiSave").onclick=async()=>{
     const nome=$("#eiNome").value.trim(); if(!nome){ setMsg("#eiErr","Informe o nome.","err"); return; }
-    try{ const {error}=await sb.from("imobiliarias").update({nome,cidade:$("#eiCidade").value.trim()||null,uf:$("#eiUf").value.trim().toUpperCase()||null}).eq("id",S.imob.id); if(error) throw error;
-      S.imob.nome=nome; S.imob.cidade=$("#eiCidade").value.trim(); S.imob.uf=$("#eiUf").value.trim().toUpperCase();
+    const upd={ nome,
+      cnpj:$("#eiCnpj").value.replace(/\D/g,"")||null,
+      telefone:$("#eiTel").value.trim()||null, email:$("#eiEmail").value.trim()||null,
+      endereco:$("#eiEnd").value.trim()||null, cep:$("#eiCep").value.trim()||null,
+      cidade:$("#eiCidade").value.trim()||null, uf:$("#eiUf").value.trim().toUpperCase()||null };
+    $("#eiSave").disabled=true;
+    try{ const {error}=await sb.from("imobiliarias").update(upd).eq("id",S.imob.id); if(error) throw error;
+      Object.assign(S.imob, {nome:upd.nome, cidade:upd.cidade, uf:upd.uf, cnpj:upd.cnpj});
       $("#whoImob").textContent=nome; closeModal(); toast("Salvo ✅"); renderConfig();
-    }catch(e){ setMsg("#eiErr",e.message||"Erro","err"); }
+    }catch(e){ setMsg("#eiErr",e.message||"Erro","err"); $("#eiSave").disabled=false; }
   };
 }
 async function dadosRecebimento(){
@@ -1324,9 +1583,21 @@ async function abrirConvite(){
 // ===================================================================
 const Inquilino = (()=>{
   let data=null, tab="contrato";
-  const TABS=[{id:"contrato",ic:"📄",label:"Contrato"},{id:"financeiro",ic:"💰",label:"Aluguel"},{id:"vistorias",ic:"📋",label:"Vistorias"},{id:"avisos",ic:"📢",label:"Avisos"}];
+  const TABS=[{id:"contrato",ic:SVG('<path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/>'),label:"Contrato"},{id:"financeiro",ic:IC.financeiro,label:"Aluguel"},{id:"vistorias",ic:IC.vistorias,label:"Vistorias"},{id:"chamados",ic:IC.atendimento,label:"Chamados"},{id:"avisos",ic:IC.anuncios,label:"Avisos"}];
   function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
-  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({contrato:renderContrato,financeiro:renderFin,vistorias:renderVist,avisos:renderAvisos}[t]||renderContrato)(); }
+  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({contrato:renderContrato,financeiro:renderFin,vistorias:renderVist,chamados:renderChamados,avisos:renderAvisos}[t]||renderContrato)(); }
+  function ctxTicket(){ const c=(data.contratos||[])[0]||{}; return { imobiliaria_id:(c.imobiliaria||{}).id, papel_autor:"locatario", locacao_id:c.locacao_id||null, imovel_id:(c.imovel||{}).id||null }; }
+  async function renderChamados(){
+    view().innerHTML=`<div class="h">🎧 Meus chamados</div><div class="bar"><button class="btn small" id="chNovo">➕ Abrir chamado</button></div><div id="chList"><div class="spin"></div></div>`;
+    $("#chNovo").onclick=()=>{ const cx=ctxTicket(); if(!cx.imobiliaria_id){ toast("Sem contrato ativo."); return; } novoTicketImob(cx, ()=>renderChamados()); };
+    let tks=[]; try{ const {data:d,error}=await sb.from("imob_tickets").select("*").eq("aberto_por",S.user.id).order("updated_at",{ascending:false}); if(error) throw error; tks=d||[]; }
+    catch(e){ $("#chList").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+    if(!tks.length){ $("#chList").innerHTML=`<div class="empty"><div class="big">🎧</div><p>Nenhum chamado. Toque em “Abrir chamado” para falar com a imobiliária.</p></div>`; return; }
+    $("#chList").innerHTML=tks.map(t=>`<button class="tile" data-tk="${t.id}" style="width:100%;text-align:left">
+        <div class="row"><h3 style="flex:1;font-size:15px">${esc(t.assunto)}</h3><span class="badge ${TK_ST[t.status]?TK_ST[t.status][1]:""}">${TK_ST[t.status]?TK_ST[t.status][0]:t.status}</span></div>
+        <div class="meta"><span>${TK_CAT[t.categoria]||t.categoria}</span><span>🕑 ${fmtDate(t.updated_at)}</span></div></button>`).join("");
+    view().querySelectorAll("[data-tk]").forEach(b=>b.onclick=()=>abrirTicketImob(b.dataset.tk,false));
+  }
   function renderContrato(){
     const c=(data.contratos||[])[0]; if(!c){ view().innerHTML='<p class="empty">Sem contrato.</p>'; return; }
     const im=c.imovel||{}, ib=c.imobiliaria||{};
@@ -1340,8 +1611,8 @@ const Inquilino = (()=>{
         <div class="drow"><span class="k">Início</span><span class="v">${fmtDate(c.inicio)||"—"}</span></div>
         <div class="drow"><span class="k">Fim</span><span class="v">${c.fim?fmtDate(c.fim):"sem prazo"}</span></div>
         <div class="drow"><span class="k">Imobiliária</span><span class="v">${esc(ib.nome||"")}</span></div></div>
-      ${ib.telefone?`<button class="btn secondary" id="ctWa">📲 Falar com a imobiliária</button>`:""}`;
-    $("#ctWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(ib.telefone)}?text=${encodeURIComponent(`Olá! Sou morador do ${im.titulo||"imóvel"}.`)}`,"_blank","noopener"));
+      <button class="btn secondary" id="ctChamado">💬 Falar com a imobiliária</button>`;
+    $("#ctChamado")?.addEventListener("click",()=>{ const cx=ctxTicket(); if(!cx.imobiliaria_id){ toast("Sem contrato ativo."); return; } novoTicketImob(cx, ()=>go("chamados")); });
   }
   function renderFin(){
     const c=(data.contratos||[])[0]; if(!c){ view().innerHTML='<p class="empty">Sem contrato.</p>'; return; }
@@ -1396,11 +1667,11 @@ const Inquilino = (()=>{
   function renderAvisos(){
     const c=(data.contratos||[])[0]||{}; const ib=c.imobiliaria||{}; const avisos=data.avisos||[];
     view().innerHTML=`<div class="h">📢 Avisos & contato</div>
-      ${ib.telefone?`<button class="btn secondary" id="avWa" style="margin-bottom:12px">📲 Falar com a imobiliária</button>`:""}
+      <button class="btn secondary" id="avChamado" style="margin-bottom:12px">💬 Falar com a imobiliária</button>
       ${avisos.length?avisos.map(a=>`<div class="tile"><h3>${esc(a.titulo)}</h3>${a.corpo?`<div class="meta"><span>${esc(a.corpo)}</span></div>`:""}<div class="meta"><span>${fmtDate(a.created_at)}</span>${a.imobiliaria?`<span>${esc(a.imobiliaria)}</span>`:""}</div></div>`).join(""):`<div class="empty"><div class="big">📢</div><p>Nenhum aviso no momento.</p></div>`}`;
-    $("#avWa")?.addEventListener("click",()=>window.open(`https://wa.me/${waPhone(ib.telefone)}?text=${encodeURIComponent("Olá! Sou morador.")}`,"_blank","noopener"));
+    $("#avChamado")?.addEventListener("click",()=>{ const cx=ctxTicket(); if(!cx.imobiliaria_id){ toast("Sem contrato ativo."); return; } novoTicketImob(cx, ()=>go("chamados")); });
   }
-  function start(d){ data=d; const c0=(d.contratos||[])[0]||{}; $("#appTag").textContent="MORADOR"; $("#whoImob").textContent=c0.imobiliaria?c0.imobiliaria.nome:""; $("#whoUser").textContent=(S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email)||"Morador"; $("#topOut").onclick=logout; show("app"); buildNav(); go("contrato"); }
+  function start(d){ data=d; const c0=(d.contratos||[])[0]||{}; $("#appTag").textContent="MORADOR"; $("#whoImob").textContent=c0.imobiliaria?c0.imobiliaria.nome:""; $("#whoUser").textContent=saudacao(); $("#topOut").onclick=logout; show("app"); buildNav(); go("contrato"); }
   return { start };
 })();
 
@@ -1410,7 +1681,7 @@ const Inquilino = (()=>{
 const Proprietario = (()=>{
   let data=null, tab="imoveis";
   const REPST={pago:["Pago","pago"],pendente:["Pendente","pendente"],atrasado:["Atrasado","vencida"],cancelado:["Cancelado","pendente"]};
-  const TABS=[{id:"imoveis",ic:"🏠",label:"Imóveis"},{id:"repasses",ic:"💰",label:"Repasses"},{id:"config",ic:"⚙️",label:"Conta"}];
+  const TABS=[{id:"imoveis",ic:IC.imoveis,label:"Imóveis"},{id:"repasses",ic:IC.financeiro,label:"Repasses"},{id:"config",ic:IC.config,label:"Conta"}];
   function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
   function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({imoveis:rImoveis,repasses:rRepasses,config:rConfig}[t]||rImoveis)(); }
   function allImoveis(){ return (data.vinculos||[]).flatMap(v=>(v.imoveis||[]).map(im=>({...im, imobiliaria:v.imobiliaria&&v.imobiliaria.nome}))); }
@@ -1453,7 +1724,7 @@ const Proprietario = (()=>{
     $("#pcTema").onclick=()=>{ const cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark"; document.documentElement.setAttribute("data-theme",cur); try{localStorage.setItem("vz-theme",cur);}catch(_){} };
     $("#pcOut").onclick=logout;
   }
-  function start(d){ data=d; const v0=(d.vinculos||[])[0]||{}; $("#appTag").textContent="PROPRIETÁRIO"; $("#whoImob").textContent=(d.vinculos&&d.vinculos.length>1)?`${d.vinculos.length} imobiliárias`:(v0.imobiliaria?v0.imobiliaria.nome:""); $("#whoUser").textContent=(S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||v0.nome||(S.user&&S.user.email)||"Proprietário"; $("#topOut").onclick=logout; show("app"); buildNav(); go("imoveis"); }
+  function start(d){ data=d; const v0=(d.vinculos||[])[0]||{}; $("#appTag").textContent="PROPRIETÁRIO"; $("#whoImob").textContent=(d.vinculos&&d.vinculos.length>1)?`${d.vinculos.length} imobiliárias`:(v0.imobiliaria?v0.imobiliaria.nome:""); $("#whoUser").textContent=saudacao(); $("#topOut").onclick=logout; show("app"); buildNav(); go("imoveis"); }
   return { start };
 })();
 

@@ -1,5 +1,5 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
-const CACHE = "condoapp-v16";
+const CACHE = "condoapp-v17";
 const SHELL = ["/condominio",
   "/app.css", "/app.js", "/helpers.js", "/theme.css", "/qrcode.js", "/jsqr.js",
   "/manifest.webmanifest",

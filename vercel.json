@@ -8,6 +8,7 @@
     { "source": "/sindico", "destination": "/condominio.html" },
     { "source": "/portaria", "destination": "/condominio.html" },
     { "source": "/privacidade", "destination": "/privacidade.html" },
+    { "source": "/termos", "destination": "/termos.html" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/imobiliaria", "destination": "/imobiliaria.html" },
     { "source": "/morador-imob", "destination": "/imobiliaria.html" },

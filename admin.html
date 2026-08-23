@@ -324,6 +324,8 @@ function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
 function modal(html){ $("#modal").innerHTML=html; $("#modalBg").classList.add("show"); }
 function closeModal(){ $("#modalBg").classList.remove("show"); const f=S._onClose; S._onClose=null; if(f) f(); }
+// script é type="module": expõe closeModal no escopo global p/ os onclick="closeModal()" inline
+window.closeModal = closeModal;
 $("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
 // confirmação com modal próprio (substitui o confirm() nativo)
 function confirmar(msg,{danger=false,ok="Confirmar"}={}){
@@ -437,7 +439,7 @@ async function boot(){
   try{ ok = await rpc("plataforma_sou_admin"); }catch(_){ ok=false; }
   if(!ok){ show("denied"); return; }
   if(REQUIRE_2FA && !(await temTotpVerificado())){ showForce2FA(); return; }
-  $("#whoEmail").textContent=user.email;
+  $("#whoName").textContent="Olá, "+(user.user_metadata?.nome||user.email?.split("@")[0]||"Operador"); $("#whoEmail").textContent="";
   show("app");
   resetIdle();
   await renderDashboard();
@@ -491,7 +493,7 @@ async function showAdminMfa(){
   show("login");
   let factorId=null;
   try{ const {data}=await sb.auth.mfa.listFactors(); factorId=(data?.totp||[]).find(f=>f.status==="verified")?.id; }catch(_){}
-  if(!factorId){ S.user=(await sb.auth.getUser()).data.user; const ok=await rpc("plataforma_sou_admin").catch(()=>false); if(!ok){ show("denied"); return; } $("#whoEmail").textContent=S.user.email; show("app"); await renderDashboard(); return; }
+  if(!factorId){ S.user=(await sb.auth.getUser()).data.user; const ok=await rpc("plataforma_sou_admin").catch(()=>false); if(!ok){ show("denied"); return; } $("#whoName").textContent="Olá, "+(S.user.user_metadata?.nome||S.user.email?.split("@")[0]||"Operador"); $("#whoEmail").textContent=""; show("app"); await renderDashboard(); return; }
   modal(`<h2>Verificação em duas etapas</h2><p class="sub">Digite o código do seu app autenticador.</p>
     <input id="amCode" class="field" inputmode="numeric" maxlength="6" placeholder="000000" style="font-size:22px;letter-spacing:8px;text-align:center">
     <div id="amErr" class="err"></div>
@@ -561,7 +563,7 @@ async function renderDashboard(){
   S._planos=planos; S._rel=rel;
   S._fin={ fat, rel, mensal, dre, despesas };
   const me = admins.find(a=>a.user_id===S.user.id);
-  if(me?.nome) $("#whoName").textContent=me.nome; else $("#whoName").textContent="Operador";
+  $("#whoName").textContent="Olá, "+(me?.nome||S.user.email?.split("@")[0]||"Operador");
   S._papel = me?.papel || "admin"; S._suporte = S._papel==="suporte";
   $("#whoRole")?.remove();
   if(S._suporte){ const w=document.querySelector("header.top .who"); if(w) w.insertAdjacentHTML("beforeend",'<span id="whoRole" class="badge" style="display:inline-block;margin-top:3px">Suporte · somente leitura</span>'); }
@@ -1517,9 +1519,12 @@ function fichaImobiliaria(d){
       <div class="metric"><small>Locações ativas</small><b>${d.locacoes_ativas||0}</b></div>
       <div class="metric"><small>Membros</small><b>${d.membros||0}</b></div>
     </div>
-    <div class="meta" style="margin-top:14px">
-      ${d.cidade?`<span>📍 ${esc(d.cidade)}${d.uf?"/"+esc(d.uf):""}</span>`:""}
-      ${d.cnpj?`<span>🧾 CNPJ ${esc(d.cnpj)}</span>`:""}
+    <div class="h" style="margin-top:16px">Cadastro</div>
+    <div class="meta" style="margin-top:2px">
+      ${d.cnpj?`<span>🧾 CNPJ ${esc(d.cnpj)}</span>`:"<span>🧾 CNPJ —</span>"}
+      ${d.telefone?`<span>📞 ${esc(d.telefone)}</span>`:""}
+      ${d.email?`<span>✉️ ${esc(d.email)}</span>`:""}
+      ${(d.endereco||d.cidade)?`<span>📍 ${esc([d.endereco,d.cidade&&(d.cidade+(d.uf?"/"+d.uf:"")),d.cep].filter(Boolean).join(" · "))}</span>`:""}
       <span>🗓️ Cadastrada em ${fmtDate(d.created_at)}</span>
     </div>
     <div class="bar" style="margin-top:18px">
