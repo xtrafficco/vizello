@@ -1,10 +1,13 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
-const CACHE = "condoapp-v18";
+const CACHE = "condoapp-v19";
 const SHELL = ["/condominio",
   "/app.css", "/app.js", "/helpers.js", "/theme.css", "/qrcode.js", "/jsqr.js",
   "/manifest.webmanifest",
   "/logo-dark.png", "/logo-white.png",
-  "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png"];
+  "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png",
+  // App da imobiliária (PWA próprio) + biblioteca de mapa auto-hospedada
+  "/imobiliaria", "/manifest-imobiliaria.webmanifest",
+  "/vendor/leaflet/leaflet.js", "/vendor/leaflet/leaflet.css"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
