@@ -1819,7 +1819,7 @@ async function renderPainel(){
     html+=`<div class="chartcard"><div class="ct">💧 Consumo · último mês lançado</div>`
       +consResumo.map(c=>`<div style="display:flex;align-items:center;gap:10px;margin:8px 0">
         <span style="font-size:18px;width:22px;text-align:center;flex:0 0 auto">${c.ic}</span>
-        <div style="flex:1;min-width:0"><b>${c.nome}</b> <span class="sub" style="margin:0">· ${compLabel(c.ult)} · ${c.cnt} un.</span>
+        <div style="flex:1;min-width:0"><b>${esc(c.nome)}</b> <span class="sub" style="margin:0">· ${compLabel(c.ult)} · ${c.cnt} un.</span>
           <div class="meta" style="margin-top:2px"><span>Total ${fmtNum(c.tot)} ${c.un}</span><span>Média ${fmtNum(Math.round(c.media*100)/100)} ${c.un}/un.</span></div></div>
         ${c.varPct!=null?`<span class="badge ${c.varPct>0?"urgente":"resolvida"}" style="flex:0 0 auto">${c.varPct>0?"▲":"▼"} ${Math.abs(c.varPct)}%</span>`:""}
       </div>`).join("")
