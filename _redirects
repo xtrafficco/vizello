@@ -1,4 +1,5 @@
-/            /condominio.html   200
+/            /site.html         200
+/site        /site.html         200
 /login       /condominio.html   200
 /condominio  /condominio.html   200
 /morador     /condominio.html   200

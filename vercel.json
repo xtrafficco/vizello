@@ -1,7 +1,8 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/condominio.html" },
+    { "source": "/", "destination": "/site.html" },
+    { "source": "/site", "destination": "/site.html" },
     { "source": "/login", "destination": "/condominio.html" },
     { "source": "/condominio", "destination": "/condominio.html" },
     { "source": "/morador", "destination": "/condominio.html" },
