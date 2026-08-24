@@ -832,14 +832,17 @@ async function drawIntegridade(){
     const e24=logs.erros_24h||0, e1=logs.erros_1h||0, itens=logs.itens||[];
     const alerta = e1>0 || e24>=10;
     out+=`<div class="h" style="margin-top:22px">Erros do app <small>Rastreio de erros do cliente (30 dias)</small></div>`;
-    out+=`<div class="mini"><div class="m2"><small>Última 1h</small><b class="${e1?"warn":""}">${e1}</b></div>
-      <div class="m2"><small>Últimas 24h</small><b class="${alerta?"warn":""}">${e24}</b></div>
-      <div class="m2" style="grid-column:span 2"><small>Status</small><b style="color:${alerta?"var(--danger)":"var(--ok)"}">${alerta?"⚠️ Investigar":"✅ Estável"}</b></div></div>`;
-    if(!itens.length) out+=`<p class="sub" style="margin:2px 2px 8px">Nenhum erro registrado. 🎉</p>`;
-    else out+=`<div class="scrollbox" style="max-height:320px">${itens.map(l=>`<div class="auditrow">
-      <div><b>${esc(l.contexto||l.nivel||"erro")}</b> <span class="ae">${esc((l.mensagem||"").slice(0,140))}</span>
+    out+=`<div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+      <div class="metric"><small>Última 1h</small><b class="${e1?"warn":""}">${e1}</b></div>
+      <div class="metric"><small>Últimas 24h</small><b class="${alerta?"warn":""}">${e24}</b></div>
+      <div class="metric"><small>Status</small><b style="font-size:18px;color:${alerta?"var(--danger)":"var(--ok)"}">${alerta?"⚠️ Investigar":"✅ Estável"}</b></div></div>`;
+    if(!itens.length) out+=`<div class="chartcard"><p class="sub" style="margin:0">Nenhum erro registrado. 🎉</p></div>`;
+    else out+=`<div class="chartcard"><div class="scrollbox" style="max-height:340px">${itens.map(l=>{
+      const col=/fatal|error|onerror|unhandled/i.test((l.nivel||"")+" "+(l.contexto||""))?"var(--danger)":(l.nivel==="warn"?"#b67d16":"var(--ok)");
+      return `<div class="auditrow"><span style="width:9px;height:9px;border-radius:50%;background:${col};flex:0 0 auto;align-self:center"></span>
+      <div style="flex:1;min-width:0"><b>${esc(l.contexto||l.nivel||"erro")}</b> <span class="ae">${esc((l.mensagem||"").slice(0,140))}</span>
         <div class="ae">${esc(l.app||"")}${l.email?" · "+esc(l.email):""}${l.url?" · "+esc(l.url):""}</div></div>
-      <span class="at">${esc(tempoRel(l.created_at))}</span></div>`).join("")}</div>`;
+      <span class="at">${esc(tempoRel(l.created_at))}</span></div>`;}).join("")}</div></div>`;
   }
 
   wrap.innerHTML=out;
@@ -1503,35 +1506,62 @@ function drawImobiliarias(){
   }));
 }
 
-function fichaImobiliaria(d){
-  const [slbl,scls]=statusMens(d.status);
-  modal(`<h2>🏘️ Ficha da imobiliária</h2><p class="sub">${esc(d.nome)}</p>
-    <div class="h" style="margin-top:6px">Assinatura <small>Mensalidade paga à Vizello</small></div>
-    <div class="mini">
-      <div class="m2"><small>Plano</small><b style="font-size:15px">${d.plano?esc(d.plano):"—"}</b></div>
-      <div class="m2"><small>Mensalidade</small><b>${d.valor_mensal!=null?fmtMoney(d.valor_mensal):"—"}</b></div>
-      <div class="m2"><small>Status</small><b><span class="badge ${scls}">${slbl}</span></b></div>
-      <div class="m2"><small>Desde</small><b style="font-size:15px">${d.inicio?new Date(d.inicio).toLocaleDateString("pt-BR"):"—"}</b></div>
+const PAPEL_IMOB={dono:"Dono",gestor:"Gestor",corretor:"Corretor",operador:"Operador"};
+async function fichaImobiliaria(base){
+  modal('<div class="spin"></div>');
+  let d;
+  try{ d=await rpc("plataforma_imobiliaria_detalhe",{p_imob:base.id}); }
+  catch(e){ closeModal(); return toast(e.message); }
+  const [slbl,scls]=statusMens(d.assinatura_status||"sem_plano");
+  const membros=d.membros||[], imoveis=d.imoveis||[];
+  const cnpjFmt = d.cnpj?String(d.cnpj).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"):null;
+  const cepFmt = d.cep?String(d.cep).replace(/^(\d{5})(\d{3})$/,"$1-$2"):null;
+  const onb=[(d.imoveis_total||0)>0,(d.locacoes_ativas||0)>0,!!d.assinatura_status,(d.membros_total||0)>0].filter(Boolean).length;
+  $("#modal").innerHTML=`
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1;min-width:0"><h2 style="margin:0">🏘️ ${esc(d.nome)}</h2>
+        <div class="meta" style="margin-top:5px">
+          <span class="badge ${scls}">${slbl}</span>
+          ${d.cidade?`<span>📍 ${esc(d.cidade)}${d.uf?"/"+esc(d.uf):""}</span>`:""}
+          <span>🗓️ desde ${esc(fmtDate(d.created_at))}</span></div></div>
+      ${!S._suporte?`<div style="flex:0 0 auto"><button class="btn small" id="fiPlano">💳 Plano</button></div>`:""}
     </div>
-    <div class="h" style="margin-top:16px">Tamanho <small>Referência para o plano</small></div>
-    <div class="metrics">
-      <div class="metric"><small>Imóveis</small><b>${d.imoveis||0}</b></div>
-      <div class="metric"><small>Locações ativas</small><b>${d.locacoes_ativas||0}</b></div>
-      <div class="metric"><small>Membros</small><b>${d.membros||0}</b></div>
+    <div class="dsec"><div class="t">Dados cadastrais</div>
+      <div class="drow"><span class="k">CNPJ</span><span class="v">${cnpjFmt?esc(cnpjFmt):"—"}</span></div>
+      <div class="drow"><span class="k">Telefone</span><span class="v">${d.telefone?esc(d.telefone):"—"}</span></div>
+      <div class="drow"><span class="k">E-mail</span><span class="v">${d.email?esc(d.email):"—"}</span></div>
+      <div class="drow"><span class="k">Endereço</span><span class="v">${d.endereco?esc(d.endereco):"—"}</span></div>
+      <div class="drow"><span class="k">CEP</span><span class="v">${cepFmt?esc(cepFmt):"—"}</span></div>
+      <div class="drow"><span class="k">Cidade/UF</span><span class="v">${d.cidade?esc(d.cidade)+(d.uf?"/"+esc(d.uf):""):"—"}</span></div>
     </div>
-    <div class="h" style="margin-top:16px">Cadastro</div>
-    <div class="meta" style="margin-top:2px">
-      ${d.cnpj?`<span>🧾 CNPJ ${esc(d.cnpj)}</span>`:"<span>🧾 CNPJ —</span>"}
-      ${d.telefone?`<span>📞 ${esc(d.telefone)}</span>`:""}
-      ${d.email?`<span>✉️ ${esc(d.email)}</span>`:""}
-      ${(d.endereco||d.cidade)?`<span>📍 ${esc([d.endereco,d.cidade&&(d.cidade+(d.uf?"/"+d.uf:"")),d.cep].filter(Boolean).join(" · "))}</span>`:""}
-      <span>🗓️ Cadastrada em ${fmtDate(d.created_at)}</span>
+    <div class="dsec"><div class="t">Plano &amp; assinatura <small style="font-weight:600;color:var(--muted)">Mensalidade paga à Vizello</small></div>
+      <div class="drow"><span class="k">Plano</span><span class="v">${d.plano?esc(d.plano):"— sem plano —"}</span></div>
+      <div class="drow"><span class="k">Mensalidade</span><span class="v">${d.valor_mensal!=null?fmtMoney(d.valor_mensal):"—"}</span></div>
+      <div class="drow"><span class="k">Status</span><span class="v">${slbl}</span></div>
+      <div class="drow"><span class="k">Desde</span><span class="v">${d.inicio?new Date(d.inicio).toLocaleDateString("pt-BR"):"—"}</span></div>
+      ${!S._suporte?`<button class="btn small" id="fiPlano2" style="margin-top:10px">💳 Definir plano / status</button>`:""}
     </div>
-    <div class="bar" style="margin-top:18px">
-      <button class="btn secondary" onclick="closeModal()">Fechar</button>
-      ${!S._suporte?`<button class="btn" id="fiPlano">💳 Definir plano</button>`:""}
-    </div>`);
-  $("#fiPlano")?.addEventListener("click",()=>definirPlanoImob(d));
+    <div class="dsec"><div class="t">Onboarding <span style="font-weight:600;color:var(--muted)">${onb}/4</span></div>
+      <div class="drow"><span class="k">${(d.imoveis_total||0)>0?"✅":"⬜"} Imóveis cadastrados</span></div>
+      <div class="drow"><span class="k">${(d.locacoes_ativas||0)>0?"✅":"⬜"} Locação ativa</span></div>
+      <div class="drow"><span class="k">${(d.membros_total||0)>0?"✅":"⬜"} Equipe vinculada</span></div>
+      <div class="drow"><span class="k">${d.assinatura_status?"✅":"⬜"} Plano/assinatura definido</span></div>
+    </div>
+    <div class="dsec"><div class="t">Carteira</div><div class="dgrid">
+      <div class="dcard"><small>Imóveis</small><b>${d.imoveis_total||0}</b></div>
+      <div class="dcard"><small>Disponíveis</small><b>${d.disponiveis||0}</b></div>
+      <div class="dcard"><small>Locados</small><b>${d.locados||0}</b></div>
+      <div class="dcard ${d.tickets_abertos?"bad":""}"><small>Chamados abertos</small><b>${d.tickets_abertos||0}</b></div>
+    </div></div>
+    <div class="dsec"><div class="t">Equipe (${membros.length})</div>
+      <div class="scrollbox">${membros.length? membros.map(m=>`<div class="personrow">👤 ${esc(m.nome||m.email)} <span class="rl">${PAPEL_IMOB[m.papel]||m.papel}</span></div>`).join("") : '<div style="color:var(--muted);padding:6px 0">Nenhum membro.</div>'}</div></div>
+    <div class="dsec"><div class="t">Imóveis (${imoveis.length})</div>
+      <div class="scrollbox">${imoveis.length? imoveis.map(im=>`<div class="personrow">🏠 ${esc(im.titulo||"Imóvel")} ${im.cidade?`<span style="color:var(--muted);font-size:12px">${esc(im.cidade)}${im.uf?"/"+esc(im.uf):""}</span>`:""} <span class="rl">${esc(im.status||"")}</span></div>`).join("") : '<div style="color:var(--muted);padding:6px 0">Nenhum imóvel cadastrado.</div>'}</div></div>
+    <button class="btn secondary" id="fiClose" style="margin-top:16px">Fechar</button>`;
+  $("#fiClose").addEventListener("click",closeModal);
+  const abrirPlano=()=>definirPlanoImob({id:d.id,nome:d.nome,plano_id:d.plano_id,status:d.assinatura_status,valor_mensal:d.valor_mensal});
+  $("#fiPlano")?.addEventListener("click",abrirPlano);
+  $("#fiPlano2")?.addEventListener("click",abrirPlano);
 }
 function definirPlanoImob(d){
   if(S._suporte) return;

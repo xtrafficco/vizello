@@ -372,24 +372,24 @@ const IC={
   atendimento: SVG('<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M20 19a3 3 0 0 1-3 3h-2.5"/>'),
 };
 
-// Abas principais (enxutas) + hub "Serviços" com o resto.
+// Abas principais + hub "Serviços" com o resto.
 const TABS=[
   {id:"inicio",ic:IC.inicio,label:"Início"},
   {id:"imoveis",ic:IC.imoveis,label:"Imóveis"},
-  {id:"locatarios",ic:IC.locatarios,label:"Locatários"},
   {id:"financeiro",ic:IC.financeiro,label:"Financeiro"},
+  {id:"atendimento",ic:IC.atendimento,label:"Atendimento"},
   {id:"servicos",ic:IC.servicos,label:"Serviços"},
+  {id:"perfil",ic:IC.config,label:"Perfil"},
 ];
 // Itens dentro de Serviços (acessados pelo hub)
 const HUB=[
+  {id:"locatarios",ic:IC.locatarios,label:"Locatários",desc:"Inquilinos e histórico"},
   {id:"donos",ic:IC.donos,label:"Donos",desc:"Proprietários e seus imóveis"},
   {id:"leads",ic:IC.leads,label:"Leads",desc:"Interessados e visitas"},
-  {id:"atendimento",ic:IC.atendimento,label:"Atendimento",desc:"Chamados dos moradores"},
   {id:"vistorias",ic:IC.vistorias,label:"Vistorias",desc:"Laudos de entrada/saída"},
   {id:"comissoes",ic:IC.comissoes,label:"Comissões & Repasses",desc:"Relatório para os donos"},
   {id:"mapa",ic:IC.mapa,label:"Mapa",desc:"Imóveis no mapa"},
   {id:"anuncios",ic:IC.anuncios,label:"Anúncios (OLX/ZAP)",desc:"Publicar nos portais"},
-  {id:"config",ic:IC.config,label:"Configurações",desc:"Imobiliária, recebimento, equipe"},
 ];
 const HUB_IDS=HUB.map(h=>h.id);
 function buildNav(){
@@ -403,7 +403,8 @@ function go(tab){
   window.scrollTo(0,0);
   const R={inicio:renderInicio,imoveis:renderImoveis,locatarios:renderLocatarios,financeiro:renderFinanceiro,
     servicos:renderServicos,donos:renderProprietarios,proprietarios:renderProprietarios,leads:renderLeads,
-    vistorias:renderVistorias,comissoes:renderComissoes,mapa:renderMapa,anuncios:renderAnuncios,atendimento:renderAtendimentoImob,config:renderConfig};
+    vistorias:renderVistorias,comissoes:renderComissoes,mapa:renderMapa,anuncios:renderAnuncios,
+    atendimento:renderAtendimentoImob,perfil:renderConfig,config:renderConfig};
   (R[tab]||renderInicio)();
 }
 function renderServicos(){
@@ -603,11 +604,16 @@ async function carregarImoveis(){
 async function renderInicio(){
   view().innerHTML='<div class="spin"></div>';
   let imoveis=[], lanc=[];
+  let tkAbertos=0;
   try{
     imoveis=await carregarImoveis();
     const {data:l}=await sb.from("imob_lancamentos").select("*").eq("imobiliaria_id",S.imob.id);
     lanc=l||[];
+    const {count}=await sb.from("imob_tickets").select("id",{count:"exact",head:true}).eq("imobiliaria_id",S.imob.id).in("status",["aberto","em_andamento"]);
+    tkAbertos=count||0;
   }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  const tkBanner = tkAbertos? `<button class="tile" id="tkBanner" style="width:100%;text-align:left;background:#fff8e6;border-color:#ece79a;margin-bottom:12px">
+      <div class="row"><span style="font-size:20px">🎧</span><span style="flex:1"><b>${tkAbertos} chamado(s) de atendimento em aberto</b><div class="sub" style="margin:2px 0 0">Toque para responder os moradores.</div></span><span class="badge pendente">Ver</span></div></button>` : "";
   const total=imoveis.length, disp=imoveis.filter(i=>i.status==="disponivel").length, locados=imoveis.filter(i=>i.status==="locado").length;
   const aluguelAtivo=imoveis.filter(i=>i.locacao).reduce((s,i)=>s+(Number(i.locacao.valor_mensal)||0),0);
   const hoje=new Date().toISOString().slice(0,10);
@@ -625,6 +631,7 @@ async function renderInicio(){
   });
   const alertasHtml = alertas.length? `<div class="h" style="font-size:16px;margin:4px 2px 8px">🔔 Alertas <small>${alertas.length}</small></div>`+alertas.map(a=>`<div class="tile" style="padding:12px 14px"><div class="row"><span style="font-size:18px">${a.ic}</span><span style="flex:1">${esc(a.txt)}</span><span class="badge ${a.cls}">!</span></div></div>`).join("")+`<div style="height:8px"></div>` : "";
   view().innerHTML=`<div class="h">📊 Visão geral <small>${esc(S.imob.nome)}</small></div>
+    ${tkBanner}
     <div class="metrics">
       <div class="metric"><small>Imóveis</small><b>${total}</b></div>
       <div class="metric"><small>Disponíveis</small><b style="color:var(--ok)">${disp}</b></div>
@@ -641,6 +648,7 @@ async function renderInicio(){
     <div class="bar"><button class="btn small" id="iNovo">➕ Novo imóvel</button><button class="btn small secondary" id="iLanc">💰 Novo lançamento</button></div>
     <div class="h" style="font-size:16px;margin-top:10px">Imóveis recentes</div>
     <div id="recentes"></div>`;
+  $("#tkBanner")?.addEventListener("click",()=>go("atendimento"));
   $("#iNovo").onclick=()=>formImovel();
   $("#iLanc").onclick=()=>formLancamento();
   $("#recentes").innerHTML = imoveis.slice(0,4).map(cardImovel).join("") || `<p class="empty">Nenhum imóvel ainda.</p>`;
@@ -1364,7 +1372,7 @@ function addItemVistoria(vistoriaId,dir,ordem){
 
 function fmtCnpj(v){ const d=String(v||"").replace(/\D/g,""); return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"):(v||""); }
 async function renderConfig(){
-  view().innerHTML=`<div class="h">⚙️ Configurações</div><div id="cfCard"><div class="spin"></div></div>`;
+  view().innerHTML=`<div class="h">👤 Perfil <small>Imobiliária, recebimento e equipe</small></div><div id="cfCard"><div class="spin"></div></div>`;
   let d={}; try{ const {data}=await sb.from("imobiliarias").select("*").eq("id",S.imob.id).single(); d=data||{}; }catch(_){ d={...S.imob}; }
   const linha=(k,v)=> v?`<div class="drow"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:"";
   $("#cfCard").innerHTML=`<div class="tile">
