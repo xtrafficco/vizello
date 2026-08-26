@@ -137,7 +137,7 @@ section{padding:76px 0}
 .band .item p{color:var(--on-dark-mut);font-size:14px;margin-top:8px}
 
 /* pricing */
-.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+.prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:stretch;max-width:900px;margin:0 auto}
 @media(max-width:820px){.prices{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
 .price{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:30px 26px;display:flex;flex-direction:column;box-shadow:var(--shadow-sm)}
 .price.pop{border-color:var(--teal);box-shadow:0 20px 50px -26px rgba(18,134,155,.55);position:relative}
@@ -146,6 +146,7 @@ section{padding:76px 0}
 .price .pdesc{color:var(--muted);font-size:13.5px;margin-top:6px;min-height:38px}
 .price .amount{margin:18px 0 4px;font-family:"Bricolage Grotesque";font-weight:800;font-size:40px;letter-spacing:-.03em}
 .price .amount small{font-size:15px;font-weight:600;color:var(--muted);font-family:"Inter"}
+.price .pmin{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.45}
 .price ul{list-style:none;padding:0;margin:20px 0 26px;display:flex;flex-direction:column;gap:11px}
 .price li{display:flex;gap:10px;font-size:14px;align-items:flex-start}
 .price li svg{width:18px;height:18px;color:var(--teal);flex:0 0 auto;margin-top:1px}
@@ -252,7 +253,7 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
 <header class="nav">
   <div class="in">
     <a href="/" class="brand" aria-label="Vizello"><span class="brandlogo" role="img" aria-label="Vizello"></span></a>
-    <nav class="links">
+    <nav class="links" aria-label="Navegação principal">
       <a href="#produto">Produto</a>
       <a href="#recursos">Recursos</a>
       <a href="#precos">Preços</a>
@@ -282,7 +283,7 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
           Acessar Imobiliária
         </a>
       </div>
-      <div class="note"><span>✅</span> <span><b>Instala no celular</b> como app · funciona offline · avisos por notificação</span></div>
+      <div class="note"><span aria-hidden="true">✅</span> <span><b>Instala no celular</b> como app · abre rápido mesmo com conexão instável · avisos por notificação</span></div>
     </div>
 
     <div class="mock">
@@ -316,9 +317,9 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
 
 <!-- TRUST BAR -->
 <div class="trust"><div class="in">
-  <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Teste grátis, sem cartão</span>
+  <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 14 dias grátis, sem cartão</span>
   <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Pagamentos por Pix</span>
-  <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Instala no celular (PWA)</span>
+  <span class="t"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Instala no celular (PWA)</span>
   <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Dados isolados por cliente</span>
   <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Conforme a LGPD</span>
   <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sem fidelidade</span>
@@ -419,7 +420,7 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
 <section class="band reveal">
   <div class="wrap">
     <div class="grid">
-      <div class="item"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg> Instala como app</h3><p>PWA no Android e iPhone, com ícone na tela inicial e uso offline. Sem loja de apps.</p></div>
+      <div class="item"><h3><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg> Instala como app</h3><p>PWA no Android e iPhone, com ícone na tela inicial e shell básico disponível offline. Sem loja de apps.</p></div>
       <div class="item"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg> Avisos que chegam</h3><p>Notificação no celular mesmo com o app fechado: interfone, encomenda, cobrança, assembleia.</p></div>
       <div class="item"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Tudo pelo sistema</h3><p>Atendimento por chamados, histórico registrado e nada mais perdido em conversa de WhatsApp.</p></div>
       <div class="item"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.5-7 9-4-1.5-7-4.6-7-9V6l7-3z"/></svg> LGPD &amp; segurança</h3><p>Consentimento, política de privacidade e dados de cada cliente isolados por padrão.</p></div>
@@ -441,7 +442,7 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
       <div class="step"><div class="n">3</div><h3>Comece a usar</h3><p>Comunicados, cobranças por Pix, portaria e locações funcionando — no celular de todos.</p></div>
     </div>
     <div style="text-align:center;margin-top:32px" class="reveal">
-      <a href="/condominio" class="btn btn-primary">Criar conta grátis →</a>
+      <a href="/cadastro" class="btn btn-primary">Criar conta grátis →</a>
     </div>
   </div>
 </section>
@@ -452,63 +453,56 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
     <div class="sec-head reveal">
       <div class="eyebrow">Preços</div>
       <h2>Planos simples, sem surpresa</h2>
-      <p>Uma assinatura mensal por condomínio ou imobiliária. Comece com teste grátis e cresça quando precisar.</p>
+        <p>Escolha o nível de automação do seu condomínio. Você paga por unidade ativa, com mínimo mensal transparente e desconto no contrato anual.</p>
     </div>
     <div class="bill-wrap reveal">
       <div class="billtoggle" role="group" aria-label="Período de cobrança">
         <button type="button" data-bill="mensal" class="on" aria-pressed="true">Mensal</button>
-        <button type="button" data-bill="anual" aria-pressed="false">Anual <span class="save">2 meses grátis</span></button>
+        <button type="button" data-bill="anual" aria-pressed="false">Anual <span class="save">10% de desconto</span></button>
       </div>
     </div>
     <div class="prices reveal">
       <div class="price">
         <div class="pname">Essencial</div>
-        <div class="pdesc">Para um condomínio pequeno ou uma imobiliária começando.</div>
-        <div class="amount" data-m='R$ 99<small>/mês</small>' data-a='R$ 82<small>/mês</small>'>R$ 99<small>/mês</small></div>
-        <div class="bill-note">cobrado R$ 990/ano</div>
+        <div class="pdesc">Organização completa para condomínios pequenos e síndicos profissionais.</div>
+        <div class="amount" data-m='R$ 4,90<small>/unidade/mês</small>' data-a='R$ 4,41<small>/unidade/mês</small>'>R$ 4,90<small>/unidade/mês</small></div>
+        <div class="pmin">Mínimo mensal de R$ 149 · inclui até 30 unidades</div>
+        <div class="bill-note">14 dias grátis · 10% de desconto no anual</div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Até 50 unidades / imóveis</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Comunicação, portaria e financeiro</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Pagamentos por Pix</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Notificações no celular</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Mural, comunicados e notificações</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Ocorrências, chamados e documentos</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Reservas, visitantes, QR Code e entregas</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Financeiro básico e prestação de contas</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Veículos, pets e permissões da equipe</li>
         </ul>
-        <a href="/condominio" class="btn btn-ghost">Começar</a>
+        <a href="/cadastro?plano=essencial" class="btn btn-ghost">Começar teste grátis</a>
       </div>
       <div class="price pop">
-        <span class="flag">Mais popular</span>
-        <div class="pname">Profissional</div>
-        <div class="pdesc">Para condomínios e imobiliárias em operação plena.</div>
-        <div class="amount" data-m='R$ 199<small>/mês</small>' data-a='R$ 166<small>/mês</small>'>R$ 199<small>/mês</small></div>
-        <div class="bill-note">cobrado R$ 1.990/ano</div>
+        <span class="flag">Mais escolhido</span>
+        <div class="pname">Gestão Pro</div>
+        <div class="pdesc">Automação financeira e operação avançada para condomínios em crescimento.</div>
+        <div class="amount" data-m='R$ 7,90<small>/unidade/mês</small>' data-a='R$ 7,11<small>/unidade/mês</small>'>R$ 7,90<small>/unidade/mês</small></div>
+        <div class="pmin">Mínimo mensal de R$ 299 · cobrança por unidade ativa</div>
+        <div class="bill-note">14 dias grátis · 10% de desconto no anual</div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Unidades / imóveis ilimitados</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Assembleias digitais e vistorias</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Comissões, repasses e relatórios</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Anúncios em portais (OLX/ZAP)</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Suporte prioritário</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tudo do plano Essencial</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cobranças recorrentes, Pix e segunda via</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Inadimplência, lembretes e régua de cobrança</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Assembleias, votações e procuração digital</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Portaria, interfonia, consumo e SOS</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Dashboards, auditoria e suporte prioritário</li>
         </ul>
-        <a href="/condominio" class="btn btn-primary">Começar agora</a>
-      </div>
-      <div class="price">
-        <div class="pname">Sob medida</div>
-        <div class="pdesc">Administradoras e redes com vários condomínios/imobiliárias.</div>
-        <div class="amount">Sob consulta</div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Vários condomínios / imobiliárias</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Painel administrativo consolidado</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Onboarding e treinamento</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Integrações personalizadas</li>
-        </ul>
-        <a href="mailto:contato@vizello.app" class="btn btn-ghost">Falar com vendas</a>
+        <a href="/cadastro?plano=pro" class="btn btn-primary">Quero o Gestão Pro</a>
       </div>
     </div>
     <div class="reassure">
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Teste grátis</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 14 dias grátis</span>
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sem cartão para começar</span>
       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cancele quando quiser</span>
-      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> HTTPS, backups e atualizações inclusos</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Implantação de R$ 490 grátis no anual</span>
     </div>
-    <p class="price-note">Valores de referência — ajuste conforme seus planos reais.</p>
+    <p class="price-note">Valores para condomínios. A unidade ativa é a unidade cadastrada no condomínio. Taxas de boleto, Pix ou gateway financeiro não estão incluídas na mensalidade.</p>
+    <p class="price-note">Administradoras, redes e imobiliárias: fale conosco para uma proposta por volume, imóveis e contratos.</p>
   </div>
 </section>
 
@@ -519,9 +513,10 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
     <div class="faq">
       <details open><summary>Preciso instalar algo?</summary><div class="a">Não. O Vizello é um app web (PWA): abre no navegador e pode ser instalado na tela inicial do celular, funcionando como um aplicativo — inclusive offline.</div></details>
       <details><summary>Serve para condomínio e para imobiliária?</summary><div class="a">Sim. São duas soluções na mesma plataforma. Escolha "Acessar Condomínio" ou "Acessar Imobiliária" acima; cada uma tem as ferramentas certas para o seu caso.</div></details>
-      <details><summary>Como funcionam os pagamentos?</summary><div class="a">Cobranças e aluguéis podem ser pagos por Pix, com baixa automática. A mensalidade da plataforma também é cobrada de forma recorrente e segura.</div></details>
+      <details><summary>Como funciona a cobrança?</summary><div class="a">Nos planos para condomínios, a mensalidade é calculada por unidade ativa, respeitando o mínimo mensal de cada plano. O contrato anual tem 10% de desconto. Taxas de boleto, Pix ou gateway financeiro são cobradas pelo respectivo meio de pagamento.</div></details>
       <details><summary>Meus dados ficam seguros?</summary><div class="a">Sim. Cada condomínio e imobiliária tem seus dados isolados (segurança em nível de registro em 100% das tabelas), com verificação em duas etapas no painel e conformidade com a LGPD.</div></details>
-      <details><summary>Tem período de teste?</summary><div class="a">Sim. Você começa com um período de teste e ativa o plano quando decidir continuar.</div></details>
+      <details><summary>Tem período de teste?</summary><div class="a">Sim. Você começa com 14 dias grátis, sem cartão de crédito. Ao final, escolha Essencial ou Gestão Pro para continuar usando o sistema. A implantação assistida custa R$ 490 e é gratuita no contrato anual.</div></details>
+      <details><summary>A imobiliária entra nesses planos?</summary><div class="a">A plataforma também atende imobiliárias, mas a cobrança desse módulo considera imóveis, contratos e volume de operação. Para administradoras, redes e imobiliárias, fale com a equipe para receber uma proposta adequada ao tamanho da operação.</div></details>
     </div>
   </div>
 </section>

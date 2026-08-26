@@ -16,13 +16,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/theme.css">
 <script>try{var _t=localStorage.getItem('vz-theme');if(_t==='dark'||_t==='light')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
-<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
-<script src="/vendor/leaflet/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/qrcode.js"></script>
 <title>VIZELLO — Imobiliária</title>
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none}
-  *::-webkit-scrollbar{display:none;width:0;height:0}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:thin}
+  *::-webkit-scrollbar{width:8px;height:8px}
+  *::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
   html,body{margin:0;min-height:100%}
   body{font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--app-bg)}
@@ -72,9 +73,10 @@
   main{max-width:1000px;margin:0 auto;padding:20px 16px calc(96px + env(safe-area-inset-bottom))}
   nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);z-index:25}
   nav.bottom .navinner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
-  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;font-weight:600;padding:6px 1px}
+  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;font-weight:600;padding:7px 2px;min-height:44px}
   nav.bottom button .ic{font-size:20px;line-height:1}
   nav.bottom button.active{color:var(--brand)}
+  .offchip{background:rgba(255,255,255,.16);color:#ffd9a8;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
   .sec{display:none} .sec.on{display:block}
   .h{font-size:20px;font-weight:800;margin:6px 2px 14px;letter-spacing:-.3px}
   .h small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
@@ -139,9 +141,9 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
     <div class="sub">Gestão de imóveis, locações e financeiro.</div>
-    <label>E-mail</label><input id="liEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
-    <label>Senha</label><input id="liPass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
-    <div id="liErr" class="err"></div><div id="liMsg" class="ok"></div>
+    <label for="liEmail">E-mail</label><input id="liEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
+    <label for="liPass">Senha</label><input id="liPass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div id="liErr" class="err" role="alert" aria-live="assertive"></div><div id="liMsg" class="ok" role="status" aria-live="polite"></div>
     <button id="liBtn" class="btn">Entrar</button>
     <div class="switch-txt">Ainda não tem conta? <button id="goSignup">Criar conta</button></div>
     <div class="switch-txt" style="margin-top:6px"><button id="liForgot">Esqueci minha senha</button></div>
@@ -163,10 +165,10 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
     <div class="sub">Crie sua conta para começar.</div>
-    <label>Nome</label><input id="suNome" class="field" type="text" autocomplete="name" placeholder="Seu nome">
-    <label>E-mail</label><input id="suEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
-    <label>Senha</label><input id="suPass" class="field" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
-    <div id="suErr" class="err"></div><div id="suMsg" class="ok"></div>
+    <label for="suNome">Nome</label><input id="suNome" class="field" type="text" autocomplete="name" placeholder="Seu nome">
+    <label for="suEmail">E-mail</label><input id="suEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
+    <label for="suPass">Senha</label><input id="suPass" class="field" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+    <div id="suErr" class="err" role="alert" aria-live="assertive"></div><div id="suMsg" class="ok" role="status" aria-live="polite"></div>
     <button id="suBtn" class="btn">Criar conta</button>
     <div class="switch-txt" style="font-size:12px;margin-top:8px">Ao criar conta, você concorda com os <a href="/termos" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</div>
     <div class="switch-txt">Já tem conta? <button id="goLogin">Entrar</button></div>
@@ -179,13 +181,13 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
     <div class="sub">Cadastre sua imobiliária para continuar.</div>
-    <label>Nome da imobiliária</label><input id="ciNome" class="field" placeholder="Imobiliária Central">
+    <label for="ciNome">Nome da imobiliária</label><input id="ciNome" class="field" placeholder="Imobiliária Central">
     <div class="fld-row">
-      <div><label>CNPJ (opcional)</label><input id="ciCnpj" class="field" inputmode="numeric" placeholder="00.000.000/0000-00"></div>
-      <div><label>UF</label><input id="ciUf" class="field" maxlength="2" placeholder="RJ"></div>
+      <div><label for="ciCnpj">CNPJ (opcional)</label><input id="ciCnpj" class="field" inputmode="numeric" placeholder="00.000.000/0000-00"></div>
+      <div><label for="ciUf">UF</label><input id="ciUf" class="field" maxlength="2" placeholder="RJ"></div>
     </div>
-    <label>Cidade (opcional)</label><input id="ciCidade" class="field" placeholder="Petrópolis">
-    <div id="ciErr" class="err"></div>
+    <label for="ciCidade">Cidade (opcional)</label><input id="ciCidade" class="field" placeholder="Petrópolis">
+    <div id="ciErr" class="err" role="alert" aria-live="assertive"></div>
     <button id="ciBtn" class="btn">Criar imobiliária</button>
     <button id="ciOut" class="btn ghost">Sair</button>
   </div>
@@ -207,14 +209,15 @@
   <header class="top">
     <div class="brand"><img class="toplogo" src="/logo-white.png?v=2" alt="VIZELLO"> <span class="tag" id="appTag">IMOBILIÁRIA</span></div>
     <div class="who"><b id="whoImob">—</b><span id="whoUser">—</span></div>
+    <span class="offchip hide" id="offlineChip" title="Você está offline">⚡ offline</span>
     <button class="btn small secondary" id="topOut" style="width:auto;margin:0 0 0 14px;padding:9px 15px">Sair</button>
   </header>
-  <main id="view"><div class="spin"></div></main>
+    <main id="view" aria-live="polite" aria-busy="true"><div class="spin" role="status" aria-label="Carregando"></div></main>
   <nav class="bottom" id="nav"></nav>
 </div>
 
-<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
-<div class="toast" id="toast"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal" role="dialog" aria-modal="true" tabindex="-1"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -226,7 +229,10 @@ const S={ user:null, imob:null, imobs:[], tab:"inicio" };
 const $=s=>document.querySelector(s);
 const view=()=>$("#view");
 function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2600); }
+let modalReturnFocus=null;
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2600); }
+function wireLabels(root=document){ root.querySelectorAll("label").forEach(label=>{ if(label.htmlFor||label.querySelector("input,select,textarea")) return; let el=label.nextElementSibling; while(el && !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){ const nested=el.querySelector?.("input,select,textarea"); if(nested){el=nested;break;} el=el.nextElementSibling; } if(el?.id) label.htmlFor=el.id; }); }
+function syncA11y(root=document){ wireLabels(root); root.querySelectorAll(".spin").forEach(el=>{ el.setAttribute("role","status"); el.setAttribute("aria-label","Carregando"); }); }
 function nomeUsuario(){ return (S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email&&S.user.email.split("@")[0])||"Você"; }
 function saudacao(){ return "Olá, "+nomeUsuario(); }
 // Link "adicionar à agenda" (Google Calendar / celular) a partir de uma data
@@ -237,9 +243,15 @@ function calLink({title,details,location,start,minutes=60}){
   const q=new URLSearchParams({action:"TEMPLATE",text:title||"Compromisso",dates:`${fmt(s)}/${fmt(e)}`,details:details||"",location:location||""});
   return "https://calendar.google.com/calendar/render?"+q.toString();
 }
-function modal(html){ $("#modal").innerHTML=html; $("#modalBg").classList.add("show"); }
-function closeModal(){ $("#modalBg").classList.remove("show"); }
+function modal(html){ modalReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#modal"); el.innerHTML=html; const title=el.querySelector("h2"); if(title){title.id=title.id||"modalTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#modalBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
+function closeModal(){ $("#modalBg").classList.remove("show"); if(modalReturnFocus?.isConnected) modalReturnFocus.focus(); modalReturnFocus=null; }
 $("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
+$("#modal").addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();closeModal();return;} if(e.key!=="Tab") return; const fs=[...$("#modal").querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])")]; if(!fs.length)return; const first=fs[0],last=fs[fs.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} });
+function syncOffline(){ const el=$("#offlineChip"); if(el) el.classList.toggle("hide",navigator.onLine); }
+addEventListener("online",()=>{syncOffline();toast("Conexão restabelecida.");}); addEventListener("offline",()=>{syncOffline();toast("Você está offline. Algumas ações podem ficar indisponíveis.");}); syncOffline();
+const viewObserver=new window.MutationObserver(()=>{ const v=$("#view"); if(v){v.setAttribute("aria-busy",v.querySelector(".spin")?"true":"false");syncA11y(v);} });
+viewObserver.observe($("#view"),{childList:true,subtree:true});
+syncA11y(document);
 function confirmar(msg,ok="Confirmar"){ return new Promise(res=>{ modal(`<h2>Confirmar</h2><p class="sub" style="text-align:left">${esc(msg)}</p>
   <div class="fld-row" style="margin-top:6px"><button class="btn secondary" id="cfN">Cancelar</button><button class="btn" id="cfY">${esc(ok)}</button></div>`);
   $("#cfY").onclick=()=>{closeModal();res(true);}; $("#cfN").onclick=()=>{closeModal();res(false);}; }); }
@@ -275,7 +287,7 @@ const ETAPA_ORDER=["novo","contato","visita","proposta","fechado"];
 function show(id){ for(const s of ["invite","login","signup","createImob","pickImob","app"]) $("#"+s).classList.toggle("hide", s!==id); }
 
 // ---------- AUTH ----------
-function setMsg(el,m,cls){ const e=$(el); if(!m){e.classList.remove("show");return;} e.textContent=m; e.className=cls+" show"; }
+function setMsg(el,m,cls){ const e=$(el); e.setAttribute("role",cls==="err"?"alert":"status"); e.setAttribute("aria-live",cls==="err"?"assertive":"polite"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.className=cls+" show"; }
 $("#goSignup").onclick=()=>show("signup");
 $("#goLogin").onclick=()=>show("login");
 $("#liBtn").onclick=async()=>{
@@ -347,7 +359,12 @@ async function aceitarConviteAtual(){
   try{ await rpc("imob_prop_convite_aceitar",{p_token:conviteToken}); return; }catch(_){}
   try{ await rpc("imob_convite_aceitar",{p_token:conviteToken}); }catch(_){}
 }
-function enterApp(){
+async function enterApp(){
+  S.assinatura=await rpc("minha_assinatura_imob",{p_imob:S.imob.id}).catch(()=>null);
+  if(S.assinatura?.precisa_pagamento){
+    location.href="/pagamento?tipo=imobiliaria&tenant="+encodeURIComponent(S.imob.id);
+    return;
+  }
   $("#whoImob").textContent=S.imob.nome;
   $("#whoUser").textContent=saudacao();
   $("#topOut").onclick=logout;
@@ -367,7 +384,6 @@ const IC={
   vistorias: SVG('<rect x="6" y="4" width="12" height="16.5" rx="2"/><path d="M9 3.4h6v2.2H9z"/><path d="M8.7 11l1.4 1.4L13 9.6"/><path d="M8.7 16l1.4 1.4L13 14.6"/>'),
   mapa: SVG('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.3"/>'),
   comissoes: SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>'),
-  relatorios: SVG('<path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 15h6M9 18h4"/>'),
   anuncios: SVG('<path d="M4 10v4h3l7 4V6L7 10H4z"/><path d="M18 9a4 4 0 0 1 0 6"/>'),
   config: SVG('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h7M15 18h5"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="18" r="2"/>'),
   atendimento: SVG('<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M20 19a3 3 0 0 1-3 3h-2.5"/>'),
@@ -389,23 +405,23 @@ const HUB=[
   {id:"leads",ic:IC.leads,label:"Leads",desc:"Interessados e visitas"},
   {id:"vistorias",ic:IC.vistorias,label:"Vistorias",desc:"Laudos de entrada/saída"},
   {id:"comissoes",ic:IC.comissoes,label:"Comissões & Repasses",desc:"Relatório para os donos"},
-  {id:"relatorios",ic:IC.relatorios,label:"Relatórios",desc:"Carteira, financeiro e mais — para imprimir"},
   {id:"mapa",ic:IC.mapa,label:"Mapa",desc:"Imóveis no mapa"},
   {id:"anuncios",ic:IC.anuncios,label:"Anúncios (OLX/ZAP)",desc:"Publicar nos portais"},
 ];
 const HUB_IDS=HUB.map(h=>h.id);
 function buildNav(){
-  $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`;
+  $("#nav").setAttribute("aria-label","Navegação principal");
+  $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`;
   $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 }
 function go(tab){
   S.tab=tab;
   const navId = HUB_IDS.includes(tab) ? "servicos" : tab;
-  $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===navId));
+  $("#nav").querySelectorAll("[data-tab]").forEach(b=>{ const active=b.dataset.tab===navId; b.classList.toggle("active",active); if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current"); });
   window.scrollTo(0,0);
   const R={inicio:renderInicio,imoveis:renderImoveis,locatarios:renderLocatarios,financeiro:renderFinanceiro,
     servicos:renderServicos,donos:renderProprietarios,proprietarios:renderProprietarios,leads:renderLeads,
-    vistorias:renderVistorias,comissoes:renderComissoes,relatorios:renderRelatorios,mapa:renderMapa,anuncios:renderAnuncios,
+    vistorias:renderVistorias,comissoes:renderComissoes,mapa:renderMapa,anuncios:renderAnuncios,
     atendimento:renderAtendimentoImob,perfil:renderConfig,config:renderConfig};
   (R[tab]||renderInicio)();
 }
@@ -447,7 +463,7 @@ async function renderLocatarios(){
 async function renderComissoes(){
   const comp=S._compComissao||new Date().toISOString().slice(0,7);
   view().innerHTML=`<div class="h">📊 Comissões & Repasses <small>Relatório mensal</small></div>
-    <div class="bar"><input id="cmComp" class="field" type="month" value="${comp}" style="max-width:180px"><button class="btn small secondary" id="cmPrint">🖨️ Imprimir / PDF</button></div><div id="cmBody"><div class="spin"></div></div>`;
+    <div class="bar"><input id="cmComp" class="field" type="month" value="${comp}" style="max-width:180px"></div><div id="cmBody"><div class="spin"></div></div>`;
   $("#cmComp").onchange=()=>{ S._compComissao=$("#cmComp").value; renderComissoes(); };
   let lanc=[], imv=[];
   try{
@@ -461,13 +477,11 @@ async function renderComissoes(){
   const repasses=lanc.filter(x=>x.tipo==="despesa"&&x.categoria==="repasse");
   if(!alugueis.length){ $("#cmBody").innerHTML=`<div class="empty"><div class="big">📊</div><p>Sem aluguéis lançados em ${esc(comp)}.</p></div>`; return; }
   let totAluguel=0, totComissao=0, totRepasse=0, totRecebido=0;
-  const printRows=[];
   const rows=alugueis.map(a=>{
     const im=a.imoveis||{}; const taxa=Number(im.taxa_admin_pct)||0;
     const comissao=+(Number(a.valor)*taxa/100).toFixed(2); const repasse=+(Number(a.valor)-comissao).toFixed(2);
     totAluguel+=Number(a.valor); totComissao+=comissao; totRepasse+=repasse; if(a.status==="pago") totRecebido+=Number(a.valor);
     const repFeito=repasses.find(r=>r.imovel_id===a.imovel_id);
-    printRows.push(`<tr><td>${esc(im.titulo||"Imóvel")}</td><td>${a.status==="pago"?"Recebido":"A receber"}</td><td class="num">${fmtMoney(a.valor)}</td><td class="num">${taxa||0}%</td><td class="num">${fmtMoney(comissao)}</td><td class="num">${fmtMoney(repasse)}</td><td>${repFeito?"Repassado":"Pendente"}</td></tr>`);
     return `<div class="tile"><div class="row"><h3 style="flex:1;font-size:15px">${esc(im.titulo||"Imóvel")}</h3><span class="badge ${a.status==="pago"?"pago":"pendente"}">${a.status==="pago"?"recebido":"a receber"}</span></div>
       <div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(a.valor)}</span></div>
       <div class="drow"><span class="k">Comissão (${taxa||0}%)</span><span class="v">${fmtMoney(comissao)}</span></div>
@@ -480,118 +494,6 @@ async function renderComissoes(){
       <div class="drow"><span class="k">A repassar aos donos</span><span class="v"><b>${fmtMoney(totRepasse)}</b></span></div>
     </div>${rows}
     <p class="sub" style="margin-top:8px">A comissão usa a <b>taxa de administração</b> de cada imóvel. Ajuste-a no cadastro do imóvel.</p>`;
-  $("#cmPrint").onclick=()=>{
-    const body=`<div class="cards"><div class="card"><small>Total em aluguéis</small><b>${fmtMoney(totAluguel)}</b></div><div class="card"><small>Recebido</small><b>${fmtMoney(totRecebido)}</b></div><div class="card"><small>Comissão da imobiliária</small><b>${fmtMoney(totComissao)}</b></div><div class="card"><small>A repassar aos donos</small><b>${fmtMoney(totRepasse)}</b></div></div>
-      <table><thead><tr><th>Imóvel</th><th>Situação</th><th class="num">Aluguel</th><th class="num">Taxa</th><th class="num">Comissão</th><th class="num">Repasse</th><th>Repasse feito?</th></tr></thead><tbody>${printRows.join("")}</tbody><tfoot><tr><td colspan="2">Total</td><td class="num">${fmtMoney(totAluguel)}</td><td></td><td class="num">${fmtMoney(totComissao)}</td><td class="num">${fmtMoney(totRepasse)}</td><td></td></tr></tfoot></table>`;
-    printHTML("Comissões & Repasses", "Competência "+comp, body);
-  };
-}
-
-// ---------- RELATÓRIOS (imprimíveis) ----------
-function printHTML(titulo, subtitulo, bodyHtml){
-  const w=window.open("","_blank"); if(!w){ toast("Permita pop-ups para gerar o PDF."); return; }
-  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(titulo)} — ${esc(S.imob.nome)}</title>
-   <style>*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#12303a;padding:28px;max-width:900px;margin:0 auto}
-   h1{font-size:20px;margin:0 0 2px}.sub{color:#5b7079;font-size:13px;margin:0 0 16px}
-   table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:7px 9px;font-size:12.5px;text-align:left;vertical-align:top}
-   th{background:#f2f6f7}td.num,th.num{text-align:right;white-space:nowrap}tfoot td{font-weight:bold;background:#f7fafb}
-   .cards{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 4px}.card{border:1px solid #ccc;border-radius:8px;padding:8px 12px;min-width:150px}
-   .card small{display:block;color:#5b7079;font-size:11px}.card b{font-size:16px}.empty{color:#5b7079;font-style:italic;margin-top:12px}
-   @media print{body{padding:0}.noprint{display:none}@page{margin:14mm}}</style></head><body>
-   <h1>${esc(titulo)}</h1>
-   <p class="sub">${esc(S.imob.nome)}${subtitulo?" · "+esc(subtitulo):""} · Emitido em ${new Date().toLocaleString("pt-BR")}</p>
-   ${bodyHtml}
-   <p class="sub" style="margin-top:30px">Documento gerado pelo VIZELLO.</p>
-   <div class="noprint" style="margin-top:16px;text-align:center"><button onclick="window.print()" style="padding:10px 18px;font-size:14px;cursor:pointer">🖨️ Imprimir / Salvar PDF</button></div>
-   </body></html>`);
-  w.document.close(); w.focus(); setTimeout(()=>{ try{ w.print(); }catch(_){} },300);
-}
-async function renderRelatorios(){
-  const comp=S._compRel||new Date().toISOString().slice(0,7);
-  view().innerHTML=`<div class="h">📄 Relatórios <small>Gerar e imprimir</small></div>
-    <div class="bar"><label style="align-self:center;font-size:13px;color:var(--muted,#5b7079)">Mês de referência</label><input id="relComp" class="field" type="month" value="${comp}" style="max-width:180px"></div>
-    <div id="relBody"><div class="spin"></div></div>`;
-  $("#relComp").onchange=()=>{ S._compRel=$("#relComp").value; renderRelatorios(); };
-  let imoveis=[],lanc=[],props=[];
-  try{
-    imoveis=await carregarImoveis();
-    const [{data:l},{data:p}]=await Promise.all([
-      sb.from("imob_lancamentos").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id),
-      sb.from("imob_proprietarios").select("*").eq("imobiliaria_id",S.imob.id)
-    ]);
-    lanc=l||[]; props=p||[];
-  }catch(e){ $("#relBody").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
-  S._relData={imoveis,lanc,props,comp};
-  const cards=[
-    {id:"carteira", ic:"🏠", t:"Carteira de imóveis", d:"Todos os imóveis: status, locatário e valores"},
-    {id:"financeiro", ic:"💰", t:"Financeiro mensal", d:`Receitas, despesas e resultado do mês`},
-    {id:"repasses", ic:"💸", t:"Repasses aos proprietários", d:"Quanto repassar a cada dono"},
-    {id:"inadimplencia", ic:"⚠️", t:"Inadimplência", d:"Cobranças vencidas em aberto"},
-    {id:"locacoes", ic:"👥", t:"Locações ativas", d:"Contratos vigentes e vencimentos"},
-  ];
-  $("#relBody").innerHTML=cards.map(c=>`<div class="tile"><div class="row"><span style="font-size:22px">${c.ic}</span><div style="flex:1;min-width:0"><h3 style="font-size:15px">${c.t}</h3><div class="meta"><span>${c.d}</span></div></div></div>
-    <div class="bar" style="margin:10px 0 0"><button class="btn small secondary" data-rv="${c.id}">👁️ Ver</button><button class="btn small" data-rp="${c.id}">🖨️ Imprimir / PDF</button></div></div>`).join("")+`<div id="relView"></div>`;
-  $("#relBody").querySelectorAll("[data-rv]").forEach(b=>b.onclick=()=>{ const h=relatorioHTML(b.dataset.rv); $("#relView").innerHTML=`<div class="h" style="font-size:15px;margin-top:12px">👁️ Prévia — ${esc(h.titulo)}</div><div class="tile" style="overflow:auto">${h.body}</div>`; $("#relView").scrollIntoView({behavior:"smooth"}); });
-  $("#relBody").querySelectorAll("[data-rp]").forEach(b=>b.onclick=()=>{ const h=relatorioHTML(b.dataset.rp); printHTML(h.titulo,h.sub,h.body); });
-}
-function relatorioHTML(id){
-  const {imoveis,lanc,props,comp}=S._relData||{imoveis:[],lanc:[],props:[],comp:""};
-  const hoje=new Date().toISOString().slice(0,10);
-  const compLabel=(()=>{ try{ const [y,m]=comp.split("-"); return new Date(y,m-1,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"}); }catch(_){ return comp; } })();
-  const money=v=>fmtMoney(Number(v)||0);
-  const inComp=l=> l.competencia? l.competencia===comp : (l.vencimento||"").slice(0,7)===comp;
-  if(id==="carteira"){
-    const rows=imoveis.map(i=>{ const l=i.locacao; const val=i.finalidade==="venda"?i.valor_venda:i.valor_aluguel;
-      return `<tr><td>${esc(i.titulo)}</td><td>${esc((TIPOS[i.tipo]||i.tipo||"")+" · "+(FINS[i.finalidade]||i.finalidade||""))}</td><td>${esc((i.cidade||"")+(i.uf?"/"+i.uf:""))}</td><td>${esc(STATUS[i.status]||i.status||"")}</td><td>${l?esc(l.locatario_nome||""):"—"}</td><td class="num">${val?money(val):"—"}</td></tr>`; }).join("");
-    const locados=imoveis.filter(i=>i.status==="locado").length, disp=imoveis.filter(i=>i.status==="disponivel").length;
-    const somaAlug=imoveis.filter(i=>i.locacao).reduce((s,i)=>s+(Number(i.locacao.valor_mensal)||0),0);
-    const body=`<div class="cards"><div class="card"><small>Imóveis</small><b>${imoveis.length}</b></div><div class="card"><small>Locados</small><b>${locados}</b></div><div class="card"><small>Disponíveis</small><b>${disp}</b></div><div class="card"><small>Aluguéis ativos/mês</small><b>${money(somaAlug)}</b></div></div>
-      <table><thead><tr><th>Imóvel</th><th>Tipo · Finalidade</th><th>Cidade</th><th>Status</th><th>Locatário</th><th class="num">Valor</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Nenhum imóvel.</td></tr>'}</tbody></table>`;
-    return {titulo:"Carteira de imóveis", sub:`${imoveis.length} imóvel(is)`, body};
-  }
-  if(id==="financeiro"){
-    const mes=lanc.filter(inComp);
-    const rec=mes.filter(l=>l.tipo==="receita"), desp=mes.filter(l=>l.tipo==="despesa");
-    const recPagas=rec.filter(l=>l.status==="pago").reduce((s,l)=>s+Number(l.valor),0);
-    const despPagas=desp.filter(l=>l.status==="pago").reduce((s,l)=>s+Number(l.valor),0);
-    const alugBruto=rec.filter(l=>l.status==="pago"&&l.categoria==="aluguel").reduce((s,l)=>s+Number(l.valor),0);
-    const repasses=desp.filter(l=>l.categoria==="repasse").reduce((s,l)=>s+Number(l.valor),0);
-    const comissao=alugBruto-repasses;
-    const rows=mes.sort((a,b)=>String(a.vencimento||"").localeCompare(String(b.vencimento||""))).map(l=>`<tr><td>${l.vencimento?fmtDate(l.vencimento):"—"}</td><td>${l.tipo==="receita"?"Receita":"Despesa"}</td><td>${esc((l.tipo==="receita"?CAT_REC:CAT_DESP)[l.categoria]||l.categoria||"")}</td><td>${esc(l.descricao||"")}${l.imoveis?" · "+esc(l.imoveis.titulo):""}</td><td>${l.status==="pago"?"Pago":"Pendente"}</td><td class="num">${l.tipo==="receita"?"":"−"}${money(l.valor)}</td></tr>`).join("");
-    const body=`<div class="cards"><div class="card"><small>Receitas recebidas</small><b>${money(recPagas)}</b></div><div class="card"><small>Despesas pagas</small><b>${money(despPagas)}</b></div><div class="card"><small>Comissão da imobiliária</small><b>${money(comissao)}</b></div><div class="card"><small>Resultado (caixa)</small><b>${money(recPagas-despPagas)}</b></div></div>
-      <table><thead><tr><th>Vencimento</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Situação</th><th class="num">Valor</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Sem lançamentos no mês.</td></tr>'}</tbody></table>`;
-    return {titulo:"Relatório financeiro mensal", sub:compLabel, body};
-  }
-  if(id==="repasses"){
-    const propById={}; props.forEach(p=>propById[p.id]=p);
-    const imById={}; imoveis.forEach(i=>imById[i.id]=i);
-    const grp={};
-    lanc.filter(l=>l.categoria==="repasse").forEach(l=>{ const im=imById[l.imovel_id]; const pid=im&&im.proprietario_id; const key=pid||"__sem__";
-      const g=grp[key]=grp[key]||{pend:0,pago:0}; if(l.status==="pago") g.pago+=Number(l.valor); else g.pend+=Number(l.valor); });
-    let totPend=0,totPago=0;
-    const rows=Object.entries(grp).map(([pid,g])=>{ totPend+=g.pend; totPago+=g.pago; const p=propById[pid];
-      return `<tr><td>${p?esc(p.nome):"(sem proprietário vinculado)"}</td><td>${p&&p.pix_chave?esc(p.pix_chave):"—"}</td><td class="num">${money(g.pago)}</td><td class="num">${money(g.pend)}</td></tr>`; }).join("");
-    const body=`<div class="cards"><div class="card"><small>A repassar (pendente)</small><b>${money(totPend)}</b></div><div class="card"><small>Já repassado</small><b>${money(totPago)}</b></div></div>
-      <table><thead><tr><th>Proprietário</th><th>Chave Pix</th><th class="num">Repassado</th><th class="num">A repassar</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Nenhum repasse registrado.</td></tr>'}</tbody><tfoot><tr><td colspan="2">Total</td><td class="num">${money(totPago)}</td><td class="num">${money(totPend)}</td></tr></tfoot></table>`;
-    return {titulo:"Repasses aos proprietários", sub:`${Object.keys(grp).length} proprietário(s)`, body};
-  }
-  if(id==="inadimplencia"){
-    const venc=lanc.filter(l=>l.tipo==="receita"&&l.status==="pendente"&&l.vencimento&&l.vencimento<hoje).sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento)));
-    let tot=0;
-    const rows=venc.map(l=>{ tot+=Number(l.valor); const dias=Math.floor((new Date(hoje)-new Date(l.vencimento+"T00:00:00"))/86400000);
-      return `<tr><td>${esc(l.descricao||"")}</td><td>${l.imoveis?esc(l.imoveis.titulo):"—"}</td><td>${fmtDate(l.vencimento)}</td><td class="num">${dias}</td><td class="num">${money(l.valor)}</td></tr>`; }).join("");
-    const body=`<div class="cards"><div class="card"><small>Cobranças vencidas</small><b>${venc.length}</b></div><div class="card"><small>Total em atraso</small><b>${money(tot)}</b></div></div>
-      <table><thead><tr><th>Descrição</th><th>Imóvel</th><th>Vencimento</th><th class="num">Dias em atraso</th><th class="num">Valor</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Nenhuma cobrança vencida. 🎉</td></tr>'}</tbody><tfoot><tr><td colspan="4">Total</td><td class="num">${money(tot)}</td></tr></tfoot></table>`;
-    return {titulo:"Relatório de inadimplência", sub:`Posição em ${fmtDate(hoje)}`, body};
-  }
-  // locacoes ativas
-  const ativas=imoveis.filter(i=>i.locacao);
-  let somaAlug=0;
-  const rows=ativas.map(i=>{ const l=i.locacao; somaAlug+=Number(l.valor_mensal)||0;
-    return `<tr><td>${esc(i.titulo)}</td><td>${esc(l.locatario_nome||"")}</td><td>${l.locatario_telefone?esc(l.locatario_telefone):"—"}</td><td>${l.inicio?fmtDate(l.inicio):"—"}</td><td>${l.fim?fmtDate(l.fim):"—"}</td><td class="num">dia ${l.dia_vencimento||"—"}</td><td class="num">${money(l.valor_mensal)}</td></tr>`; }).join("");
-  const body=`<div class="cards"><div class="card"><small>Locações ativas</small><b>${ativas.length}</b></div><div class="card"><small>Aluguéis/mês</small><b>${money(somaAlug)}</b></div></div>
-    <table><thead><tr><th>Imóvel</th><th>Locatário</th><th>Telefone</th><th>Início</th><th>Fim</th><th class="num">Vencimento</th><th class="num">Aluguel</th></tr></thead><tbody>${rows||'<tr><td colspan="7">Nenhuma locação ativa.</td></tr>'}</tbody><tfoot><tr><td colspan="6">Total</td><td class="num">${money(somaAlug)}</td></tr></tfoot></table>`;
-  return {titulo:"Locações ativas", sub:`${ativas.length} contrato(s)`, body};
 }
 
 // ---------- ANÚNCIOS (OLX / ZAP / VivaReal) ----------
@@ -622,22 +524,16 @@ async function renderAnuncios(){
   view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div><div class="spin"></div>`;
   let imv=[]; try{ imv=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
   const disp=imv.filter(i=>i.status==="disponivel");
-  const feedUrl=`${SUPABASE_URL}/functions/v1/feed-imoveis?imob=${S.imob.id}`;
   view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div>
     <div class="tile"><p style="margin:0 0 8px">Os portais (ZAP, VivaReal, OLX) publicam seus imóveis lendo um <b>feed XML</b> no padrão VRSync. O Vizello monta esse feed a partir dos seus imóveis <b>disponíveis</b>.</p>
       <div class="drow"><span class="k">Imóveis disponíveis</span><span class="v">${disp.length}</span></div>
       <div class="drow"><span class="k">Formato</span><span class="v">VRSync (ZAP/VivaReal/OLX)</span></div>
     </div>
-    <div class="tile"><b>🔗 URL do seu feed (pública)</b>
-      <p class="sub" style="text-align:left;margin:6px 0 8px">Cadastre esta URL no painel do ZAP / VivaReal / OLX. Eles buscam sozinhos e mantêm os anúncios sempre atualizados com seus imóveis disponíveis.</p>
-      <input id="anUrl" class="field" readonly style="font-size:12px" value="${esc(feedUrl)}">
-      <div class="bar" style="margin-top:8px"><button class="btn small" id="anOpen">🌐 Abrir feed</button><button class="btn small secondary" id="anCopyUrl">📋 Copiar URL</button></div>
-    </div>
-    <div class="bar"><button class="btn small secondary" id="anPrev">👁️ Ver prévia do XML</button><button class="btn small secondary" id="anCopy">📋 Copiar XML</button></div>
+    <div class="bar"><button class="btn small" id="anPrev">👁️ Ver prévia do feed</button><button class="btn small secondary" id="anCopy">📋 Copiar XML</button></div>
+    <div class="tile" style="background:#fff8e6;border-color:#ece79a"><b>⚙️ Falta ligar (1 passo no servidor)</b>
+      <p class="sub" style="text-align:left;margin:6px 0 0">Para os portais buscarem sozinhos, publique o feed numa URL pública (Edge Function <code>feed-imoveis</code>) e cadastre essa URL no painel do ZAP/OLX. O arquivo da função já está no projeto (<code>supabase/functions/feed-imoveis</code>).</p></div>
     <div id="anXml"></div>`;
   const xml=feedXML(imv);
-  $("#anOpen").onclick=()=>window.open(feedUrl,"_blank","noopener");
-  $("#anCopyUrl").onclick=async()=>{ try{ await navigator.clipboard.writeText(feedUrl); toast("URL copiada ✅"); }catch(_){ const t=$("#anUrl"); t.focus(); t.select(); toast("Selecione e copie"); } };
   $("#anPrev").onclick=()=>{ $("#anXml").innerHTML=`<textarea class="field" rows="14" readonly style="font-size:11px;font-family:monospace">${esc(xml)}</textarea>`; };
   $("#anCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(xml); toast("XML copiado ✅"); }catch(_){ toast("Use 'Ver prévia' e copie manualmente."); } };
 }
@@ -744,15 +640,14 @@ async function renderInicio(){
   const vencidasReceber=areceber.filter(l=>l.vencimento&&l.vencimento<hoje);
   // ---- alertas & vencimentos ----
   const alertas=[]; const hojeD=new Date();
-  if(vencidasReceber.length) alertas.push({ic:"⚠️",cls:"vencida",txt:`${vencidasReceber.length} aluguel(is) vencido(s) — ${fmtMoney(vencidasReceber.reduce((s,l)=>s+Number(l.valor),0))}`, act:()=>{ S._finView="receber"; go("financeiro"); }});
+  if(vencidasReceber.length) alertas.push({ic:"⚠️",cls:"vencida",txt:`${vencidasReceber.length} aluguel(is) vencido(s) — ${fmtMoney(vencidasReceber.reduce((s,l)=>s+Number(l.valor),0))}`});
   imoveis.forEach(i=>{ const l=i.locacao; if(!l) return;
-    if(l.fim){ const dias=Math.ceil((new Date(l.fim+"T00:00:00")-hojeD)/86400000); if(dias>=0&&dias<=60) alertas.push({ic:"📄",cls:"pendente",txt:`Contrato de ${i.titulo} vence em ${dias} dia(s) (${fmtDate(l.fim)})`, act:()=>formLocacao(i)}); }
+    if(l.fim){ const dias=Math.ceil((new Date(l.fim+"T00:00:00")-hojeD)/86400000); if(dias>=0&&dias<=60) alertas.push({ic:"📄",cls:"pendente",txt:`Contrato de ${i.titulo} vence em ${dias} dia(s) (${fmtDate(l.fim)})`}); }
     if(l.inicio){ const ini=new Date(l.inicio+"T00:00:00"); const anos=(hojeD-ini)/(365.25*86400000);
       if(anos>=1){ let prox=new Date(ini); prox.setFullYear(hojeD.getFullYear()); if(prox<hojeD) prox.setFullYear(hojeD.getFullYear()+1); const d2=Math.ceil((prox-hojeD)/86400000);
-        if(d2>=0&&d2<=30) alertas.push({ic:"📈",cls:"locado",txt:`Reajuste anual de ${i.titulo} em ${d2} dia(s)`, act:()=>formLocacao(i)}); } }
+        if(d2>=0&&d2<=30) alertas.push({ic:"📈",cls:"locado",txt:`Reajuste anual de ${i.titulo} em ${d2} dia(s)`}); } }
   });
-  S._alertas=alertas;
-  const alertasHtml = alertas.length? `<div class="h" style="font-size:16px;margin:4px 2px 8px">🔔 Alertas <small>${alertas.length}</small></div>`+alertas.map((a,idx)=>`<button class="tile" data-alert="${idx}" style="width:100%;text-align:left;padding:12px 14px;cursor:pointer"><div class="row"><span style="font-size:18px">${a.ic}</span><span style="flex:1">${esc(a.txt)}</span><span class="badge ${a.cls}">Ver ›</span></div></button>`).join("")+`<div style="height:8px"></div>` : "";
+  const alertasHtml = alertas.length? `<div class="h" style="font-size:16px;margin:4px 2px 8px">🔔 Alertas <small>${alertas.length}</small></div>`+alertas.map(a=>`<div class="tile" style="padding:12px 14px"><div class="row"><span style="font-size:18px">${a.ic}</span><span style="flex:1">${esc(a.txt)}</span><span class="badge ${a.cls}">!</span></div></div>`).join("")+`<div style="height:8px"></div>` : "";
   view().innerHTML=`<div class="h">📊 Visão geral <small>${esc(S.imob.nome)}</small></div>
     ${tkBanner}
     <div class="metrics">
@@ -772,7 +667,6 @@ async function renderInicio(){
     <div class="h" style="font-size:16px;margin-top:10px">Imóveis recentes</div>
     <div id="recentes"></div>`;
   $("#tkBanner")?.addEventListener("click",()=>go("atendimento"));
-  view().querySelectorAll("[data-alert]").forEach(b=>b.onclick=()=>{ const a=(S._alertas||[])[Number(b.dataset.alert)]; if(a&&a.act) a.act(); });
   $("#iNovo").onclick=()=>formImovel();
   $("#iLanc").onclick=()=>formLancamento();
   $("#recentes").innerHTML = imoveis.slice(0,4).map(cardImovel).join("") || `<p class="empty">Nenhum imóvel ainda.</p>`;
@@ -1716,8 +1610,8 @@ async function abrirConvite(){
 const Inquilino = (()=>{
   let data=null, tab="contrato";
   const TABS=[{id:"contrato",ic:SVG('<path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/>'),label:"Contrato"},{id:"financeiro",ic:IC.financeiro,label:"Aluguel"},{id:"vistorias",ic:IC.vistorias,label:"Vistorias"},{id:"chamados",ic:IC.atendimento,label:"Chamados"},{id:"avisos",ic:IC.anuncios,label:"Avisos"}];
-  function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
-  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({contrato:renderContrato,financeiro:renderFin,vistorias:renderVist,chamados:renderChamados,avisos:renderAvisos}[t]||renderContrato)(); }
+  function buildNav(){ $("#nav").setAttribute("aria-label","Navegação do portal"); $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
+  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>{const active=b.dataset.tab===t;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");}); window.scrollTo(0,0); ({contrato:renderContrato,financeiro:renderFin,vistorias:renderVist,chamados:renderChamados,avisos:renderAvisos}[t]||renderContrato)(); }
   function ctxTicket(){ const c=(data.contratos||[])[0]||{}; return { imobiliaria_id:(c.imobiliaria||{}).id, papel_autor:"locatario", locacao_id:c.locacao_id||null, imovel_id:(c.imovel||{}).id||null }; }
   async function renderChamados(){
     view().innerHTML=`<div class="h">🎧 Meus chamados</div><div class="bar"><button class="btn small" id="chNovo">➕ Abrir chamado</button></div><div id="chList"><div class="spin"></div></div>`;
@@ -1814,8 +1708,8 @@ const Proprietario = (()=>{
   let data=null, tab="imoveis";
   const REPST={pago:["Pago","pago"],pendente:["Pendente","pendente"],atrasado:["Atrasado","vencida"],cancelado:["Cancelado","pendente"]};
   const TABS=[{id:"imoveis",ic:IC.imoveis,label:"Imóveis"},{id:"repasses",ic:IC.financeiro,label:"Repasses"},{id:"config",ic:IC.config,label:"Conta"}];
-  function buildNav(){ $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}"><span class="ic">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
-  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t)); window.scrollTo(0,0); ({imoveis:rImoveis,repasses:rRepasses,config:rConfig}[t]||rImoveis)(); }
+  function buildNav(){ $("#nav").setAttribute("aria-label","Navegação do portal"); $("#nav").innerHTML=`<div class="navinner">${TABS.map(t=>`<button data-tab="${t.id}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span>${t.label}</span></button>`).join("")}</div>`; $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab)); }
+  function go(t){ tab=t; $("#nav").querySelectorAll("[data-tab]").forEach(b=>{const active=b.dataset.tab===t;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");}); window.scrollTo(0,0); ({imoveis:rImoveis,repasses:rRepasses,config:rConfig}[t]||rImoveis)(); }
   function allImoveis(){ return (data.vinculos||[]).flatMap(v=>(v.imoveis||[]).map(im=>({...im, imobiliaria:v.imobiliaria&&v.imobiliaria.nome}))); }
   function allRepasses(){ return (data.vinculos||[]).flatMap(v=>(v.repasses||[]).map(r=>({...r, imobiliaria:v.imobiliaria&&v.imobiliaria.nome}))); }
   function rImoveis(){

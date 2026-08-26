@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/", "destination": "/site.html" },
     { "source": "/site", "destination": "/site.html" },
+    { "source": "/cadastro", "destination": "/cadastro.html" },
+    { "source": "/pagamento", "destination": "/pagamento.html" },
     { "source": "/login", "destination": "/condominio.html" },
     { "source": "/condominio", "destination": "/condominio.html" },
     { "source": "/morador", "destination": "/condominio.html" },

@@ -1,13 +1,10 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
 const CACHE = "condoapp-v19";
-const SHELL = ["/condominio",
-  "/app.css", "/app.js", "/helpers.js", "/theme.css", "/qrcode.js", "/jsqr.js",
+const SHELL = ["/", "/site", "/condominio", "/login", "/imobiliaria", "/admin",
+  "/app.css", "/app.js", "/helpers.js", "/ui-a11y.js", "/theme.css", "/qrcode.js", "/jsqr.js",
   "/manifest.webmanifest",
   "/logo-dark.png", "/logo-white.png",
-  "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png",
-  // App da imobiliária (PWA próprio) + biblioteca de mapa auto-hospedada
-  "/imobiliaria", "/manifest-imobiliaria.webmanifest",
-  "/vendor/leaflet/leaflet.js", "/vendor/leaflet/leaflet.css"];
+  "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
@@ -35,6 +32,20 @@ self.addEventListener("fetch", (e) => {
 
   // Biblioteca do CDN (esm.sh): cache-first (acelera e permite abrir offline).
   if (url.hostname === "esm.sh") {
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) c.put(req, res.clone());
+      return res;
+    })());
+    return;
+  }
+
+  // Leaflet usado pelos mapas: cacheia depois do primeiro acesso para que a
+  // estrutura do app continue abrindo em conexões instáveis.
+  if (url.hostname === "unpkg.com") {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
       const hit = await c.match(req);

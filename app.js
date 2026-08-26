@@ -5,6 +5,7 @@ import {
   fmtDate, esc, fmtNum, compLabel, fmtBytes, fmtMoney, unitLabel,
   OC_CAT, OC_STATUS, urlBase64ToUint8Array, abToB64u
 } from "./helpers.js";
+import { wireLabels, syncA11y } from "./ui-a11y.js";
 
 // ===================================================================
 // CONFIG — preencha com o seu projeto Supabase (Project Settings → API)
@@ -31,7 +32,7 @@ const APP_LABEL = { morador:"Morador", sindico:"Síndico", portaria:"Portaria" }
 function gotoApp(app){ if(SINGLE){ APP_ROLE = app; enterApp(); } else { location.href = "/" + app; } }
 
 // ---------- estado ----------
-const S = { user:null, profile:null, memberships:[], condId:null, cond:null, role:null, tab:"inicio" };
+const S = { user:null, profile:null, memberships:[], condId:null, cond:null, role:null, tab:"inicio", assinatura:null };
 
 // helpers puros (ROLE_LABEL, VINCULO_LABEL, isGestor/isPortaria/isSindico,
 // NAV_SVG, tabsFor, fmtDate, esc, OC_CAT, OC_STATUS...): em ./helpers.js
@@ -40,10 +41,19 @@ const HUB_TABS = ["servicos","painel","reservas","financeiro","contas","assemble
 // ---------- UI utils ----------
 const $ = s => document.querySelector(s);
 const view = () => $("#view");
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2400); }
-function sheet(html){ $("#sheet").innerHTML = '<div class="grab"></div>'+html; $("#sheetBg").classList.add("show"); }
-function closeSheet(){ $("#sheetBg").classList.remove("show"); if(typeof pararToque==="function") pararToque(); }
+let sheetReturnFocus=null;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2400); }
+function sheet(html){ sheetReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#sheet"); el.innerHTML = '<div class="grab" aria-hidden="true"></div>'+html; const title=el.querySelector("h2"); if(title){title.id=title.id||"sheetTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#sheetBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
+function closeSheet(){ $("#sheetBg").classList.remove("show"); if(sheetReturnFocus?.isConnected) sheetReturnFocus.focus(); sheetReturnFocus=null; if(typeof pararToque==="function") pararToque(); }
 $("#sheetBg").addEventListener("click",e=>{ if(e.target.id==="sheetBg") closeSheet(); });
+$("#sheet").addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();closeSheet();return;} if(e.key!=="Tab") return; const fs=[...$("#sheet").querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])")]; if(!fs.length)return; const first=fs[0],last=fs[fs.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} });
+const viewObserver=new window.MutationObserver(()=>{ const v=view(); if(v){v.setAttribute("aria-busy",v.querySelector(".spin")?"true":"false");syncA11y(v);} });
+viewObserver.observe(view(),{childList:true,subtree:true});
+syncA11y(document);
+function syncOffline(){ const el=$("#offlineChip"); if(el) el.classList.toggle("hide",navigator.onLine); }
+addEventListener("online",()=>{syncOffline();toast("Conexão restabelecida.");});
+addEventListener("offline",()=>{syncOffline();toast("Você está offline. Algumas ações podem ficar indisponíveis.");});
+syncOffline();
 // modal de confirmação (substitui o confirm() nativo) — retorna Promise<boolean>
 function confirmar(msg, okLabel="Confirmar"){
   return new Promise(resolve=>{
@@ -206,7 +216,7 @@ try{ localStorage.removeItem("vz-login-target"); }catch(_){}  // limpa preferên
   form.appendChild(d);
 })();
 
-function authErr(m){ const e=$("#authErr"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function authErr(m){ const e=$("#authErr"); e.setAttribute("role","alert"); e.setAttribute("aria-live","assertive"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
 
 $("#authBtn")?.addEventListener("click", async ()=>{
   if(!CONFIGURED){ authErr("Configure SUPABASE_URL e SUPABASE_ANON no topo do arquivo."); return; }
@@ -235,7 +245,7 @@ function traduzErro(e){
   if(m.includes("rate limit")||m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos e tente de novo.";
   return e?.message||"Erro inesperado.";
 }
-function authMsg(m){ const e=$("#authMsg"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function authMsg(m){ const e=$("#authMsg"); e.setAttribute("role","status"); e.setAttribute("aria-live","polite"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
 
 // ---------- Esqueci minha senha ----------
 $("#forgotBtn")?.addEventListener("click", async ()=>{
@@ -333,19 +343,21 @@ function enterApp(){
   if(list.length===1){ enterCond(list[0]); return; }
   renderPick(list); showScreen("pick");
 }
-// Prioridade fixa quando a conta tem mais de uma categoria: síndico > portaria > morador.
+// Prioridade usada apenas quando a conta tem um único app compatível ou quando
+// o cadastro acabou de criar um condomínio. Com múltiplos vínculos mostramos a
+// escolha explicitamente para evitar uma entrada inesperada no perfil errado.
 const APP_PRIORITY = ["sindico","portaria","morador"];
-// Login unificado: roteia automaticamente pela categoria da conta (igual à
-// imobiliária) — sem seletor manual de papel. Só mostra tela quando o usuário
-// ainda não participa de nenhum condomínio.
+// Login unificado: entra direto quando há um único perfil e pede escolha quando
+// existem múltiplos perfis compatíveis.
 function showRoleChooser(msg, force){
   const apps = appsFor(S.memberships);
-  if(!msg && !force && apps.length){
+  if(!msg && !force && apps.length===1){
     const target = (window.__loginTarget && apps.includes(window.__loginTarget))
       ? window.__loginTarget                                  // atalho pós-cadastro (novo condomínio → síndico)
       : (APP_PRIORITY.find(a=>apps.includes(a)) || apps[0]);  // categoria padrão por prioridade
     gotoApp(target); return;
   }
+  if(!msg && !force && apps.length>1) msg="Escolha o perfil que você quer acessar.";
   const box = $("#roleList");
   if(box){
     const order=["morador","sindico","portaria"];
@@ -376,7 +388,7 @@ function renderPick(listArg){
       </div></button>`).join("");
   list.querySelectorAll("[data-i]").forEach(b=>b.addEventListener("click",()=>enterCond(items[+b.dataset.i])));
 }
-function enterCond(m){
+async function enterCond(m){
   S.condId=m.condominio_id;
   // Trava a visão no papel do arquivo. No app do síndico mantém o papel real
   // (síndico/conselho/super_admin) para o gating de gestão ficar correto.
@@ -384,6 +396,13 @@ function enterCond(m){
   S.membershipRole = m.role;
   S.cond=m.condominios||{nome:"Condomínio"};
   S.unidadeId=m.unidade_id||null;
+  // Acesso liberado durante o trial e após uma assinatura aprovada. Quando
+  // expirar, o gestor vai direto para o checkout e não entra no produto.
+  S.assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId}).catch(()=>null);
+  if(S.assinatura?.precisa_pagamento){
+    location.href="/pagamento?tipo=condominio&tenant="+encodeURIComponent(S.condId);
+    return;
+  }
   $("#condName").textContent=S.cond.nome||"Condomínio";
   $("#condSub").textContent=(S.cond.cidade?S.cond.cidade+(S.cond.uf?"/"+S.cond.uf:""):"")||"—";
   $("#roleChip").textContent=APP_LABEL[APP_ROLE]||ROLE_LABEL[S.role];
@@ -501,13 +520,13 @@ async function desativarMFA(){
 // NAV / ROTEAMENTO
 // ===================================================================
 function buildNav(){
-  const nav=$("#nav"); const tabs=tabsFor(S.role);
-  nav.innerHTML=tabs.map(t=>`<button data-tab="${t.id}" title="${t.label}"><span class="ic">${t.ic}</span><span class="lbl">${t.label}</span></button>`).join("");
+  const nav=$("#nav"); const tabs=tabsFor(S.role); nav.setAttribute("aria-label","Navegação principal");
+  nav.innerHTML=tabs.map(t=>`<button data-tab="${t.id}" title="${t.label}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span class="lbl">${t.label}</span></button>`).join("");
   nav.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.tab)));
 }
 function setActive(tab){
   const nav = HUB_TABS.includes(tab) ? "servicos" : tab;
-  document.querySelectorAll("#nav [data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===nav));
+  document.querySelectorAll("#nav [data-tab]").forEach(b=>{ const active=b.dataset.tab===nav; b.classList.toggle("active",active); if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current"); });
 }
 window.addEventListener("hashchange",()=>{ if(!$("#app").classList.contains("hide")) go(location.hash.replace("#","")||"inicio",true); });
 function go(tab,fromHash){
@@ -1939,10 +1958,17 @@ function renderServicos(){
   if(isPortaria(S.role)) cards.push({id:"livro",ic:"📒",nome:"Livro de Portaria",desc:"Registro de turno",on:true});
   if(isGestor(S.role)) cards.push({id:"vagas",ic:"🅿️",nome:"Vagas",desc:"Garagem do condomínio",on:true});
   if(isGestor(S.role)) cards.push({id:"gestao",ic:"👥",nome:"Gestão",desc:"Unidades, moradores e equipe",on:true});
-  let html=`<div class="h">Serviços <small>Tudo do seu condomínio em um lugar</small></div><div class="hub">`;
-  html+=cards.map(c=>`<button class="hubcard ${c.on?"":"soon"}" ${c.on?`data-goto="${c.id}"`:""}>
-      <span class="ic">${c.ic}</span><b>${c.nome}</b><small>${esc(c.desc)}</small>
-      ${c.on?"":'<span class="tag">em breve</span>'}</button>`).join("");
+  const groups=[
+    {id:"acoes",label:"Ações rápidas",ids:["sos","reservas","atendimento"]},
+    {id:"operacao",label:"Operação do condomínio",ids:["painel","financeiro","contas","assembleias","enquetes","manutencoes","consumo","livro","vagas","gestao"]},
+    {id:"comunicacao",label:"Comunicação e cadastros",ids:["mural","documentos","conversas","pesquisas","cadastros","autorizacoes"]}
+  ];
+  const cardById=Object.fromEntries(cards.map(c=>[c.id,c]));
+  const cardHtml=c=>`<button class="hubcard ${c.on?"":"soon"}" ${c.on?`data-goto="${c.id}"`:""}>
+      <span class="ic" aria-hidden="true">${c.ic}</span><b>${c.nome}</b><small>${esc(c.desc)}</small>
+      ${c.on?"":'<span class="tag">em breve</span>'}</button>`;
+  let html=`<div class="h">Serviços <small>Escolha uma tarefa para continuar</small></div><div class="svc-groups">`;
+  html+=groups.map(g=>{ const visible=g.ids.map(id=>cardById[id]).filter(Boolean); if(!visible.length)return ""; return `<section class="svc-group" aria-labelledby="svc-${g.id}"><h2 id="svc-${g.id}" class="svc-group-title">${g.label}</h2><div class="hub">${visible.map(cardHtml).join("")}</div></section>`; }).join("");
   html+=`</div>`;
   view().innerHTML=html; $("#fab").classList.add("hide");
   view().querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.goto)));
@@ -3441,13 +3467,18 @@ function novoRegistroPortaria(){
 // ---- Assinatura VIZELLO (mensalidade SaaS paga pelo síndico via PIX) ----
 async function carregarAssinaturaVizello(){
   const el=$("#assinVizello"); if(!el) return;
-  let fats=[]; try{ fats=(await rpc("minha_fatura_vizello"))||[]; }catch(_){ return; }
+  let assinatura=S.assinatura||null, fats=[];
+  try{ if(!assinatura) assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId}); }catch(_){ assinatura=null; }
+  try{ fats=(await rpc("minha_fatura_vizello"))||[]; }catch(_){ fats=[]; }
   fats=fats.filter(f=>f.tipo==="condominio");
-  if(!fats.length){ el.innerHTML=""; return; }
+  if(!fats.length && !assinatura){ el.innerHTML=""; return; }
+  const status=assinatura?.status==="trial"
+    ? `Trial gratuito · ${assinatura.dias_restantes||0} dia(s) restante(s)`
+    : `${esc(assinatura?.plano_nome||"Plano")}${assinatura?.valor_estimado?` · ${fmtMoney(assinatura.valor_estimado)}/mês`:""}`;
   el.innerHTML=`<div class="tile" style="background:#fdfce4;border-color:#ece79a;margin-bottom:16px">
-    <div class="row"><span style="font-size:20px">🧾</span><div style="flex:1"><b>Assinatura VIZELLO</b><div class="sub" style="margin:2px 0 0">Mensalidade do sistema — ${fats.length} em aberto</div></div></div>
-    ${fats.map(f=>`<div class="row" style="margin-top:10px;padding-top:10px;border-top:1px solid #ece79a"><span style="flex:1">${esc(f.competencia)} · <b>${fmtMoney(f.valor)}</b>${f.vencimento?` <span class="sub" style="margin:0">vence ${fmtDate(f.vencimento)}</span>`:""}</span><button class="btn" data-payfat="${f.id}" style="width:auto;margin:0;padding:8px 14px">💠 Pagar com PIX</button></div>`).join("")}</div>`;
-  el.querySelectorAll("[data-payfat]").forEach(b=>b.addEventListener("click",()=>pagarMensalidadeVizello(b.dataset.payfat)));
+    <div class="row"><span style="font-size:20px">🧾</span><div style="flex:1"><b>Assinatura VIZELLO</b><div class="sub" style="margin:2px 0 0">${status} · ${fats.length} cobrança(s) em aberto</div></div><button class="btn" data-payplan style="width:auto;margin:0;padding:8px 14px">💳 Pix ou cartão</button></div>
+    ${fats.map(f=>`<div class="row" style="margin-top:10px;padding-top:10px;border-top:1px solid #ece79a"><span style="flex:1">${esc(f.competencia)} · <b>${fmtMoney(f.valor)}</b>${f.vencimento?` <span class="sub" style="margin:0">vence ${fmtDate(f.vencimento)}</span>`:""}</span><button class="btn secondary" data-payplan style="width:auto;margin:0;padding:8px 14px">Pagar cobrança</button></div>`).join("")}</div>`;
+  el.querySelectorAll("[data-payplan]").forEach(b=>b.addEventListener("click",()=>{ location.href="/pagamento?tipo=condominio&tenant="+encodeURIComponent(S.condId); }));
 }
 async function pagarMensalidadeVizello(id){
   sheet(`<h2>💠 Mensalidade VIZELLO</h2><div class="spin"></div>`);

@@ -1,6 +1,7 @@
   /* tokens de cor e modo escuro em /theme.css (compartilhado com o admin) */
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none;-ms-overflow-style:none}
-  *::-webkit-scrollbar{display:none;width:0;height:0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:thin;-ms-overflow-style:auto}
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
   html,body{margin:0;height:100%;overscroll-behavior:none}
   /* pinta a área de safe-area (home indicator) para não mostrar faixa branca no login */
@@ -155,6 +156,8 @@
   .hubcard small{color:var(--muted);font-size:12.5px;line-height:1.35}
   .hubcard.soon{opacity:.62}
   .hubcard .tag{align-self:flex-start;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);margin-top:auto}
+  .svc-groups{display:flex;flex-direction:column;gap:22px}
+  .svc-group-title{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:0 2px 9px}
   /* cartão de gráfico (painel do síndico + prestação de contas) */
   .chartcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
   .chartcard .ct{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px}
@@ -198,7 +201,7 @@
     display:flex;justify-content:space-around;padding:6px 4px max(6px, env(safe-area-inset-bottom));z-index:25;
     max-width:640px;width:100%;margin:0 auto
   }
-  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:clamp(9px,2.9vw,11px);font-weight:600;padding:6px 1px}
+  nav.bottom button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:clamp(11px,2.9vw,12px);font-weight:600;padding:7px 2px;min-height:44px}
   nav.bottom button .ic{display:flex;align-items:center;justify-content:center;height:23px}
   nav.bottom button .ic svg{display:block}
   /* rótulo nunca quebra linha nem transborda: encolhe com reticências */

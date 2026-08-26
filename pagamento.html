@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#183451">
+<meta name="description" content="Ative sua assinatura Vizello com Pix ou cartão de crédito.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<title>Ativar assinatura — Vizello</title>
+<style>
+:root{--navy:#183451;--teal:#12869b;--teal-dark:#0e6375;--ink:#102a3b;--muted:#647887;--line:#dce7eb;--surface:#fff;--soft:#f4f8f9;--ok:#19734f;--danger:#ad3e3e;--shadow:0 24px 70px rgba(18,53,77,.14)}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f4f8f9 0%,#fff 52%,#eef7f8 100%);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}a{color:inherit}.page{width:min(980px,calc(100% - 32px));margin:0 auto;padding:28px 0 58px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}.logo{width:128px;display:block}.back{color:var(--muted);font-size:13px;font-weight:700;text-decoration:none}.back:hover{color:var(--teal)}.layout{display:grid;grid-template-columns:.82fr 1.18fr;gap:28px;align-items:start}.intro{padding:25px 6px}.eyebrow{color:var(--teal);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.intro h1{font-family:"Bricolage Grotesque",Inter,sans-serif;color:var(--navy);font-size:clamp(35px,5vw,54px);line-height:1;letter-spacing:-.045em;margin:15px 0}.intro p{color:var(--muted);line-height:1.65;font-size:15px}.secure{display:grid;gap:13px;margin-top:27px;color:#34505f;font-size:13px;font-weight:700}.secure span{display:flex;gap:9px;align-items:center}.check{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#dff1f1;color:var(--teal);font-weight:900}.card{background:var(--surface);border:1px solid rgba(220,231,235,.9);border-radius:22px;padding:27px;box-shadow:var(--shadow)}.card h2{font-family:"Bricolage Grotesque",Inter,sans-serif;color:var(--navy);font-size:28px;letter-spacing:-.03em;margin:0 0 5px}.card-head p{color:var(--muted);font-size:13px;margin:0 0 20px}.status{border-radius:11px;padding:12px 14px;font-size:13px;line-height:1.45;margin-bottom:16px;display:none}.status.show{display:block}.status.info{background:#eef7f8;color:#286777;border:1px solid #cae6e9}.status.error{background:#fff0f0;color:var(--danger);border:1px solid #f1cccc}.status.success{background:#eaf8f0;color:var(--ok);border:1px solid #c8e8d5}.plans{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:17px 0}.plan{position:relative;border:1px solid var(--line);border-radius:13px;padding:15px;cursor:pointer}.plan.selected{border-color:var(--teal);background:#f0fafb;box-shadow:0 0 0 3px rgba(18,134,155,.1)}.plan-name{font-weight:800;color:var(--navy);font-size:14px}.plan-price{display:block;color:var(--teal);font-family:"Bricolage Grotesque",Inter,sans-serif;font-size:24px;font-weight:800;margin-top:7px}.plan-price small{font:700 11px Inter;color:var(--muted)}.plan-desc{display:block;color:var(--muted);font-size:11.5px;line-height:1.35;margin-top:5px}.plan-badge{position:absolute;right:9px;top:9px;background:#dff1f1;color:var(--teal-dark);border-radius:99px;padding:3px 7px;font-size:9px;font-weight:800;text-transform:uppercase}.estimate{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:15px;border-radius:13px;background:var(--soft);margin:16px 0;color:var(--muted);font-size:12px}.estimate strong{display:block;color:var(--navy);font-family:"Bricolage Grotesque",Inter,sans-serif;font-size:22px}.estimate small{display:block;margin-top:3px}.pay{width:100%;border:0;border-radius:12px;background:var(--teal);color:#fff;padding:14px 18px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 10px 22px rgba(18,134,155,.22)}.pay:hover{background:var(--teal-dark)}.pay:disabled{opacity:.6;cursor:wait}.footnote{text-align:center;color:#8a9aa1;font-size:11px;line-height:1.5;margin:14px 0 0}.result{display:none;text-align:center;padding:10px}.result.show{display:block}.result-icon{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 14px;border-radius:50%;background:#e3f5eb;color:var(--ok);font-size:27px}.result p{color:var(--muted);line-height:1.6;font-size:14px}.result a{display:inline-flex;width:100%;justify-content:center;margin-top:9px;padding:12px 16px;border:1px solid var(--teal);border-radius:11px;text-decoration:none;color:var(--teal-dark);font-size:14px;font-weight:800}@media(max-width:760px){.layout{grid-template-columns:1fr;gap:15px}.intro{padding:0 4px}.intro h1{font-size:clamp(38px,10vw,54px)}.card{max-width:620px}.top{margin-bottom:25px}}@media(max-width:500px){.page{width:calc(100% - 24px);padding-top:18px}.logo{width:115px}.back{font-size:12px}.card{padding:21px 17px;border-radius:18px}.plans{grid-template-columns:1fr}.estimate{align-items:flex-start;flex-direction:column;gap:7px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="top"><a href="/" aria-label="Voltar para o site"><img class="logo" src="/logo-dark.png?v=2" alt="Vizello"></a><a class="back" href="/condominio">← Voltar ao sistema</a></header>
+  <div class="layout">
+    <section class="intro"><div class="eyebrow">Assinatura Vizello</div><h1>Continue cuidando da sua operação.</h1><p>Seu período de teste terminou ou sua assinatura precisa ser ativada. Escolha o plano ideal e faça o pagamento com segurança no Mercado Pago.</p><div class="secure"><span><i class="check">✓</i> Pix ou cartão de crédito</span><span><i class="check">✓</i> Confirmação automática do pagamento</span><span><i class="check">✓</i> Cancele quando quiser</span></div></section>
+    <section class="card" aria-labelledby="title">
+      <div id="checkoutPanel"><div class="card-head"><h2 id="title">Ative sua assinatura</h2><p id="tenantText">Carregando os dados do condomínio…</p></div><div id="status" class="status" role="status" aria-live="polite"></div><div id="plans" class="plans"></div><div class="estimate"><div>Mensalidade estimada<strong id="amount">—</strong><small id="amountHint">Calculando por unidade…</small></div><span>🔒 Pagamento seguro</span></div><button id="payBtn" class="pay" type="button" disabled>Continuar para Pix ou cartão →</button><p class="footnote">Você será redirecionado ao Checkout Pro do Mercado Pago. O acesso é liberado automaticamente após a confirmação.</p></div>
+      <div id="result" class="result"><div class="result-icon">✓</div><h2 id="resultTitle">Pagamento recebido</h2><p id="resultText">Estamos aguardando a confirmação automática do Mercado Pago. Você pode voltar ao sistema e atualizar em instantes.</p><a href="/condominio">Voltar ao Vizello</a></div>
+    </section>
+  </div>
+</main>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const sb=createClient("https://bklvbhsaxcmrnjxjbzjh.supabase.co","sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa");
+const qs=new URLSearchParams(location.search), tipo=qs.get("tipo")==="imobiliaria"?"imobiliaria":"condominio", tenant=qs.get("tenant")||qs.get("cond")||"";
+const fallback=[{slug:"essencial",nome:"Essencial",descricao:"Comunicação, operação e financeiro básico.",valor_mensal:4.9,minimo_mensal:149},{slug:"pro",nome:"Gestão Pro",descricao:"Automação financeira e gestão avançada.",valor_mensal:7.9,minimo_mensal:299}];
+const state={plans:fallback,selected:qs.get("plano")==="pro"?"pro":"essencial",subscription:null};
+const $=s=>document.querySelector(s), statusEl=$("#status");
+function showStatus(text,kind="info"){statusEl.textContent=text;statusEl.className="status show "+kind;}
+function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});}
+function renderPlans(){
+  $("#plans").innerHTML=state.plans.map(p=>`<button type="button" class="plan ${state.selected===p.slug?"selected":""}" data-plan="${p.slug}"><span class="plan-name">${p.nome}</span>${p.slug==="pro"?'<span class="plan-badge">Mais escolhido</span>':""}<span class="plan-price">${money(p.valor_mensal)} <small>/unidade/mês</small></span><span class="plan-desc">${p.descricao||"Plano Vizello"}</span></button>`).join("");
+  $("#plans").querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{state.selected=b.dataset.plan;renderPlans();renderEstimate();});
+}
+function renderEstimate(){
+  const p=state.plans.find(x=>x.slug===state.selected)||state.plans[0], s=state.subscription||{};
+  const units=Number(s.unidades||0), total=Math.max(units*Number(p.valor_mensal||0),Number(p.minimo_mensal||0));
+  $("#amount").textContent=total?money(total):money(p.minimo_mensal);
+  $("#amountHint").textContent=units?`${units} unidade(s)/imóvel(is) · mínimo mensal de ${money(p.minimo_mensal)}`:`mínimo mensal de ${money(p.minimo_mensal)}`;
+}
+function showResult(kind){
+  $("#checkoutPanel").style.display="none";$("#result").classList.add("show");
+  if(kind==="failure"){ $("#resultTitle").textContent="Pagamento não concluído";$("#resultText").textContent="O pagamento não foi aprovado. Você pode tentar novamente escolhendo Pix ou cartão.";$("#result").querySelector("a").href=location.href.split("&status=")[0]; }
+  if(kind==="pending"){ $("#resultTitle").textContent="Pagamento pendente";$("#resultText").textContent="O Mercado Pago ainda está processando o pagamento. Assim que confirmar, seu acesso será liberado automaticamente."; }
+}
+async function boot(){
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){location.href="/condominio";return;}
+  if(!tenant){showStatus("Não encontramos o condomínio ou a imobiliária para esta assinatura.","error");return;}
+  const resultStatus=qs.get("status"); if(resultStatus) showResult(resultStatus);
+  $("#payBtn").disabled=false;
+  try{const {data}=await sb.rpc("planos_publicos");if(Array.isArray(data)&&data.length)state.plans=data;}catch(_){ }
+  try{
+    const fn=tipo==="imobiliaria"?"minha_assinatura_imob":"minha_assinatura_vizello";
+    const {data,error}=await sb.rpc(fn,tipo==="imobiliaria"?{p_imob:tenant}:{p_cond:tenant});if(error)throw error;state.subscription=data;
+    $("#tenantText").textContent=`${data.plano_nome||"Plano Vizello"} · ${data.dias_restantes?data.dias_restantes+" dia(s) restantes no trial":"assinatura a ativar"}`;
+    if(data.plano_slug&&state.plans.some(p=>p.slug===data.plano_slug))state.selected=data.plano_slug;
+  }catch(e){$("#tenantText").textContent="Escolha um plano para continuar usando o Vizello.";}
+  renderPlans();renderEstimate();
+}
+$("#payBtn").onclick=async()=>{
+  $("#payBtn").disabled=true;$("#payBtn").textContent="Preparando checkout…";showStatus("Abrindo o pagamento seguro…");
+  try{const {data,error}=await sb.functions.invoke("criar-checkout-assinatura",{body:{tipo,tenant_id:tenant,plano:state.selected}});if(error||!data?.init_point)throw new Error(data?.error||error?.message||"Não foi possível iniciar o pagamento.");location.href=data.init_point;}
+  catch(e){showStatus(e.message||"Não foi possível iniciar o pagamento.","error");$("#payBtn").disabled=false;$("#payBtn").textContent="Continuar para Pix ou cartão →";}
+};
+boot();
+</script>
+</body>
+</html>
