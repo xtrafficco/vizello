@@ -1,7 +1,7 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
-const CACHE = "condoapp-v22";
+const CACHE = "condoapp-v23";
 const SHELL = ["/", "/index.html", "/condominio.html", "/login", "/imobiliaria.html", "/admin.html", "/pagamento.html",
-  "/app.css", "/app.js", "/helpers.js", "/ui-a11y.js", "/theme.css", "/plans.js", "/qrcode.js", "/jsqr.js",
+  "/app.css", "/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js", "/theme.css", "/plans.js", "/qrcode.js", "/jsqr.js",
   "/manifest.webmanifest", "/manifest-imobiliaria.webmanifest", "/manifest-morador-imob.webmanifest", "/manifest-proprietario.webmanifest", "/admin.webmanifest",
   "/logo-dark.png", "/logo-white.png",
   "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png"];
@@ -13,6 +13,7 @@ const SAFE_TABS = new Set([
 ]);
 const PROTECTED_NAVIGATION = new Set(["/admin", "/admin.html", "/condominio", "/condominio.html", "/morador", "/sindico", "/portaria", "/imobiliaria", "/imobiliaria.html", "/morador-imob", "/proprietario", "/pagamento", "/pagamento.html"]);
 const isProtectedNavigation = (pathname) => PROTECTED_NAVIGATION.has(pathname);
+const AUTH_CRITICAL_ASSETS = new Set(["/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js"]);
 function safeNotificationLink(value) {
   const raw = typeof value === "string" ? value.trim() : "";
   const tab = raw.replace(/^#/, "");
@@ -92,6 +93,22 @@ self.addEventListener("fetch", (e) => {
           : pathname === "/" ? "/index.html"
           : "/condominio.html";
         return (await caches.match(fallback)) || (await caches.match("/index.html"));
+      }
+    })());
+    return;
+  }
+
+  // Scripts que controlam login/sessão precisam vir da rede primeiro. Um
+  // supabase-client.js antigo no cache pode quebrar todas as telas de login.
+  if (url.origin === self.location.origin && AUTH_CRITICAL_ASSETS.has(url.pathname)) {
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      try {
+        const res = await fetch(req);
+        if (res && res.ok) c.put(req, res.clone());
+        return res;
+      } catch {
+        return (await c.match(req)) || Response.error();
       }
     })());
     return;
