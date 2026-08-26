@@ -85,11 +85,8 @@
 </main>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabase as sb } from "./supabase-client.js";
 
-const SUPABASE_URL = "https://bklvbhsaxcmrnjxjbzjh.supabase.co";
-const SUPABASE_ANON = "sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa";
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const form = document.getElementById("signupForm");
 const message = document.getElementById("message");
 const submit = document.getElementById("submitBtn");

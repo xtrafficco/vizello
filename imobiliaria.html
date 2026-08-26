@@ -220,10 +220,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const SUPABASE_URL="https://bklvbhsaxcmrnjxjbzjh.supabase.co";
-const SUPABASE_ANON="sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa";
-const sb=createClient(SUPABASE_URL, SUPABASE_ANON);
+import { supabase as sb } from "./supabase-client.js";
 
 const S={ user:null, imob:null, imobs:[], tab:"inicio" };
 const $=s=>document.querySelector(s);

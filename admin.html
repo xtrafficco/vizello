@@ -309,12 +309,9 @@
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabase as sb } from "./supabase-client.js";
 
 // mesma config do app (publishable key é pública)
-const SUPABASE_URL  = "https://bklvbhsaxcmrnjxjbzjh.supabase.co";
-const SUPABASE_ANON = "sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa";
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // --- Segurança do painel ---
 const REQUIRE_2FA = true;   // operadores obrigados a ter 2FA ativo p/ acessar
@@ -353,6 +350,9 @@ function confirmar(msg,{danger=false,ok="Confirmar"}={}){
   });
 }
 async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error){ if(fn!=="log_evento") logEvento("error","rpc:"+fn,error.message,{code:error.code}); throw error; } return data; }
+// Algumas telas novas podem chegar antes da migração correspondente. Essas
+// consultas opcionais não devem poluir o monitor de erros do produto.
+async function rpcSilencioso(fn,args,fallback){ const {data,error}=await sb.rpc(fn,args); return error?fallback:data; }
 // ---- Observabilidade (best-effort) ----
 const _logDedup=new Set();
 async function logEvento(nivel,contexto,mensagem,detalhe){
@@ -370,6 +370,10 @@ function fmtMoney(v){ return (Number(v)||0).toLocaleString("pt-BR",{style:"curre
 function fmtDateTime(iso){ return iso? new Date(iso).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—"; }
 function tempoRel(iso){ if(!iso) return "nunca"; const d=(Date.now()-new Date(iso).getTime())/86400000;
   if(d<1) return "hoje"; if(d<2) return "ontem"; if(d<30) return `há ${Math.floor(d)} dias`; return fmtDate(iso); }
+function erroDeImplantacaoOpcional(l){
+  const txt=String((l?.contexto||"")+" "+(l?.mensagem||""));
+  return /plataforma_cadastros_resumo/i.test(txt) && /schema cache|could not find the function/i.test(txt);
+}
 const ROLE_LABEL={super_admin:"Dono",sindico:"Síndico",conselho:"Conselho",portaria:"Portaria",morador:"Morador"};
 const ACAO_LABEL={condominio_criar:"Criou condomínio",condominio_editar:"Editou dados",condominio_suspender:"Suspendeu",
   condominio_reativar:"Reativou",sindico_definir:"Definiu síndico",operador_add:"Adicionou operador",operador_remove:"Removeu operador"};
@@ -570,7 +574,7 @@ async function renderDashboard(){
       rpc("plataforma_dre",{p_meses:6}).catch(()=>({})),
       rpc("plataforma_despesas_listar").catch(()=>[]),
       rpc("plataforma_imobiliarias").catch(()=>[]),
-      rpc("plataforma_cadastros_resumo",{p_limit:20}).catch(()=>({nao_lidos:0,itens:[]}))
+      rpcSilencioso("plataforma_cadastros_resumo",{p_limit:20},{nao_lidos:0,itens:[]})
     ]);
   }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
   S._planos=planos; S._rel=rel;
@@ -846,15 +850,21 @@ async function drawIntegridade(){
   // ---- Erros recentes do app (observabilidade) ----
   let logs=null; try{ logs=await rpc("plataforma_logs_listar",{p_limit:40}); }catch(_){}
   if(logs){
-    const e24=logs.erros_24h||0, e1=logs.erros_1h||0, itens=logs.itens||[];
+    const itens=logs.itens||[], pendencias=itens.filter(erroDeImplantacaoOpcional);
+    // Erros antigos da RPC nova, antes da migração, são pendência de deploy;
+    // não devem mascarar falhas reais do frontend.
+    const e24=Math.max(0,(Number(logs.erros_24h)||0)-pendencias.length);
+    const e1=Math.max(0,(Number(logs.erros_1h)||0)-pendencias.filter(l=>Date.now()-new Date(l.created_at).getTime()<3600000).length);
     const alerta = e1>0 || e24>=10;
     out+=`<div class="h" style="margin-top:22px">Erros do app <small>Rastreio de erros do cliente (30 dias)</small></div>`;
     out+=`<div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
       <div class="metric"><small>Última 1h</small><b class="${e1?"warn":""}">${e1}</b></div>
       <div class="metric"><small>Últimas 24h</small><b class="${alerta?"warn":""}">${e24}</b></div>
-      <div class="metric"><small>Status</small><b style="font-size:18px;color:${alerta?"var(--danger)":"var(--ok)"}">${alerta?"⚠️ Investigar":"✅ Estável"}</b></div></div>`;
-    if(!itens.length) out+=`<div class="chartcard"><p class="sub" style="margin:0">Nenhum erro registrado. 🎉</p></div>`;
-    else out+=`<div class="chartcard"><div class="scrollbox" style="max-height:340px">${itens.map(l=>{
+      <div class="metric"><small>Status</small><b style="font-size:18px;color:${alerta?"var(--danger)":pendencias.length?"#b67d16":"var(--ok)"}">${alerta?"⚠️ Investigar":pendencias.length?"⚙️ Deploy pendente":"✅ Estável"}</b></div></div>`;
+    if(pendencias.length) out+=`<div class="chartcard"><p class="sub" style="margin:0">A RPC de novos cadastros ainda não está no banco publicado. Aplique a migração para ativar essa seção; isso não é uma falha do frontend.</p></div>`;
+    const itensReais=itens.filter(l=>!erroDeImplantacaoOpcional(l));
+    if(!itensReais.length && !pendencias.length) out+=`<div class="chartcard"><p class="sub" style="margin:0">Nenhum erro registrado. 🎉</p></div>`;
+    else if(itensReais.length) out+=`<div class="chartcard"><div class="scrollbox" style="max-height:340px">${itensReais.map(l=>{
       const col=/fatal|error|onerror|unhandled/i.test((l.nivel||"")+" "+(l.contexto||""))?"var(--danger)":(l.nivel==="warn"?"#b67d16":"var(--ok)");
       return `<div class="auditrow"><span style="width:9px;height:9px;border-radius:50%;background:${col};flex:0 0 auto;align-self:center"></span>
       <div style="flex:1;min-width:0"><b>${esc(l.contexto||l.nivel||"erro")}</b> <span class="ae">${esc((l.mensagem||"").slice(0,140))}</span>
@@ -1086,7 +1096,7 @@ function novaDespesa(){
 async function configCobranca(){
   modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2><div class="spin"></div>`);
   let c={cobranca_ativa:false,dia_vencimento:10,multa_pct:0,juros_mes_pct:0};
-  try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p class="sub">${esc(e.message)}</p><div class="bar"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`); return; }
+try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p class="sub">${esc(e.message)}</p><div class="bar"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`); return; }
   const whUrl="https://bklvbhsaxcmrnjxjbzjh.supabase.co/functions/v1/mp-mensalidade-webhook";
   modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2>
     <div class="tile" style="padding:14px">
@@ -1114,7 +1124,7 @@ async function configCobranca(){
       <div class="chk-item">6. Teste com uma fatura (botão “Mensalidades (PIX)”) antes de ligar a cobrança.</div>
       <button class="btn small secondary" id="ccCopyWh" style="margin-top:6px">📋 Copiar URL do webhook</button>
     </div>
-    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`);
+<div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`);
   $("#ccCopyWh").onclick=()=>{ try{ navigator.clipboard.writeText(whUrl); toast("URL copiada ✅"); }catch(_){ toast("Copie manualmente."); } };
   $("#ccSave").onclick=async()=>{
     const dia=parseInt($("#ccDia").value,10); if(!(dia>=1&&dia<=28)){ $("#ccErr").textContent="Dia de vencimento deve ser entre 1 e 28."; $("#ccErr").classList.add("show"); return; }
@@ -1130,7 +1140,7 @@ function gerenciarFaturas(){
     <label>Competência</label><input id="ftComp" class="field" value="${comp}" placeholder="AAAA-MM">
     <div class="bar" style="margin-top:10px"><button class="btn small" id="ftGerar">Gerar faturas do mês</button><button class="btn small secondary" id="ftListar">Atualizar</button></div>
     <div id="ftOut" style="margin-top:10px"><div class="spin"></div></div>
-    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="closeModal()">Fechar</button></div>`);
+    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`);
   async function listar(){ const el=$("#ftOut"); el.innerHTML='<div class="spin"></div>';
     try{ const fs=await rpc("plataforma_faturas_listar",{p_competencia:$("#ftComp").value.trim()});
       if(!fs.length){ el.innerHTML='<p class="sub">Nenhuma fatura nesta competência. Clique em “Gerar faturas do mês”.</p>'; return; }

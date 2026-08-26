@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { supabase as sb, requestedPath, roleForPath, redirectToLogin } from "./supabase-client.js";
 import {
   ROLE_APPS, appsFor, membershipsForApp, ROLE_LABEL, VINCULO_LABEL,
   isGestor, isPortaria, isSindico, NAV_SVG, tabsFor,
@@ -7,16 +7,10 @@ import {
 } from "./helpers.js";
 import { wireLabels, syncA11y } from "./ui-a11y.js";
 
-// ===================================================================
-// CONFIG — preencha com o seu projeto Supabase (Project Settings → API)
-// ===================================================================
-const SUPABASE_URL  = "https://bklvbhsaxcmrnjxjbzjh.supabase.co";      // projeto CondoApp
-const SUPABASE_ANON = "sb_publishable_7ci7VKQf-aUPvfpckRhK9A_fRmf8JQa"; // publishable key (pública)
 // Chave pública VAPID do Web Push (pública; a privada é secret da Edge Function)
 const VAPID_PUBLIC = "BJeUbCaT-75qLroDtQvhI-yy-LN5AzTH67ymOqx4kO-0S9YinNIXpnJYJQYLrV1T6WCA12sl6p_MOuUOT_nlfjw";
 
-const CONFIGURED = !SUPABASE_URL.startsWith("COLE_");
-const sb = CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON) : null;
+const CONFIGURED = Boolean(sb);
 
 // ===================================================================
 // PAPEL DO ARQUIVO (morador.html / sindico.html / portaria.html definem
@@ -25,7 +19,8 @@ const sb = CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 // Arquivo único (condominio.html): window.APP_ROLE não é definido → SINGLE=true,
 // e o app roteia por papel INLINE (sem redirecionar para /morador etc.).
 // (compat: se algum arquivo antigo ainda definir window.APP_ROLE, mantém o modo travado.)
-let APP_ROLE = (typeof window !== "undefined" && window.APP_ROLE) ? String(window.APP_ROLE) : null;
+const routeRole = roleForPath(typeof location !== "undefined" ? location.pathname : "");
+let APP_ROLE = (typeof window !== "undefined" && window.APP_ROLE) ? String(window.APP_ROLE) : routeRole;
 const SINGLE = !APP_ROLE;
 const APP_LABEL = { morador:"Morador", sindico:"Síndico", portaria:"Portaria" };
 // ROLE_APPS, appsFor, membershipsForApp: em ./helpers.js
@@ -72,6 +67,9 @@ function confirmar(msg, okLabel="Confirmar"){
 function loading(){ view().innerHTML='<div class="spin"></div>'; }
 
 async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error){ if(fn!=="log_evento") logEvento("error","rpc:"+fn,error.message,{code:error.code}); throw error; } return data; }
+// Compatibilidade durante a publicação de migrações novas: uma função
+// opcional ausente não deve virar um falso erro de frontend.
+async function rpcSilencioso(fn,args,fallback=null){ const {data,error}=await sb.rpc(fn,args); return error?fallback:data; }
 // ---- Observabilidade: log de erros do cliente (best-effort, nunca quebra o app) ----
 const _logDedup=new Set();
 async function logEvento(nivel,contexto,mensagem,detalhe){
@@ -219,7 +217,7 @@ try{ localStorage.removeItem("vz-login-target"); }catch(_){}  // limpa preferên
 function authErr(m){ const e=$("#authErr"); e.setAttribute("role","alert"); e.setAttribute("aria-live","assertive"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
 
 $("#authBtn")?.addEventListener("click", async ()=>{
-  if(!CONFIGURED){ authErr("Configure SUPABASE_URL e SUPABASE_ANON no topo do arquivo."); return; }
+  if(!CONFIGURED){ authErr("O cliente Supabase não está configurado."); return; }
   const email=$("#email").value.trim(), pass=$("#pass").value, name=$("#name").value.trim();
   if(!email||!pass){ authErr("Preencha e-mail e senha."); return; }
   $("#authBtn").disabled=true; authErr("");
@@ -307,7 +305,7 @@ if(sb){ sb.auth.onAuthStateChange((event)=>{ if(event==="PASSWORD_RECOVERY") sho
 // ===================================================================
 async function boot(){
   const {data:{user}} = await sb.auth.getUser();
-  if(!user){ if(APP_ROLE && !SINGLE){ location.href="/login"; return; } showScreen("auth"); return; }
+  if(!user){ if(APP_ROLE && !SINGLE){ redirectToLogin(); return; } showScreen("auth"); return; }
   if(await mfaPendente()){ showMfaChallenge(); return; }  // exige 2FA antes de entrar
   S.user=user;
   // aceita convites pendentes vinculados ao e-mail deste usuário
@@ -324,7 +322,18 @@ async function boot(){
     .select("id,role,condominio_id,unidade_id,condominios(nome,cidade,uf)")
     .eq("user_id",user.id).eq("ativo",true);
   S.memberships = ms||[];
+  if(routeToRequestedEntry()) return;
   routeAfterAuth();
+}
+function routeToRequestedEntry(){
+  const pending = requestedPath();
+  const pendingRole = roleForPath(pending);
+  if(!APP_ROLE && pendingRole && appsFor(S.memberships).includes(pendingRole)) APP_ROLE=pendingRole;
+  if(location.pathname === "/login" && pending && !pendingRole){
+    location.replace(pending);
+    return true;
+  }
+  return false;
 }
 // Decide para onde ir depois do login:
 //  - arquivo de papel (APP_ROLE): entra no app travado naquele papel;
@@ -352,9 +361,12 @@ const APP_PRIORITY = ["sindico","portaria","morador"];
 function showRoleChooser(msg, force){
   const apps = appsFor(S.memberships);
   if(!msg && !force && apps.length===1){
-    const target = (window.__loginTarget && apps.includes(window.__loginTarget))
-      ? window.__loginTarget                                  // atalho pós-cadastro (novo condomínio → síndico)
-      : (APP_PRIORITY.find(a=>apps.includes(a)) || apps[0]);  // categoria padrão por prioridade
+    const requestedRole = roleForPath(requestedPath());
+    const target = requestedRole && apps.includes(requestedRole)
+      ? requestedRole
+      : (window.__loginTarget && apps.includes(window.__loginTarget)
+        ? window.__loginTarget                              // atalho pós-cadastro (novo condomínio → síndico)
+        : (APP_PRIORITY.find(a=>apps.includes(a)) || apps[0]));
     gotoApp(target); return;
   }
   if(!msg && !force && apps.length>1) msg="Escolha o perfil que você quer acessar.";
@@ -398,7 +410,7 @@ async function enterCond(m){
   S.unidadeId=m.unidade_id||null;
   // Acesso liberado durante o trial e após uma assinatura aprovada. Quando
   // expirar, o gestor vai direto para o checkout e não entra no produto.
-  S.assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId}).catch(()=>null);
+  S.assinatura=await rpcSilencioso("minha_assinatura_vizello",{p_cond:S.condId});
   if(S.assinatura?.precisa_pagamento){
     location.href="/pagamento?tipo=condominio&tenant="+encodeURIComponent(S.condId);
     return;
@@ -476,11 +488,12 @@ async function showMfaChallenge(){
 }
 // re-entra no boot já com AAL2 (sem re-checar MFA e cair em loop)
 async function bootAfterMfa(){
-  const {data:{user}}=await sb.auth.getUser(); if(!user){ if(APP_ROLE){ location.href="/login"; return; } showScreen("auth"); return; }
+  const {data:{user}}=await sb.auth.getUser(); if(!user){ if(APP_ROLE){ redirectToLogin(); return; } showScreen("auth"); return; }
   S.user=user;
   try{ await rpc("convites_aceitar"); }catch(_){}
   const {data:ms}=await sb.from("memberships").select("id,role,condominio_id,unidade_id,condominios(nome,cidade,uf)").eq("user_id",user.id).eq("ativo",true);
   S.memberships=ms||[];
+  if(routeToRequestedEntry()) return;
   routeAfterAuth();
 }
 async function ativarMFA(){
@@ -3468,7 +3481,7 @@ function novoRegistroPortaria(){
 async function carregarAssinaturaVizello(){
   const el=$("#assinVizello"); if(!el) return;
   let assinatura=S.assinatura||null, fats=[];
-  try{ if(!assinatura) assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId}); }catch(_){ assinatura=null; }
+  if(!assinatura) assinatura=await rpcSilencioso("minha_assinatura_vizello",{p_cond:S.condId});
   try{ fats=(await rpc("minha_fatura_vizello"))||[]; }catch(_){ fats=[]; }
   fats=fats.filter(f=>f.tipo==="condominio");
   if(!fats.length && !assinatura){ el.innerHTML=""; return; }
@@ -3815,15 +3828,18 @@ async function renderPerfil(){
 
   // lista de visitantes do morador
   const {data:vis}=await sb.from("visitantes").select("*").eq("autorizado_por",S.user.id).order("created_at",{ascending:false}).limit(10);
+  // O usuário pode trocar de aba enquanto as visitas carregam. Nesse caso a
+  // tela de Perfil já foi desmontada e não há mais destino para este HTML.
+  const visList=$("#pfVisList"); if(!visList) return;
   const visMap={}; (vis||[]).forEach(v=>{ visMap[v.codigo]=v; });
-  $("#pfVisList").innerHTML=(vis||[]).map(v=>`<div class="tile" style="padding:12px">
+  visList.innerHTML=(vis||[]).map(v=>`<div class="tile" style="padding:12px">
     <div class="row"><h3 style="flex:1">${esc(v.nome_visitante)}</h3><span class="badge ${v.status}">${v.status}</span></div>
     <div class="meta"><span>🔑 <b>${esc(v.codigo)}</b></span>${v.data_visita?`<span>📅 ${esc(v.data_visita)}</span>`:""}${v.validade_ate?`<span>⏳ até ${fmtDate(v.validade_ate)}</span>`:""}
     <button class="badge" data-qrv="${esc(v.codigo)}">📷 QR</button>
     <button class="badge" data-wav="${esc(v.codigo)}" style="background:#25d366;color:#fff">📲 WhatsApp</button>
     ${v.status==="autorizado"?`<button class="badge" data-cancv="${v.id}" style="margin-left:auto">Cancelar</button>`:""}</div></div>`).join("");
-  $("#pfVisList").querySelectorAll("[data-qrv]").forEach(b=>b.addEventListener("click",()=>mostrarQRVisitante(visMap[b.dataset.qrv]||b.dataset.qrv)));
-  $("#pfVisList").querySelectorAll("[data-wav]").forEach(b=>b.addEventListener("click",()=>enviarWhatsAppVisitante(visMap[b.dataset.wav]||{codigo:b.dataset.wav})));
+  visList.querySelectorAll("[data-qrv]").forEach(b=>b.addEventListener("click",()=>mostrarQRVisitante(visMap[b.dataset.qrv]||b.dataset.qrv)));
+  visList.querySelectorAll("[data-wav]").forEach(b=>b.addEventListener("click",()=>enviarWhatsAppVisitante(visMap[b.dataset.wav]||{codigo:b.dataset.wav})));
   $("#pfVisList").querySelectorAll("[data-cancv]").forEach(b=>b.addEventListener("click",async()=>{
     try{ await rpc("vis_cancelar",{p_visitante:b.dataset.cancv}); toast("Cancelado"); renderPerfil(); }catch(e){ toast(e.message); }
   }));
@@ -3954,7 +3970,7 @@ if(CONFIGURED){
   // evento PASSWORD_RECOVERY (mostra a tela de nova senha) em vez de entrar no app.
   if(!/[#&]type=recovery/.test(location.hash)) boot().catch(e=>console.error(e));
 }
-else { authErr("⚠️ Configure SUPABASE_URL e SUPABASE_ANON no topo do arquivo para começar."); }
+else { authErr("⚠️ O cliente Supabase não está configurado."); }
 
 // ---------- PWA: service worker + instalar ----------
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{})); }
