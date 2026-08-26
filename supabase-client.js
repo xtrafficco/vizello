@@ -1,6 +1,7 @@
 // Fixar a versão evita que uma atualização major/minor do CDN altere o runtime
-// sem uma publicação controlada do Vizello.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+// sem uma publicação controlada do Vizello. A versão mínima atual também é
+// necessária para que chaves sb_publishable_* sejam enviadas apenas em apikey.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.112.4";
 
 // The publishable key is safe to ship to the browser. Never put a service-role
 // key in this file: database access is enforced by Supabase RLS policies.

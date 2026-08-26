@@ -28,7 +28,7 @@ IMPORTANTE:
        Site URL: https://SEU-DOMINIO
        Redirect URLs: https://SEU-DOMINIO/**
      (os links de confirmação/recuperação abrem no arquivo único, que trata recovery.)
-  4) Service Worker: cache "condoapp-v16" (novas versões chegam sozinhas no próximo load).
+  4) Service Worker: cache "condoapp-v20" (novas versões chegam sozinhas no próximo load).
 
 BACKEND — SECRETS das Edge Functions (Supabase → Project Settings → Edge Functions):
   Web Push (interfone/avisos com app fechado):

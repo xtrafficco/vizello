@@ -1,0 +1,14 @@
+{
+  "name": "vizello-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check:js": "node --check app.js && node --check helpers.js && node --check supabase-client.js && node --check ui-a11y.js && node --check plans.js && node --check sw.js && node --check qrcode.js && node --check jsqr.js",
+    "test": "node --test tests/*.test.js",
+    "security:check": "node scripts/security-check.mjs",
+    "ci": "npm run check:js && npm test && npm run security:check"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -465,8 +465,8 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
       <div class="price">
         <div class="pname">Essencial</div>
         <div class="pdesc">Organização completa para condomínios pequenos e síndicos profissionais.</div>
-        <div class="amount" data-m='R$ 4,90<small>/unidade/mês</small>' data-a='R$ 4,41<small>/unidade/mês</small>'>R$ 4,90<small>/unidade/mês</small></div>
-        <div class="pmin">Mínimo mensal de R$ 149 · inclui até 30 unidades</div>
+        <div class="amount" data-plan="essencial">R$ 4,90<small>/unidade/mês</small></div>
+        <div class="pmin" data-plan="essencial">Mínimo mensal de R$ 149 · inclui até 30 unidades</div>
         <div class="bill-note">14 dias grátis · 10% de desconto no anual</div>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Mural, comunicados e notificações</li>
@@ -481,8 +481,8 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
         <span class="flag">Mais escolhido</span>
         <div class="pname">Gestão Pro</div>
         <div class="pdesc">Automação financeira e operação avançada para condomínios em crescimento.</div>
-        <div class="amount" data-m='R$ 7,90<small>/unidade/mês</small>' data-a='R$ 7,11<small>/unidade/mês</small>'>R$ 7,90<small>/unidade/mês</small></div>
-        <div class="pmin">Mínimo mensal de R$ 299 · cobrança por unidade ativa</div>
+        <div class="amount" data-plan="pro">R$ 7,90<small>/unidade/mês</small></div>
+        <div class="pmin" data-plan="pro">Mínimo mensal de R$ 299 · cobrança por unidade ativa</div>
         <div class="bill-note">14 dias grátis · 10% de desconto no anual</div>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tudo do plano Essencial</li>
@@ -561,7 +561,21 @@ footer.ft .cr{width:100%;border-top:1px solid var(--line);margin-top:26px;paddin
   <a href="/imobiliaria" class="btn btn-sand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 21V10.5M19 21V10.5M5 21h14"/><path d="M10 21v-5a2 2 0 0 1 4 0v5"/></svg> Imobiliária</a>
 </div>
 
-<script>
+<script type="module">
+import { PLAN_PRICES, planBRL } from "./plans.js";
+
+(function(){
+  document.querySelectorAll(".amount[data-plan]").forEach(function(el){
+    var plan=PLAN_PRICES[el.dataset.plan];
+    if(plan) el.dataset.m=planBRL(plan.monthly)+"<small>/unidade/mês</small>";
+    if(plan) el.dataset.a=planBRL(plan.annual)+"<small>/unidade/mês</small>";
+  });
+  document.querySelectorAll(".pmin[data-plan]").forEach(function(el){
+    var plan=PLAN_PRICES[el.dataset.plan];
+    if(plan) el.textContent="Mínimo mensal de "+planBRL(plan.minimum)+" · "+(el.dataset.plan==="essencial"?"inclui até 30 unidades":"cobrança por unidade ativa");
+  });
+})();
+
 (function(){
   var els=[].slice.call(document.querySelectorAll('.reveal'));
   if(!('IntersectionObserver' in window)||window.matchMedia('(prefers-reduced-motion: reduce)').matches){

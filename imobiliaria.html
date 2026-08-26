@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#183451">
 <link rel="manifest" href="/manifest-imobiliaria.webmanifest">
+<script>
+try {
+  const p = location.pathname;
+  const manifest = p.startsWith("/proprietario")
+    ? "/manifest-proprietario.webmanifest"
+    : p.startsWith("/morador-imob")
+      ? "/manifest-morador-imob.webmanifest"
+      : "/manifest-imobiliaria.webmanifest";
+  document.querySelector('link[rel="manifest"]').setAttribute("href", manifest);
+} catch (_) {}
+</script>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -93,16 +104,17 @@
   .bar{display:flex;gap:10px;align-items:center;margin:2px 2px 12px;flex-wrap:wrap}
   .search{flex:1;min-width:140px;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--field-bg)}
   .seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
-  .seg button{padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
+  .seg button{padding:7px 13px;min-height:40px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
   .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(15,43,61,.12)}
   .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,43,61,.04)}
   .tile .row{display:flex;align-items:center;gap:10px}
   .tile h3{margin:0;font-size:16px}
   .meta{color:var(--muted);font-size:12.5px;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--brand-ink)}
-  .badge.disponivel{background:#e6f5ee;color:var(--ok)} .badge.locado{background:#fff4e0;color:var(--warn)}
-  .badge.vendido{background:#e2eff2;color:#00596b} .badge.inativo{background:#f0f0f0;color:#888}
-  .badge.pago{background:#e6f5ee;color:var(--ok)} .badge.pendente{background:#eef2f6;color:#5a6b78} .badge.vencida{background:#fdecea;color:var(--danger)}
+  button.badge,[role="button"].badge{min-height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding-inline:10px}
+  .badge.disponivel{background:var(--surface-success);color:var(--ok)} .badge.locado{background:var(--surface-warning);color:var(--warn)}
+  .badge.vendido{background:var(--chip);color:var(--brand-ink)} .badge.inativo{background:var(--surface-neutral);color:var(--text-disabled)}
+  .badge.pago{background:var(--surface-success);color:var(--ok)} .badge.pendente{background:var(--chip);color:var(--muted)} .badge.vencida{background:var(--surface-danger);color:var(--danger)}
   .empty{text-align:center;color:var(--muted);padding:40px 20px} .empty .big{font-size:40px}
   .spin{width:24px;height:24px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:44px auto}
   @keyframes sp{to{transform:rotate(360deg)}}
@@ -119,15 +131,16 @@
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:flex-end;justify-content:center;z-index:40}
   .modal-bg.show{display:flex}
-  .modal{background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:22px;box-shadow:var(--shadow);max-height:92dvh;overflow-y:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+  .modal{position:relative;background:var(--surface);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:22px;box-shadow:var(--shadow);max-height:92dvh;overflow-y:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+  .modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:10px;background:var(--chip);color:var(--brand-ink);font-size:24px;line-height:1;display:grid;place-items:center}
   @media(min-width:560px){ .modal-bg{align-items:center} .modal{border-radius:20px} }
-  .modal h2{margin:0 0 4px;font-size:19px}
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+  .modal h2{margin:0 0 4px;padding-right:44px;font-size:19px}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
   .toast.show{opacity:1}
   #mapEl{height:64vh;width:100%;border-radius:var(--r);border:1px solid var(--line)}
   .leaflet-container{font:inherit}
   .fld-row{display:flex;gap:10px} .fld-row>div{flex:1}
-  .badge.ok{background:#e6f5ee;color:var(--ok)} .badge.atrasado,.badge.cancelado{background:#fdecea;color:var(--danger)}
+  .badge.ok{background:var(--surface-success);color:var(--ok)} .badge.atrasado,.badge.cancelado{background:var(--surface-danger);color:var(--danger)}
   .installbar{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;margin-bottom:14px}
   .installbar b{font-size:13.5px} .installbar small{color:var(--muted);font-size:12px;display:block}
   .installbar .ib{flex:0 0 auto;background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:9px 13px;border-radius:10px}
@@ -141,10 +154,12 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="tagline"><span class="tag">IMOBILIÁRIA</span></div>
     <div class="sub">Gestão de imóveis, locações e financeiro.</div>
-    <label for="liEmail">E-mail</label><input id="liEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
-    <label for="liPass">Senha</label><input id="liPass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
-    <div id="liErr" class="err" role="alert" aria-live="assertive"></div><div id="liMsg" class="ok" role="status" aria-live="polite"></div>
-    <button id="liBtn" class="btn">Entrar</button>
+    <form id="liForm" novalidate>
+      <label for="liEmail">E-mail</label><input id="liEmail" class="field" type="email" autocomplete="email" placeholder="voce@imobiliaria.com">
+      <label for="liPass">Senha</label><input id="liPass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div id="liErr" class="err" role="alert" aria-live="assertive"></div><div id="liMsg" class="ok" role="status" aria-live="polite"></div>
+      <button id="liBtn" class="btn" type="submit">Entrar</button>
+    </form>
     <div class="switch-txt">Ainda não tem conta? <button id="goSignup">Criar conta</button></div>
     <div class="switch-txt" style="margin-top:6px"><button id="liForgot">Esqueci minha senha</button></div>
   </div>
@@ -221,13 +236,15 @@
 
 <script type="module">
 import { supabase as sb } from "./supabase-client.js";
+import { publicErrorMessage, validateUpload, esc } from "./helpers.js";
 
 const S={ user:null, imob:null, imobs:[], tab:"inicio" };
+let renderGeneration=0;
+const isCurrentRender=token=>token===renderGeneration;
 const $=s=>document.querySelector(s);
 const view=()=>$("#view");
-function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 let modalReturnFocus=null;
-function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2600); }
+function toast(m){ const t=$("#toast"); t.textContent=publicErrorMessage(m); t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2600); }
 function wireLabels(root=document){ root.querySelectorAll("label").forEach(label=>{ if(label.htmlFor||label.querySelector("input,select,textarea")) return; let el=label.nextElementSibling; while(el && !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){ const nested=el.querySelector?.("input,select,textarea"); if(nested){el=nested;break;} el=el.nextElementSibling; } if(el?.id) label.htmlFor=el.id; }); }
 function syncA11y(root=document){ wireLabels(root); root.querySelectorAll(".spin").forEach(el=>{ el.setAttribute("role","status"); el.setAttribute("aria-label","Carregando"); }); }
 function nomeUsuario(){ return (S.user&&S.user.user_metadata&&S.user.user_metadata.nome)||(S.user&&S.user.email&&S.user.email.split("@")[0])||"Você"; }
@@ -240,8 +257,8 @@ function calLink({title,details,location,start,minutes=60}){
   const q=new URLSearchParams({action:"TEMPLATE",text:title||"Compromisso",dates:`${fmt(s)}/${fmt(e)}`,details:details||"",location:location||""});
   return "https://calendar.google.com/calendar/render?"+q.toString();
 }
-function modal(html){ modalReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#modal"); el.innerHTML=html; const title=el.querySelector("h2"); if(title){title.id=title.id||"modalTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#modalBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
-function closeModal(){ $("#modalBg").classList.remove("show"); if(modalReturnFocus?.isConnected) modalReturnFocus.focus(); modalReturnFocus=null; }
+function modal(html){ modalReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#modal"); el.innerHTML=html+'<button type="button" class="modal-close" aria-label="Fechar">×</button>'; el.querySelector(".modal-close")?.addEventListener("click",closeModal); const title=el.querySelector("h2"); if(title){title.id=title.id||"modalTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#app")?.setAttribute("inert",""); $("#modalBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
+function closeModal(){ $("#modalBg").classList.remove("show"); $("#app")?.removeAttribute("inert"); if(modalReturnFocus?.isConnected) modalReturnFocus.focus(); modalReturnFocus=null; }
 $("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
 $("#modal").addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();closeModal();return;} if(e.key!=="Tab") return; const fs=[...$("#modal").querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])")]; if(!fs.length)return; const first=fs[0],last=fs[fs.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} });
 function syncOffline(){ const el=$("#offlineChip"); if(el) el.classList.toggle("hide",navigator.onLine); }
@@ -253,6 +270,7 @@ function confirmar(msg,ok="Confirmar"){ return new Promise(res=>{ modal(`<h2>Con
   <div class="fld-row" style="margin-top:6px"><button class="btn secondary" id="cfN">Cancelar</button><button class="btn" id="cfY">${esc(ok)}</button></div>`);
   $("#cfY").onclick=()=>{closeModal();res(true);}; $("#cfN").onclick=()=>{closeModal();res(false);}; }); }
 async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error) throw error; return data; }
+async function dbWrite(request){ const {error}=await request; if(error) throw error; }
 function fmtMoney(v){ return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 function fmtDate(d){ return d? new Date(d+ (String(d).length<=10?"T00:00:00":"")).toLocaleDateString("pt-BR"):""; }
 function maskCnpj(v){ v=(v||"").replace(/\D/g,"").slice(0,14); return v.replace(/^(\d{2})(\d)/,"$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3").replace(/\.(\d{3})(\d)/,".$1/$2").replace(/(\d{4})(\d)/,"$1-$2"); }
@@ -281,12 +299,16 @@ const CAT_DESP={repasse:"Repasse ao proprietário",manutencao:"Manutenção",ipt
 const ETAPAS={novo:"Novo",contato:"Em contato",visita:"Visita",proposta:"Proposta",fechado:"Fechado",perdido:"Perdido"};
 const ETAPA_ORDER=["novo","contato","visita","proposta","fechado"];
 
-function show(id){ for(const s of ["invite","login","signup","createImob","pickImob","app"]) $("#"+s).classList.toggle("hide", s!==id); }
+function show(id){
+  for(const s of ["invite","login","signup","createImob","pickImob","app"]) $("#"+s).classList.toggle("hide", s!==id);
+  requestAnimationFrame(()=>$("#"+id+" input:not([disabled]),#"+id+" button:not([disabled]),#"+id+" [tabindex='0']")?.focus());
+}
 
 // ---------- AUTH ----------
-function setMsg(el,m,cls){ const e=$(el); e.setAttribute("role",cls==="err"?"alert":"status"); e.setAttribute("aria-live",cls==="err"?"assertive":"polite"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.className=cls+" show"; }
+function setMsg(el,m,cls){ const e=$(el); e.setAttribute("role",cls==="err"?"alert":"status"); e.setAttribute("aria-live",cls==="err"?"assertive":"polite"); if(!m){e.classList.remove("show");return;} e.textContent=cls==="err"?publicErrorMessage(m):m; e.className=cls+" show"; }
 $("#goSignup").onclick=()=>show("signup");
 $("#goLogin").onclick=()=>show("login");
+$("#liForm")?.addEventListener("submit",e=>{e.preventDefault();$("#liBtn")?.click();});
 $("#liBtn").onclick=async()=>{
   const email=$("#liEmail").value.trim(), pass=$("#liPass").value;
   if(!email||!pass) return setMsg("#liErr","Preencha e-mail e senha.","err");
@@ -357,7 +379,15 @@ async function aceitarConviteAtual(){
   try{ await rpc("imob_convite_aceitar",{p_token:conviteToken}); }catch(_){}
 }
 async function enterApp(){
-  S.assinatura=await rpc("minha_assinatura_imob",{p_imob:S.imob.id}).catch(()=>null);
+  try{
+    S.assinatura=await rpc("minha_assinatura_imob",{p_imob:S.imob.id});
+    if(!S.assinatura || typeof S.assinatura!=="object") throw new Error("assinatura indisponível");
+  }catch(_){
+    S.assinatura=null;
+    show("pickImob");
+    toast("Não foi possível validar a assinatura. Tente novamente em instantes.");
+    return;
+  }
   if(S.assinatura?.precisa_pagamento){
     location.href="/pagamento?tipo=imobiliaria&tenant="+encodeURIComponent(S.imob.id);
     return;
@@ -393,7 +423,6 @@ const TABS=[
   {id:"financeiro",ic:IC.financeiro,label:"Financeiro"},
   {id:"atendimento",ic:IC.atendimento,label:"Atendimento"},
   {id:"servicos",ic:IC.servicos,label:"Serviços"},
-  {id:"perfil",ic:IC.config,label:"Perfil"},
 ];
 // Itens dentro de Serviços (acessados pelo hub)
 const HUB=[
@@ -404,6 +433,7 @@ const HUB=[
   {id:"comissoes",ic:IC.comissoes,label:"Comissões & Repasses",desc:"Relatório para os donos"},
   {id:"mapa",ic:IC.mapa,label:"Mapa",desc:"Imóveis no mapa"},
   {id:"anuncios",ic:IC.anuncios,label:"Anúncios (OLX/ZAP)",desc:"Publicar nos portais"},
+  {id:"perfil",ic:IC.config,label:"Perfil e conta",desc:"Dados, tema e sessão"},
 ];
 const HUB_IDS=HUB.map(h=>h.id);
 function buildNav(){
@@ -412,7 +442,7 @@ function buildNav(){
   $("#nav").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 }
 function go(tab){
-  S.tab=tab;
+  S.tab=tab; const token=++renderGeneration; S._renderToken=token;
   const navId = HUB_IDS.includes(tab) ? "servicos" : tab;
   $("#nav").querySelectorAll("[data-tab]").forEach(b=>{ const active=b.dataset.tab===navId; b.classList.toggle("active",active); if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current"); });
   window.scrollTo(0,0);
@@ -431,13 +461,15 @@ function renderServicos(){
 
 // ---------- LOCATÁRIOS (lista + histórico) ----------
 async function renderLocatarios(){
+  const token=S._renderToken;
   view().innerHTML=`<div class="h">👥 Locatários <small>Inquilinos e histórico</small></div><div class="spin"></div>`;
   let locs=[];
   try{
-    const {data,error}=await sb.from("locacoes").select("*, imoveis(titulo,endereco,cidade,uf)").eq("imobiliaria_id",S.imob.id).order("inicio",{ascending:false});
+    const {data,error}=await sb.from("locacoes").select("*, imoveis(titulo,endereco,cidade,uf)").eq("imobiliaria_id",S.imob.id).order("inicio",{ascending:false}).limit(100);
     if(error) throw error; locs=data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
-  if(!locs.length){ view().innerHTML=`<div class="h">👥 Locatários</div><div class="empty"><div class="big">👥</div><p>Nenhum locatário ainda. Eles aparecem quando você cria uma locação num imóvel.</p></div>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
+  if(!locs.length){ view().innerHTML=`<div class="h">👥 Locatários</div><div class="empty"><div class="big" aria-hidden="true">👥</div><p>Nenhum locatário ainda. Eles aparecem quando você cria uma locação num imóvel.</p></div>`; return; }
   // agrupa por CPF (ou nome, se sem CPF)
   const grupos={};
   locs.forEach(l=>{ const key=(l.locatario_cpf&&l.locatario_cpf.replace(/\D/g,""))||("nome:"+(l.locatario_nome||"").toLowerCase().trim()); (grupos[key]=grupos[key]||[]).push(l); });
@@ -453,11 +485,13 @@ async function renderLocatarios(){
       <div class="meta">${t.locatario_cpf?`<span>🪪 ${esc(t.locatario_cpf)}</span>`:""}${t.locatario_telefone?`<span>📞 ${esc(t.locatario_telefone)}</span>`:""}${t.locatario_email?`<span>✉️ ${esc(t.locatario_email)}</span>`:""}</div>
       <div style="margin-top:8px">${hist}</div></div>`;
   }).join("");
+  if(!isCurrentRender(token)) return;
   view().innerHTML=`<div class="h">👥 Locatários <small>${Object.keys(grupos).length} pessoa(s)</small></div>${cards}`;
 }
 
 // ---------- COMISSÕES & REPASSES (relatório) ----------
 async function renderComissoes(){
+  const token=S._renderToken;
   const comp=S._compComissao||new Date().toISOString().slice(0,7);
   view().innerHTML=`<div class="h">📊 Comissões & Repasses <small>Relatório mensal</small></div>
     <div class="bar"><input id="cmComp" class="field" type="month" value="${comp}" style="max-width:180px"></div><div id="cmBody"><div class="spin"></div></div>`;
@@ -465,14 +499,15 @@ async function renderComissoes(){
   let lanc=[], imv=[];
   try{
     const [{data:l},{data:i}]=await Promise.all([
-      sb.from("imob_lancamentos").select("*, imoveis(titulo,taxa_admin_pct,proprietario_id)").eq("imobiliaria_id",S.imob.id).eq("competencia",comp),
-      sb.from("imoveis").select("id,titulo,taxa_admin_pct").eq("imobiliaria_id",S.imob.id)
+      sb.from("imob_lancamentos").select("*, imoveis(titulo,taxa_admin_pct,proprietario_id)").eq("imobiliaria_id",S.imob.id).eq("competencia",comp).limit(500),
+      sb.from("imoveis").select("id,titulo,taxa_admin_pct").eq("imobiliaria_id",S.imob.id).limit(500)
     ]);
     lanc=l||[]; imv=i||[];
-  }catch(e){ $("#cmBody").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; $("#cmBody").innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
   const alugueis=lanc.filter(x=>x.tipo==="receita"&&x.categoria==="aluguel");
   const repasses=lanc.filter(x=>x.tipo==="despesa"&&x.categoria==="repasse");
-  if(!alugueis.length){ $("#cmBody").innerHTML=`<div class="empty"><div class="big">📊</div><p>Sem aluguéis lançados em ${esc(comp)}.</p></div>`; return; }
+  if(!alugueis.length){ $("#cmBody").innerHTML=`<div class="empty"><div class="big" aria-hidden="true">📊</div><p>Sem aluguéis lançados em ${esc(comp)}.</p></div>`; return; }
   let totAluguel=0, totComissao=0, totRepasse=0, totRecebido=0;
   const rows=alugueis.map(a=>{
     const im=a.imoveis||{}; const taxa=Number(im.taxa_admin_pct)||0;
@@ -484,6 +519,7 @@ async function renderComissoes(){
       <div class="drow"><span class="k">Comissão (${taxa||0}%)</span><span class="v">${fmtMoney(comissao)}</span></div>
       <div class="drow"><span class="k">Repasse ao dono</span><span class="v">${fmtMoney(repasse)} ${repFeito?`<span class="badge pago">repassado</span>`:`<span class="badge pendente">pendente</span>`}</span></div></div>`;
   }).join("");
+  if(!isCurrentRender(token)) return;
   $("#cmBody").innerHTML=`<div class="tile" style="background:var(--chip)">
       <div class="drow"><span class="k">Total em aluguéis</span><span class="v">${fmtMoney(totAluguel)}</span></div>
       <div class="drow"><span class="k">Recebido</span><span class="v">${fmtMoney(totRecebido)}</span></div>
@@ -519,7 +555,7 @@ function feedXML(imoveis){
 }
 async function renderAnuncios(){
   view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div><div class="spin"></div>`;
-  let imv=[]; try{ imv=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  let imv=[]; try{ imv=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   const disp=imv.filter(i=>i.status==="disponivel");
   view().innerHTML=`<div class="h">📣 Anúncios <small>OLX · ZAP · VivaReal</small></div>
     <div class="tile"><p style="margin:0 0 8px">Os portais (ZAP, VivaReal, OLX) publicam seus imóveis lendo um <b>feed XML</b> no padrão VRSync. O Vizello monta esse feed a partir dos seus imóveis <b>disponíveis</b>.</p>
@@ -528,7 +564,7 @@ async function renderAnuncios(){
     </div>
     <div class="bar"><button class="btn small" id="anPrev">👁️ Ver prévia do feed</button><button class="btn small secondary" id="anCopy">📋 Copiar XML</button></div>
     <div class="tile" style="background:#fff8e6;border-color:#ece79a"><b>⚙️ Falta ligar (1 passo no servidor)</b>
-      <p class="sub" style="text-align:left;margin:6px 0 0">Para os portais buscarem sozinhos, publique o feed numa URL pública (Edge Function <code>feed-imoveis</code>) e cadastre essa URL no painel do ZAP/OLX. O arquivo da função já está no projeto (<code>supabase/functions/feed-imoveis</code>).</p></div>
+      <p class="sub" style="text-align:left;margin:6px 0 0">Para os portais buscarem sozinhos, publique o feed numa URL pública (Edge Function <code>feed-imoveis</code>) e cadastre essa URL no painel do ZAP/OLX. A função precisa ser publicada pelo repositório de backend.</p></div>
     <div id="anXml"></div>`;
   const xml=feedXML(imv);
   $("#anPrev").onclick=()=>{ $("#anXml").innerHTML=`<textarea class="field" rows="14" readonly style="font-size:11px;font-family:monospace">${esc(xml)}</textarea>`; };
@@ -539,11 +575,13 @@ async function renderAnuncios(){
 const TK_ST={aberto:["Aberto","pendente"],em_andamento:["Em andamento","locado"],resolvido:["Resolvido","pago"],fechado:["Fechado",""]};
 const TK_CAT={manutencao:"🔧 Manutenção",financeiro:"💰 Financeiro",documentos:"📄 Documentos",outro:"❓ Outro"};
 async function renderAtendimentoImob(){
+  const token=S._renderToken;
   view().innerHTML=`<div class="h">🎧 Atendimento <small>Chamados dos moradores</small></div><div id="tkList"><div class="spin"></div></div>`;
   let tks=[];
-  try{ const {data,error}=await sb.from("imob_tickets").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("updated_at",{ascending:false}); if(error) throw error; tks=data||[]; }
-  catch(e){ $("#tkList").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
-  if(!tks.length){ $("#tkList").innerHTML=`<div class="empty"><div class="big">🎧</div><p>Nenhum chamado ainda. Os moradores abrem chamados pelo portal deles.</p></div>`; return; }
+  try{ const {data,error}=await sb.from("imob_tickets").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("updated_at",{ascending:false}).limit(100); if(error) throw error; tks=data||[]; }
+  catch(e){ if(!isCurrentRender(token)) return; $("#tkList").innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
+  if(!tks.length){ $("#tkList").innerHTML=`<div class="empty"><div class="big" aria-hidden="true">🎧</div><p>Nenhum chamado ainda. Os moradores abrem chamados pelo portal deles.</p></div>`; return; }
   $("#tkList").innerHTML=tks.map(t=>`<button class="tile" data-tk="${t.id}" style="width:100%;text-align:left">
       <div class="row"><h3 style="flex:1;font-size:15px">${esc(t.assunto)}</h3><span class="badge ${TK_ST[t.status]?TK_ST[t.status][1]:""}">${TK_ST[t.status]?TK_ST[t.status][0]:t.status}</span></div>
       <div class="meta"><span>${TK_CAT[t.categoria]||t.categoria}</span>${t.imoveis?`<span>🏠 ${esc(t.imoveis.titulo)}</span>`:""}<span>${t.papel_autor==="proprietario"?"👤 Proprietário":"🔑 Locatário"}</span><span>🕑 ${fmtDate(t.updated_at)}</span></div>
@@ -555,7 +593,7 @@ async function abrirTicketImob(id, gestor){
   let t=null, msgs=[];
   try{
     const {data:td}=await sb.from("imob_tickets").select("*, imoveis(titulo)").eq("id",id).single(); t=td;
-    const {data:md}=await sb.from("imob_ticket_msgs").select("*").eq("ticket_id",id).order("created_at"); msgs=md||[];
+    const {data:md}=await sb.from("imob_ticket_msgs").select("id,ticket_id,corpo,is_gestor,created_at").eq("ticket_id",id).order("created_at").limit(200); msgs=md||[];
   }catch(e){ closeModal(); toast(e.message||"Erro"); return; }
   if(!t){ closeModal(); toast("Chamado não encontrado"); return; }
   const thread=msgs.map(m=>`<div class="tile" style="padding:10px 12px;margin:0 0 8px;${m.is_gestor?"background:var(--chip)":""}">
@@ -575,12 +613,12 @@ async function abrirTicketImob(id, gestor){
     const corpo=$("#tkMsg").value.trim(); if(!corpo){ setMsg("#tkErr","Escreva uma mensagem.","err"); return; }
     $("#tkSend").disabled=true;
     try{ const {error}=await sb.from("imob_ticket_msgs").insert({ticket_id:id,corpo,is_gestor:!!gestor}); if(error) throw error;
-      if(gestor && t.status==="aberto"){ await sb.from("imob_tickets").update({status:"em_andamento"}).eq("id",id); }
+      if(gestor && t.status==="aberto"){ await dbWrite(sb.from("imob_tickets").update({status:"em_andamento"}).eq("id",id)); }
       closeModal(); toast("Mensagem enviada ✅"); if(gestor) renderAtendimentoImob();
     }catch(e){ setMsg("#tkErr",e.message||"Erro","err"); $("#tkSend").disabled=false; }
   });
   document.querySelectorAll("[data-st]").forEach(b=>b.onclick=async()=>{
-    try{ await sb.from("imob_tickets").update({status:b.dataset.st}).eq("id",id); closeModal(); toast("Status atualizado"); if(gestor) renderAtendimentoImob(); }
+    try{ await dbWrite(sb.from("imob_tickets").update({status:b.dataset.st}).eq("id",id)); closeModal(); toast("Status atualizado"); if(gestor) renderAtendimentoImob(); }
     catch(e){ toast(e.message||"Erro"); }
   });
 }
@@ -600,7 +638,7 @@ function novoTicketImob({imobiliaria_id, papel_autor, locacao_id, imovel_id}, on
     try{
       const {data:tk,error}=await sb.from("imob_tickets").insert({imobiliaria_id,papel_autor:papel_autor||"locatario",locacao_id:locacao_id||null,imovel_id:imovel_id||null,assunto,categoria:$("#ntCat").value}).select("id").single();
       if(error) throw error;
-      await sb.from("imob_ticket_msgs").insert({ticket_id:tk.id,corpo,is_gestor:false});
+      await dbWrite(sb.from("imob_ticket_msgs").insert({ticket_id:tk.id,corpo,is_gestor:false}));
       closeModal(); toast("Chamado enviado ✅"); if(onDone) onDone();
     }catch(e){ setMsg("#ntErr",e.message||"Erro","err"); $("#ntSave").disabled=false; }
   };
@@ -608,25 +646,27 @@ function novoTicketImob({imobiliaria_id, papel_autor, locacao_id, imovel_id}, on
 
 // ---------- DADOS ----------
 async function carregarImoveis(){
-  const {data:imv,error}=await sb.from("imoveis").select("*").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false});
+  const {data:imv,error}=await sb.from("imoveis").select("*").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false}).limit(500);
   if(error) throw error;
-  const {data:loc}=await sb.from("locacoes").select("*").eq("imobiliaria_id",S.imob.id).eq("ativo",true);
+    const {data:loc}=await sb.from("locacoes").select("*").eq("imobiliaria_id",S.imob.id).eq("ativo",true).limit(500);
   const locByImovel={}; (loc||[]).forEach(l=>locByImovel[l.imovel_id]=l);
   return (imv||[]).map(i=>({...i, locacao:locByImovel[i.id]||null}));
 }
 
 // ---------- INÍCIO ----------
 async function renderInicio(){
+  const token=S._renderToken;
   view().innerHTML='<div class="spin"></div>';
   let imoveis=[], lanc=[];
   let tkAbertos=0;
   try{
     imoveis=await carregarImoveis();
-    const {data:l}=await sb.from("imob_lancamentos").select("*").eq("imobiliaria_id",S.imob.id);
+    const {data:l}=await sb.from("imob_lancamentos").select("*").eq("imobiliaria_id",S.imob.id).limit(500);
     lanc=l||[];
     const {count}=await sb.from("imob_tickets").select("id",{count:"exact",head:true}).eq("imobiliaria_id",S.imob.id).in("status",["aberto","em_andamento"]);
     tkAbertos=count||0;
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
   const tkBanner = tkAbertos? `<button class="tile" id="tkBanner" style="width:100%;text-align:left;background:#fff8e6;border-color:#ece79a;margin-bottom:12px">
       <div class="row"><span style="font-size:20px">🎧</span><span style="flex:1"><b>${tkAbertos} chamado(s) de atendimento em aberto</b><div class="sub" style="margin:2px 0 0">Toque para responder os moradores.</div></span><span class="badge pendente">Ver</span></div></button>` : "";
   const total=imoveis.length, disp=imoveis.filter(i=>i.status==="disponivel").length, locados=imoveis.filter(i=>i.status==="locado").length;
@@ -676,7 +716,7 @@ function cardImovel(i){
   const valor = i.finalidade==="venda"? i.valor_venda : i.valor_aluguel;
   return `<div class="tile">
     <div class="row"><div style="flex:1;min-width:0">
-      <h3>${esc(i.titulo)} <span class="badge ${i.status}">${STATUS[i.status]||i.status}</span></h3>
+      <h3>${esc(i.titulo)} <span class="badge ${STATUS[i.status]?esc(i.status):""}">${esc(STATUS[i.status]||i.status||"")}</span></h3>
       <div class="meta"><span>${TIPOS[i.tipo]||i.tipo} · ${FINS[i.finalidade]||i.finalidade}</span>
         ${i.cidade?`<span>📍 ${esc(i.cidade)}${i.uf?"/"+esc(i.uf):""}</span>`:""}
         ${valor?`<span>💵 ${fmtMoney(valor)}${i.finalidade==="venda"?"":"/mês"}</span>`:""}</div>
@@ -737,6 +777,7 @@ async function docsImovel(i){
     const files=[...e.target.files]; if(!files.length) return;
     setMsg("#docErr","","err"); toast("Enviando…");
     for(const f of files){
+      const check=validateUpload(f); if(!check.ok){ setMsg("#docErr",check.message,"err"); continue; }
       const path=`${dir}/${Date.now()}-${(f.name||"arquivo").replace(/[^\w.\-]/g,"_")}`;
       const {error}=await sb.storage.from("imob-docs").upload(path,f,{upsert:false});
       if(error){ setMsg("#docErr",error.message,"err"); }
@@ -757,7 +798,7 @@ async function docsImovel(i){
 }
 async function renderImoveis(){
   view().innerHTML='<div class="spin"></div>';
-  let imoveis=[]; try{ imoveis=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  let imoveis=[]; try{ imoveis=await carregarImoveis(); }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   S._imoveis=imoveis; S._imFiltro="todos"; S._imQ="";
   view().innerHTML=`<div class="h">🏠 Imóveis <small>${imoveis.length} cadastrado(s)</small></div>
     <div class="bar"><input id="imQ" class="search" placeholder="Buscar por título, endereço, locatário..."><button class="btn small" id="imNovo">➕ Novo</button></div>
@@ -775,12 +816,12 @@ function drawImoveis(){
   if(S._imFiltro!=="todos") list=list.filter(i=>i.status===S._imFiltro);
   if(S._imQ){ const q=S._imQ; list=list.filter(i=>(i.titulo||"").toLowerCase().includes(q)||(i.endereco||"").toLowerCase().includes(q)||(i.cidade||"").toLowerCase().includes(q)||(i.locacao&&(i.locacao.locatario_nome||"").toLowerCase().includes(q))); }
   const el=$("#imList");
-  el.innerHTML = list.length? list.map(cardImovel).join("") : `<div class="empty"><div class="big">🏠</div><p>Nenhum imóvel neste filtro.</p></div>`;
+  el.innerHTML = list.length? list.map(cardImovel).join("") : `<div class="empty"><div class="big" aria-hidden="true">🏠</div><p>Nenhum imóvel neste filtro.</p></div>`;
   wireImovelCards(el, S._imoveis||[]);
 }
 async function formImovel(i){
   const ed=!!i;
-  let props=[]; try{ const {data}=await sb.from("imob_proprietarios").select("id,nome").eq("imobiliaria_id",S.imob.id).order("nome"); props=data||[]; }catch(_){}
+  let props=[]; try{ const {data}=await sb.from("imob_proprietarios").select("id,nome").eq("imobiliaria_id",S.imob.id).order("nome").limit(500); props=data||[]; }catch(_){}
   modal(`<h2>${ed?"Editar imóvel":"Novo imóvel"}</h2>
     <label>Título / identificação</label><input id="fTitulo" class="field" placeholder="Apto 302 - Ed. Aurora" value="${ed?esc(i.titulo):""}">
     <div class="fld-row">
@@ -880,10 +921,10 @@ function formLocacao(i){
       if(l){ const {error}=await sb.from("locacoes").update(rec).eq("id",l.id); if(error) throw error; }
       else {
         // desativa qualquer locação ativa remanescente e insere a nova
-        await sb.from("locacoes").update({ativo:false}).eq("imovel_id",i.id).eq("ativo",true);
+        await dbWrite(sb.from("locacoes").update({ativo:false}).eq("imovel_id",i.id).eq("ativo",true));
         const {error}=await sb.from("locacoes").insert(rec); if(error) throw error;
       }
-      await sb.from("imoveis").update({status:"locado"}).eq("id",i.id);
+      await dbWrite(sb.from("imoveis").update({status:"locado"}).eq("id",i.id));
       closeModal(); toast("Locatário salvo ✅"); go(S.tab);
     }catch(e){ setMsg("#lErr",e.message||"Erro","err"); $("#lSave").disabled=false; }
   };
@@ -891,24 +932,26 @@ function formLocacao(i){
 async function encerrarLocacao(i){
   if(!await confirmar(`Encerrar a locação de "${i.titulo}"? O imóvel volta a ficar disponível.`,"Encerrar")) return;
   try{
-    await sb.from("locacoes").update({ativo:false, fim:new Date().toISOString().slice(0,10)}).eq("imovel_id",i.id).eq("ativo",true);
-    await sb.from("imoveis").update({status:"disponivel"}).eq("id",i.id);
+    await dbWrite(sb.from("locacoes").update({ativo:false, fim:new Date().toISOString().slice(0,10)}).eq("imovel_id",i.id).eq("ativo",true));
+    await dbWrite(sb.from("imoveis").update({status:"disponivel"}).eq("id",i.id));
     toast("Locação encerrada"); go(S.tab);
   }catch(e){ toast(e.message); }
 }
 
 // ---------- PROPRIETÁRIOS ----------
 async function renderProprietarios(){
+  const token=S._renderToken;
   view().innerHTML='<div class="spin"></div>';
   let props=[], imoveis=[], lanc=[];
   try{
-    const {data:p}=await sb.from("imob_proprietarios").select("*").eq("imobiliaria_id",S.imob.id).order("nome");
+    const {data:p}=await sb.from("imob_proprietarios").select("*").eq("imobiliaria_id",S.imob.id).order("nome").limit(500);
     props=p||[];
-    const {data:im}=await sb.from("imoveis").select("id,titulo,proprietario_id").eq("imobiliaria_id",S.imob.id);
+    const {data:im}=await sb.from("imoveis").select("id,titulo,proprietario_id").eq("imobiliaria_id",S.imob.id).limit(500);
     imoveis=im||[];
-    const {data:l}=await sb.from("imob_lancamentos").select("valor,status,imovel_id").eq("imobiliaria_id",S.imob.id).eq("categoria","repasse");
+    const {data:l}=await sb.from("imob_lancamentos").select("valor,status,imovel_id").eq("imobiliaria_id",S.imob.id).eq("categoria","repasse").limit(500);
     lanc=l||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
   const imById={}; imoveis.forEach(i=>imById[i.id]=i);
   const repByProp={}, countByProp={};
   imoveis.forEach(i=>{ if(i.proprietario_id) countByProp[i.proprietario_id]=(countByProp[i.proprietario_id]||0)+1; });
@@ -923,12 +966,12 @@ async function renderProprietarios(){
       <div class="meta">${p.telefone?`<span>📞 ${esc(p.telefone)}</span>`:""}${p.documento?`<span>${esc(p.documento)}</span>`:""}<span>🏠 ${countByProp[p.id]||0} imóvel(is)</span></div>
       ${repByProp[p.id]?`<div class="meta"><span style="color:var(--warn)">💸 Repasse a pagar: ${fmtMoney(repByProp[p.id])}</span></div>`:""}</div></div>
     <div class="bar" style="margin:10px 0 0"><button class="btn small secondary" data-edp="${p.id}">✏️ Editar</button><button class="btn small secondary" data-invp="${p.id}">${p.user_id?"🔑 Portal ✅":"🔑 Convidar p/ portal"}</button>${p.telefone?`<button class="btn small secondary" data-wap="${p.id}" style="background:#25d366;color:#fff">📲 WhatsApp</button>`:""}<button class="btn small danger" data-delp="${p.id}">🗑️</button></div></div>`).join("")
-    : `<div class="empty"><div class="big">👤</div><p>Nenhum proprietário. Cadastre para vincular aos imóveis e automatizar o repasse do aluguel.</p></div>`;
+    : `<div class="empty"><div class="big" aria-hidden="true">👤</div><p>Nenhum proprietário. Cadastre para vincular aos imóveis e automatizar o repasse do aluguel.</p></div>`;
   const byId={}; props.forEach(p=>byId[p.id]=p);
   el.querySelectorAll("[data-edp]").forEach(b=>b.onclick=()=>formProprietario(byId[b.dataset.edp]));
   el.querySelectorAll("[data-invp]").forEach(b=>b.onclick=()=>convidarProprietario(byId[b.dataset.invp]));
   el.querySelectorAll("[data-wap]").forEach(b=>b.onclick=()=>{ const p=byId[b.dataset.wap]; window.open(`https://wa.me/${waPhone(p.telefone)}?text=${encodeURIComponent(`Olá ${p.nome}! Aqui é da ${S.imob.nome}.`)}`,"_blank","noopener"); });
-  el.querySelectorAll("[data-delp]").forEach(b=>b.onclick=async()=>{ const p=byId[b.dataset.delp]; if(!await confirmar(`Excluir o proprietário "${p.nome}"? Os imóveis dele ficam sem proprietário vinculado.`,"Excluir")) return; try{ await sb.from("imob_proprietarios").delete().eq("id",p.id); toast("Excluído"); renderProprietarios(); }catch(e){ toast(e.message); } });
+  el.querySelectorAll("[data-delp]").forEach(b=>b.onclick=async()=>{ const p=byId[b.dataset.delp]; if(!await confirmar(`Excluir o proprietário "${p.nome}"? Os imóveis dele ficam sem proprietário vinculado.`,"Excluir")) return; try{ await dbWrite(sb.from("imob_proprietarios").delete().eq("id",p.id)); toast("Excluído"); renderProprietarios(); }catch(e){ toast(e.message); } });
 }
 function convidarProprietario(p){
   modal(`<h2>🔑 Convidar para o portal</h2><p class="sub" style="text-align:left">${esc(p.nome)} poderá acompanhar imóveis e repasses no portal do proprietário.</p>
@@ -981,10 +1024,10 @@ async function renderLeads(){
   view().innerHTML='<div class="spin"></div>';
   let leads=[], imoveis=[];
   try{
-    const {data:l}=await sb.from("imob_leads").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false});
+    const {data:l}=await sb.from("imob_leads").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false}).limit(200);
     leads=l||[];
-    const {data:im}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo"); imoveis=im||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+    const {data:im}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo").limit(500); imoveis=im||[];
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   S._leadImoveis=imoveis; S._leads=leads; S._leadFiltro=S._leadFiltro||"ativos";
   const ativos=leads.filter(l=>!["fechado","perdido"].includes(l.etapa));
   view().innerHTML=`<div class="h">🤝 Interessados <small>${ativos.length} ativo(s) de ${leads.length}</small></div>
@@ -1004,7 +1047,7 @@ function drawLeads(){
   else if(S._leadFiltro==="visita") list=list.filter(l=>l.etapa==="visita"||l.visita_em);
   const badgeCls={novo:"pendente",contato:"locado",visita:"locado",proposta:"pendente",fechado:"pago",perdido:"vencida"};
   const el=$("#ldList");
-  if(!list.length){ el.innerHTML=`<div class="empty"><div class="big">🤝</div><p>Nenhum interessado.</p></div>`; return; }
+  if(!list.length){ el.innerHTML=`<div class="empty"><div class="big" aria-hidden="true">🤝</div><p>Nenhum interessado.</p></div>`; return; }
   el.innerHTML=list.map(l=>{
     const idx=ETAPA_ORDER.indexOf(l.etapa), prox=(idx>=0&&idx<ETAPA_ORDER.length-1)?ETAPA_ORDER[idx+1]:null;
     const visita=l.visita_em?new Date(l.visita_em):null;
@@ -1026,12 +1069,12 @@ function drawLeads(){
   el.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>{ const l=byId[b.dataset.cal]; if(!l.visita_em) return; const im=l.imoveis||{};
     window.open(calLink({title:`Visita — ${im.titulo||l.nome}`,details:`Visita com ${l.nome}${l.telefone?" ("+l.telefone+")":""} — ${S.imob.nome}`,location:im.endereco||"",start:l.visita_em}),"_blank","noopener"); });
   el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLead(byId[b.dataset.edl]));
-  el.querySelectorAll("[data-lostl]").forEach(b=>b.onclick=async()=>{ try{ await sb.from("imob_leads").update({etapa:"perdido"}).eq("id",b.dataset.lostl); toast("Marcado como perdido"); renderLeads(); }catch(e){ toast(e.message); } });
-  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este interessado?","Excluir")) return; try{ await sb.from("imob_leads").delete().eq("id",b.dataset.dell); toast("Excluído"); renderLeads(); }catch(e){ toast(e.message); } });
+  el.querySelectorAll("[data-lostl]").forEach(b=>b.onclick=async()=>{ try{ await dbWrite(sb.from("imob_leads").update({etapa:"perdido"}).eq("id",b.dataset.lostl)); toast("Marcado como perdido"); renderLeads(); }catch(e){ toast(e.message); } });
+  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este interessado?","Excluir")) return; try{ await dbWrite(sb.from("imob_leads").delete().eq("id",b.dataset.dell)); toast("Excluído"); renderLeads(); }catch(e){ toast(e.message); } });
 }
 async function advLead(l){
   const idx=ETAPA_ORDER.indexOf(l.etapa), prox=(idx>=0&&idx<ETAPA_ORDER.length-1)?ETAPA_ORDER[idx+1]:null; if(!prox) return;
-  try{ await sb.from("imob_leads").update({etapa:prox}).eq("id",l.id); toast(`→ ${ETAPAS[prox]}`); renderLeads(); }catch(e){ toast(e.message); }
+  try{ await dbWrite(sb.from("imob_leads").update({etapa:prox}).eq("id",l.id)); toast(`→ ${ETAPAS[prox]}`); renderLeads(); }catch(e){ toast(e.message); }
 }
 function formLead(l){
   const ed=!!l; const imoveis=S._leadImoveis||[];
@@ -1088,13 +1131,15 @@ async function renderMapa(){
 
 // ---------- FINANCEIRO ----------
 async function renderFinanceiro(){
+  const token=S._renderToken;
   view().innerHTML='<div class="spin"></div>';
   let lanc=[], imoveis=[];
   try{
-    const {data:l,error}=await sb.from("imob_lancamentos").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("vencimento",{ascending:false});
+    const {data:l,error}=await sb.from("imob_lancamentos").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("vencimento",{ascending:false}).limit(500);
     if(error) throw error; lanc=l||[];
     imoveis=await carregarImoveis();
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
   S._lanc=lanc; S._finView=S._finView||"resumo";
   S._telByImovel={}; imoveis.forEach(i=>{ if(i.locacao) S._telByImovel[i.id]={nome:i.locacao.locatario_nome,telefone:i.locacao.locatario_telefone}; });
   const hoje=new Date().toISOString().slice(0,10);
@@ -1177,10 +1222,10 @@ function drawLancamentos(){
   el.querySelectorAll("[data-cobra]").forEach(b=>b.onclick=()=>cobrarWhatsApp(byId[b.dataset.cobra]));
   el.querySelectorAll("[data-pix]").forEach(b=>b.onclick=()=>gerarPix(byId[b.dataset.pix]));
   el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLancamento(byId[b.dataset.edl]));
-  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este lançamento?","Excluir")) return; try{ await sb.from("imob_lancamentos").delete().eq("id",b.dataset.dell); toast("Excluído"); renderFinanceiro(); }catch(e){ toast(e.message); } });
+  el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este lançamento?","Excluir")) return; try{ await dbWrite(sb.from("imob_lancamentos").delete().eq("id",b.dataset.dell)); toast("Excluído"); renderFinanceiro(); }catch(e){ toast(e.message); } });
 }
 async function lancStatus(id,status){
-  try{ await sb.from("imob_lancamentos").update({status, pago_em: status==="pago"?new Date().toISOString():null}).eq("id",id); toast(status==="pago"?"Baixado ✅":"Reaberto"); renderFinanceiro(); }catch(e){ toast(e.message); }
+  try{ await dbWrite(sb.from("imob_lancamentos").update({status, pago_em: status==="pago"?new Date().toISOString():null}).eq("id",id)); toast(status==="pago"?"Baixado ✅":"Reaberto"); renderFinanceiro(); }catch(e){ toast(e.message); }
 }
 function cobrarWhatsApp(l){
   if(!l) return;
@@ -1201,7 +1246,7 @@ async function gerarPix(l){
   if(!S.imob.pix_chave){ toast("Cadastre a chave Pix em Config → Dados de recebimento."); return; }
   const tel=(S._telByImovel||{})[l.imovel_id]||{};
   const payload=pixBRCode({chave:S.imob.pix_chave, nome:S.imob.nome, cidade:S.imob.cidade, valor:l.valor, txid:("L"+String(l.id).replace(/-/g,"").slice(0,15)), descricao:l.descricao});
-  try{ await sb.from("imob_lancamentos").update({metodo:"pix", gateway:"pix_manual", pix_copiacola:payload}).eq("id",l.id); }catch(_){}
+  try{ await dbWrite(sb.from("imob_lancamentos").update({metodo:"pix", gateway:"pix_manual", pix_copiacola:payload}).eq("id",l.id)); }catch(_){}
   modal(`<h2>💠 Cobrança Pix</h2><p class="sub" style="text-align:left">${esc(l.descricao)} · <b>${fmtMoney(l.valor)}</b></p>
     <div style="text-align:center">${qrImgTag(payload,6)||'<p class="sub">QR indisponível (sem conexão).</p>'}</div>
     <label style="margin-top:10px">Pix copia e cola</label>
@@ -1256,12 +1301,14 @@ async function formLancamento(l){
 const VIST_ST={rascunho:["Rascunho","pendente"],concluida:["Concluída","locado"],assinada:["Assinada","ok"]};
 const VIST_ESTADO={novo:"Novo",bom:"Bom",regular:"Regular",ruim:"Ruim",danificado:"Danificado"};
 async function renderVistorias(){
+  const token=S._renderToken;
   view().innerHTML='<div class="spin"></div>';
   let vist=[];
   try{
-    const {data,error}=await sb.from("imob_vistorias").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("data_vistoria",{ascending:false});
+    const {data,error}=await sb.from("imob_vistorias").select("*, imoveis(titulo)").eq("imobiliaria_id",S.imob.id).order("data_vistoria",{ascending:false}).limit(100);
     if(error) throw error; vist=data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
   view().innerHTML=`<div class="h">📋 Vistorias <small>Laudos de entrada e saída</small></div>
     <button class="btn" id="nvBtn" style="margin-bottom:12px">➕ Nova vistoria</button>
     ${vist.length? vist.map(v=>{ const [l,c]=VIST_ST[v.status]||[v.status,""]; return `<div class="tile clickable" data-v="${v.id}"><div class="row">
@@ -1272,7 +1319,7 @@ async function renderVistorias(){
   view().querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>abrirVistoria(b.dataset.v));
 }
 async function novaVistoria(){
-  const {data:imv}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo");
+  const {data:imv}=await sb.from("imoveis").select("id,titulo").eq("imobiliaria_id",S.imob.id).order("titulo").limit(500);
   const imoveis=imv||[]; if(!imoveis.length){ toast("Cadastre um imóvel primeiro."); return; }
   modal(`<h2>Nova vistoria</h2>
     <label>Imóvel</label><select id="nvImovel" class="field">${imoveis.map(i=>`<option value="${i.id}">${esc(i.titulo)}</option>`).join("")}</select>
@@ -1296,7 +1343,7 @@ async function abrirVistoria(id){
   view().innerHTML='<div class="spin"></div>';
   const {data:v,error}=await sb.from("imob_vistorias").select("*, imoveis(titulo,endereco)").eq("id",id).single();
   if(error){ toast(error.message); return go("vistorias"); }
-  const {data:itensRaw}=await sb.from("imob_vistoria_itens").select("*").eq("vistoria_id",id).order("ordem").order("created_at");
+  const {data:itensRaw}=await sb.from("imob_vistoria_itens").select("*").eq("vistoria_id",id).order("ordem").order("created_at").limit(500);
   const itens=itensRaw||[]; const [slbl,scls]=VIST_ST[v.status]||[v.status,""];
   const locked = v.status!=="rascunho";
   const dir=`${S.imob.id}/vistorias/${id}`;
@@ -1328,12 +1375,12 @@ async function abrirVistoria(id){
   });
   elItens.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
     if(!await confirmar("Excluir este item da vistoria?","Excluir")) return;
-    try{ await sb.from("imob_vistoria_itens").delete().eq("id",b.dataset.del); toast("Item excluído"); abrirVistoria(id); }catch(e){ toast(e.message); }
+    try{ await dbWrite(sb.from("imob_vistoria_itens").delete().eq("id",b.dataset.del)); toast("Item excluído"); abrirVistoria(id); }catch(e){ toast(e.message); }
   });
   $("#vAdd")?.addEventListener("click",()=>addItemVistoria(id,dir,itens.length));
   $("#vDone")?.addEventListener("click",async()=>{
     if(!await confirmar("Concluir a vistoria? Depois disso o locatário poderá assiná-la e ela não poderá mais ser editada.","Concluir")) return;
-    try{ await sb.from("imob_vistorias").update({status:"concluida"}).eq("id",id); toast("Vistoria concluída ✅"); abrirVistoria(id); }catch(e){ toast(e.message); }
+    try{ await dbWrite(sb.from("imob_vistorias").update({status:"concluida"}).eq("id",id)); toast("Vistoria concluída ✅"); abrirVistoria(id); }catch(e){ toast(e.message); }
   });
 }
 function laudoVistoria(v,itens){
@@ -1370,6 +1417,8 @@ function addItemVistoria(vistoriaId,dir,ordem){
     try{
       const files=[...($("#viFotos").files||[])]; const paths=[];
       for(const f of files){
+        const check=validateUpload(f,{mime:["image/jpeg","image/png","image/webp"],maxBytes:10*1024*1024});
+        if(!check.ok) throw new Error(check.message);
         const path=`${dir}/${Date.now()}-${(f.name||"foto").replace(/[^\w.\-]/g,"_")}`;
         const {error:ue}=await sb.storage.from("imob-docs").upload(path,f,{upsert:false});
         if(ue) throw ue; paths.push(path);
@@ -1436,7 +1485,7 @@ async function pagarMensImob(id){
     if(error||!data||data.error) throw new Error((data&&data.error)||error?.message||"Falha ao gerar PIX");
     const qr=data.qr_code, qr64=data.qr_code_base64;
     modal(`<h2>💠 Mensalidade VIZELLO</h2><p class="sub" style="text-align:left">Pague com PIX (copia-e-cola ou QR). A baixa é automática.</p>
-      ${qr64?`<div style="text-align:center"><img alt="QR PIX" src="data:image/png;base64,${qr64}" style="width:220px;max-width:70%"></div>`:""}
+      ${qr64?`<div style="text-align:center"><img alt="QR PIX" src="data:image/png;base64,${qr64}" loading="lazy" decoding="async" style="width:220px;max-width:70%"></div>`:""}
       ${qr?`<textarea class="field" rows="3" readonly style="font-size:12px;word-break:break-all;margin-top:8px">${esc(qr)}</textarea><button class="btn secondary" id="fatCopy" style="margin-top:8px">📋 Copiar código</button>`:'<p class="empty">PIX indisponível. Tente novamente.</p>'}
       <button class="btn" id="fatClose" style="margin-top:8px">Fechar</button>`);
     $("#fatClose").onclick=closeModal;
@@ -1519,7 +1568,7 @@ async function avisosManager(){
   $("#avPub").onclick=async()=>{ const t=$("#avT").value.trim(); if(!t){ setMsg("#avErr","Informe o título.","err"); return; }
     try{ await rpc("imob_aviso_publicar",{p_imob:S.imob.id,p_titulo:t,p_corpo:$("#avC").value.trim()||null}); toast("Aviso publicado ✅"); avisosManager(); }
     catch(e){ setMsg("#avErr",e.message||"Erro","err"); } };
-  document.querySelectorAll("[data-delav]").forEach(b=>b.onclick=async()=>{ await sb.from("imob_avisos").delete().eq("id",b.dataset.delav); toast("Excluído"); avisosManager(); });
+  document.querySelectorAll("[data-delav]").forEach(b=>b.onclick=async()=>{ try{ await dbWrite(sb.from("imob_avisos").delete().eq("id",b.dataset.delav)); toast("Excluído"); avisosManager(); }catch(e){ toast(e.message); } });
 }
 async function integracaoPagamento(){
   modal('<h2>Integração de recebimento</h2><div class="spin"></div>');
@@ -1613,9 +1662,9 @@ const Inquilino = (()=>{
   async function renderChamados(){
     view().innerHTML=`<div class="h">🎧 Meus chamados</div><div class="bar"><button class="btn small" id="chNovo">➕ Abrir chamado</button></div><div id="chList"><div class="spin"></div></div>`;
     $("#chNovo").onclick=()=>{ const cx=ctxTicket(); if(!cx.imobiliaria_id){ toast("Sem contrato ativo."); return; } novoTicketImob(cx, ()=>renderChamados()); };
-    let tks=[]; try{ const {data:d,error}=await sb.from("imob_tickets").select("*").eq("aberto_por",S.user.id).order("updated_at",{ascending:false}); if(error) throw error; tks=d||[]; }
-    catch(e){ $("#chList").innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
-    if(!tks.length){ $("#chList").innerHTML=`<div class="empty"><div class="big">🎧</div><p>Nenhum chamado. Toque em “Abrir chamado” para falar com a imobiliária.</p></div>`; return; }
+    let tks=[]; try{ const {data:d,error}=await sb.from("imob_tickets").select("*").eq("aberto_por",S.user.id).order("updated_at",{ascending:false}).limit(100); if(error) throw error; tks=d||[]; }
+    catch(e){ $("#chList").innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+    if(!tks.length){ $("#chList").innerHTML=`<div class="empty"><div class="big" aria-hidden="true">🎧</div><p>Nenhum chamado. Toque em “Abrir chamado” para falar com a imobiliária.</p></div>`; return; }
     $("#chList").innerHTML=tks.map(t=>`<button class="tile" data-tk="${t.id}" style="width:100%;text-align:left">
         <div class="row"><h3 style="flex:1;font-size:15px">${esc(t.assunto)}</h3><span class="badge ${TK_ST[t.status]?TK_ST[t.status][1]:""}">${TK_ST[t.status]?TK_ST[t.status][0]:t.status}</span></div>
         <div class="meta"><span>${TK_CAT[t.categoria]||t.categoria}</span><span>🕑 ${fmtDate(t.updated_at)}</span></div></button>`).join("");
@@ -1648,7 +1697,7 @@ const Inquilino = (()=>{
         return `<div class="tile"><div class="drow" style="border:none;padding:0"><span class="k" style="flex:1">${esc(m.descricao)}</span><b>${fmtMoney(m.valor)}</b></div>
           <div class="meta"><span>📅 ${m.vencimento?fmtDate(m.vencimento):"—"}</span><span class="badge ${m.status==="pago"?"pago":(venc?"vencida":"pendente")}">${m.status==="pago"?"Pago":(venc?"Vencido":"Em aberto")}</span></div>
           ${m.status==="pendente"&&ib.pix_chave?`<button class="btn secondary" data-pix="${m.id}" style="margin-top:10px">💠 Pagar com Pix</button>`:""}</div>`;
-      }).join(""):`<div class="empty"><div class="big">💰</div><p>Nenhuma cobrança ainda.</p></div>`}`;
+      }).join(""):`<div class="empty"><div class="big" aria-hidden="true">💰</div><p>Nenhuma cobrança ainda.</p></div>`}`;
     const byId={}; mens.forEach(m=>byId[m.id]=m);
     view().querySelectorAll("[data-pix]").forEach(b=>b.onclick=()=>pagarPix(byId[b.dataset.pix], c));
   }
@@ -1665,8 +1714,8 @@ const Inquilino = (()=>{
   }
   async function renderVist(){
     view().innerHTML='<div class="spin"></div>';
-    let vist=[]; try{ vist=await rpc("imob_morador_vistorias")||[]; }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
-    if(!vist.length){ view().innerHTML=`<div class="h">📋 Vistorias</div><div class="empty"><div class="big">📋</div><p>Nenhuma vistoria disponível ainda.</p></div>`; return; }
+    let vist=[]; try{ vist=await rpc("imob_morador_vistorias")||[]; }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+    if(!vist.length){ view().innerHTML=`<div class="h">📋 Vistorias</div><div class="empty"><div class="big" aria-hidden="true">📋</div><p>Nenhuma vistoria disponível ainda.</p></div>`; return; }
     view().innerHTML=`<div class="h">📋 Vistorias <small>Laudo do imóvel</small></div>`+vist.map(v=>`
       <div class="tile">
         <h3>${v.tipo==="entrada"?"➡️ Entrada":"⬅️ Saída"}${v.imovel?" · "+esc(v.imovel):""} ${v.status==="assinada"?'<span class="badge ok">Assinada</span>':'<span class="badge pendente">A assinar</span>'}</h3>
@@ -1691,7 +1740,7 @@ const Inquilino = (()=>{
     const c=(data.contratos||[])[0]||{}; const ib=c.imobiliaria||{}; const avisos=data.avisos||[];
     view().innerHTML=`<div class="h">📢 Avisos & contato</div>
       <button class="btn secondary" id="avChamado" style="margin-bottom:12px">💬 Falar com a imobiliária</button>
-      ${avisos.length?avisos.map(a=>`<div class="tile"><h3>${esc(a.titulo)}</h3>${a.corpo?`<div class="meta"><span>${esc(a.corpo)}</span></div>`:""}<div class="meta"><span>${fmtDate(a.created_at)}</span>${a.imobiliaria?`<span>${esc(a.imobiliaria)}</span>`:""}</div></div>`).join(""):`<div class="empty"><div class="big">📢</div><p>Nenhum aviso no momento.</p></div>`}`;
+      ${avisos.length?avisos.map(a=>`<div class="tile"><h3>${esc(a.titulo)}</h3>${a.corpo?`<div class="meta"><span>${esc(a.corpo)}</span></div>`:""}<div class="meta"><span>${fmtDate(a.created_at)}</span>${a.imobiliaria?`<span>${esc(a.imobiliaria)}</span>`:""}</div></div>`).join(""):`<div class="empty"><div class="big" aria-hidden="true">📢</div><p>Nenhum aviso no momento.</p></div>`}`;
     $("#avChamado")?.addEventListener("click",()=>{ const cx=ctxTicket(); if(!cx.imobiliaria_id){ toast("Sem contrato ativo."); return; } novoTicketImob(cx, ()=>go("chamados")); });
   }
   function start(d){ data=d; const c0=(d.contratos||[])[0]||{}; $("#appTag").textContent="MORADOR"; $("#whoImob").textContent=c0.imobiliaria?c0.imobiliaria.nome:""; $("#whoUser").textContent=saudacao(); $("#topOut").onclick=logout; show("app"); buildNav(); go("contrato"); }
@@ -1713,7 +1762,7 @@ const Proprietario = (()=>{
     const imv=allImoveis();
     view().innerHTML=`<div class="h">🏠 Meus imóveis <small>${imv.length} imóvel(is)</small></div>`+
       (imv.length? imv.map(im=>{ const l=im.locacao; return `<div class="tile">
-        <h3>${esc(im.titulo||"Imóvel")} <span class="badge ${im.status||""}">${esc(STATUS[im.status]||im.status||"")}</span></h3>
+        <h3>${esc(im.titulo||"Imóvel")} <span class="badge ${esc(im.status||"")}">${esc(STATUS[im.status]||im.status||"")}</span></h3>
         ${im.endereco?`<div class="meta"><span>📍 ${esc(im.endereco)}</span></div>`:""}
         ${l?`<div class="drow"><span class="k">Locatário</span><span class="v">${esc(l.locatario_nome||"—")}</span></div>
             <div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(l.valor_mensal)}/mês</span></div>
@@ -1722,7 +1771,7 @@ const Proprietario = (()=>{
           :`<div class="meta"><span>Sem locação ativa</span>${im.valor_aluguel?`<span>Aluguel anunciado: ${fmtMoney(im.valor_aluguel)}</span>`:""}</div>`}
         ${im.imobiliaria?`<div class="meta"><span>🏢 ${esc(im.imobiliaria)}</span></div>`:""}
       </div>`;}).join("")
-      : `<div class="empty"><div class="big">🏠</div><p>Nenhum imóvel vinculado a você ainda.</p></div>`);
+      : `<div class="empty"><div class="big" aria-hidden="true">🏠</div><p>Nenhum imóvel vinculado a você ainda.</p></div>`);
   }
   function rRepasses(){
     const reps=allRepasses();
@@ -1735,7 +1784,7 @@ const Proprietario = (()=>{
         <div class="row"><div style="flex:1;min-width:0"><b>${esc(r.descricao||"Repasse")}</b>
           <div class="meta">${r.imovel?`<span>🏠 ${esc(r.imovel)}</span>`:""}${r.competencia?`<span>${esc(r.competencia)}</span>`:""}<span>${r.pago_em?"Pago em "+fmtDate(String(r.pago_em).slice(0,10)):(r.vencimento?"Vence "+fmtDate(r.vencimento):"")}</span></div></div>
           <div style="text-align:right"><b>${fmtMoney(r.valor)}</b><div><span class="badge ${st[1]}">${st[0]}</span></div></div></div></div>`;}).join("")
-      : `<div class="empty"><div class="big">💰</div><p>Nenhum repasse registrado ainda.</p></div>`);
+      : `<div class="empty"><div class="big" aria-hidden="true">💰</div><p>Nenhum repasse registrado ainda.</p></div>`);
   }
   function rConfig(){
     const v0=(data.vinculos||[])[0]||{};
