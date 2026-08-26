@@ -1,4 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Fixar a versão evita que uma atualização major/minor do CDN altere o runtime
+// sem uma publicação controlada do Vizello.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 // The publishable key is safe to ship to the browser. Never put a service-role
 // key in this file: database access is enforced by Supabase RLS policies.

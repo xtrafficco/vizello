@@ -128,6 +128,8 @@
   /* rótulo nunca quebra linha nem transborda: encolhe com reticências */
   nav.bottom button .lbl{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;letter-spacing:-.2px}
   nav.bottom button.active{color:var(--brand)}
+  .more-nav{display:none!important}
+  @media(max-width:680px){nav.bottom button.nav-secondary{display:none}.more-nav{display:flex!important}}
   .offchip{background:rgba(255,255,255,.16);color:#ffd9a8;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
   @media(min-width:1040px){ nav.bottom button{font-size:12px} }
   .adsec{display:none} .adsec.on{display:block}
@@ -186,7 +188,7 @@
 
   /* segmentos (filtro) */
   .seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px}
-  .seg button{padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
+  .seg button{padding:7px 13px;min-height:40px;border-radius:999px;font-size:13px;font-weight:600;color:var(--brand-ink)}
   .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(15,43,61,.12)}
 
   /* card clicável + detalhe */
@@ -215,8 +217,9 @@
   .tile h3{margin:0;font-size:16px}
   .meta{color:var(--muted);font-size:12.5px;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--brand-ink)}
-  .badge.ok{background:#e6f5ee;color:var(--ok)} .badge.off{background:#f0f0f0;color:#888}
-  .badge.dngr{background:#fdecea;color:var(--danger)} .badge.trial{background:#eef2f6;color:#5a6b78}
+  button.badge,[role="button"].badge{min-height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding-inline:10px}
+  .badge.ok{background:var(--surface-success);color:var(--ok)} .badge.off{background:var(--surface-neutral);color:var(--text-disabled)}
+  .badge.dngr{background:var(--surface-danger);color:var(--danger)} .badge.trial{background:var(--chip);color:var(--muted)}
   .empty{text-align:center;color:var(--muted);padding:40px 20px}
   .empty .big{font-size:40px}
   .spin{width:24px;height:24px;border:2.5px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:48px auto}
@@ -225,9 +228,11 @@
   /* modal */
   .modal-bg{position:fixed;inset:0;background:rgba(9,25,35,.5);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
   .modal-bg.show{display:flex}
-  .modal{background:var(--surface);width:100%;max-width:440px;border-radius:var(--r);padding:22px;box-shadow:var(--shadow);max-height:90dvh;overflow-y:auto}
-  .modal h2{margin:0 0 4px;font-size:19px}
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:32px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+  .modal{position:relative;background:var(--surface);width:100%;max-width:440px;border-radius:var(--r);padding:22px;box-shadow:var(--shadow);max-height:90dvh;overflow-y:auto}
+  .modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:10px;background:var(--chip);color:var(--brand-ink);font-size:24px;line-height:1;display:grid;place-items:center}
+  .modal h2{margin:0 0 4px;padding-right:44px;font-size:19px}
+  .admin-more-list{display:grid;gap:8px;margin-top:16px}.admin-more-list .btn{display:flex;align-items:center;gap:10px;text-align:left;margin:0}.admin-more-list svg{width:20px;height:20px;flex:0 0 auto}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(32px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
   .toast.show{opacity:1}
   .switch{cursor:pointer;width:46px;height:26px;border-radius:999px;background:#cdd8de;position:relative;transition:background .15s;flex:0 0 auto}
   .switch.on{background:var(--ok)}
@@ -245,13 +250,15 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="brand tagline"><span class="tag">ADMIN</span></div>
     <div class="sub" style="text-align:center">Painel de operação da plataforma.</div>
-    <label for="email">E-mail</label>
-    <input id="email" class="field" type="email" autocomplete="email" placeholder="voce@empresa.com">
-    <label for="pass">Senha</label>
-    <input id="pass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
-    <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
-    <div id="loginMsg" class="ok" role="status" aria-live="polite"></div>
-    <button id="loginBtn" class="btn">Entrar</button>
+    <form id="loginForm" novalidate>
+      <label for="email">E-mail</label>
+      <input id="email" class="field" type="email" autocomplete="email" placeholder="voce@empresa.com">
+      <label for="pass">Senha</label>
+      <input id="pass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
+      <div id="loginMsg" class="ok" role="status" aria-live="polite"></div>
+      <button id="loginBtn" class="btn" type="submit">Entrar</button>
+    </form>
     <div style="text-align:center;margin-top:12px"><button id="forgotBtn" type="button" style="color:var(--brand-ink);font-weight:700">Esqueci minha senha</button></div>
   </div>
 </div>
@@ -310,6 +317,7 @@
 
 <script type="module">
 import { supabase as sb } from "./supabase-client.js";
+import { publicErrorMessage, esc } from "./helpers.js";
 
 // mesma config do app (publishable key é pública)
 
@@ -320,15 +328,12 @@ const IDLE_MIN    = 30;     // logout automático após N min de inatividade
 const S = { user:null };
 const $ = s => document.querySelector(s);
 const view = () => $("#view");
-function esc(x){ return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 let modalReturnFocus=null;
-function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2600); }
+function toast(m){ const t=$("#toast"); t.textContent=publicErrorMessage(m); t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2600); }
 function wireLabels(root=document){ root.querySelectorAll("label").forEach(label=>{ if(label.htmlFor||label.querySelector("input,select,textarea")) return; let el=label.nextElementSibling; while(el && !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){ const nested=el.querySelector?.("input,select,textarea"); if(nested){el=nested;break;} el=el.nextElementSibling; } if(el?.id) label.htmlFor=el.id; }); }
 function syncA11y(root=document){ wireLabels(root); root.querySelectorAll(".spin").forEach(el=>{ el.setAttribute("role","status"); el.setAttribute("aria-label","Carregando"); }); }
-function modal(html){ modalReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#modal"); el.innerHTML=html; const title=el.querySelector("h2"); if(title){title.id=title.id||"modalTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#modalBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
-function closeModal(){ $("#modalBg").classList.remove("show"); if(modalReturnFocus?.isConnected) modalReturnFocus.focus(); modalReturnFocus=null; const f=S._onClose; S._onClose=null; if(f) f(); }
-// script é type="module": expõe closeModal no escopo global p/ os onclick="closeModal()" inline
-window.closeModal = closeModal;
+function modal(html){ modalReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#modal"); el.innerHTML=html+'<button type="button" class="modal-close" aria-label="Fechar">×</button>'; el.querySelector(".modal-close")?.addEventListener("click",closeModal); el.querySelectorAll("[data-close-modal]").forEach(b=>b.addEventListener("click",closeModal)); const title=el.querySelector("h2"); if(title){title.id=title.id||"modalTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#app")?.setAttribute("inert",""); $("#modalBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
+function closeModal(){ $("#modalBg").classList.remove("show"); $("#app")?.removeAttribute("inert"); if(modalReturnFocus?.isConnected) modalReturnFocus.focus(); modalReturnFocus=null; const f=S._onClose; S._onClose=null; if(f) f(); }
 $("#modalBg").addEventListener("click",e=>{ if(e.target.id==="modalBg") closeModal(); });
 $("#modal").addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();closeModal();return;} if(e.key!=="Tab") return; const fs=[...$("#modal").querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])")]; if(!fs.length)return; const first=fs[0],last=fs[fs.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} });
 function syncOffline(){ const el=$("#offlineChip"); if(el) el.classList.toggle("hide",navigator.onLine); }
@@ -358,9 +363,12 @@ const _logDedup=new Set();
 async function logEvento(nivel,contexto,mensagem,detalhe){
   try{
     if(!S.user) return;
-    const key=(contexto||"")+"|"+String(mensagem||"").slice(0,120);
+    const scrub=v=>String(v??"").replace(/Bearer\s+\S+/gi,"Bearer [redacted]").replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,"[email redacted]").replace(/https?:\/\/\S+/gi,"[url redacted]").slice(0,220);
+    const safeContext=scrub(contexto), safeMessage=scrub(mensagem);
+    const safeDetail=detalhe&&typeof detalhe==="object"?{code:detalhe.code||null,status:detalhe.status||null}:null;
+    const key=(safeContext||"")+"|"+String(safeMessage||"").slice(0,120);
     if(_logDedup.has(key)) return; _logDedup.add(key); setTimeout(()=>_logDedup.delete(key),60000);
-    await sb.rpc("log_evento",{p_nivel:nivel||"error",p_contexto:contexto||null,p_mensagem:String(mensagem||"").slice(0,500),p_detalhe:detalhe||null,p_url:(location.hash||location.pathname||"").slice(0,300),p_app:"admin",p_cond:null});
+    await sb.rpc("log_evento",{p_nivel:["error","warn","info"].includes(nivel)?nivel:"error",p_contexto:safeContext||null,p_mensagem:safeMessage||"erro",p_detalhe:safeDetail,p_url:(location.hash||location.pathname||"").replace(/[?].*$/,"").slice(0,120),p_app:"admin",p_cond:null});
   }catch(_){}
 }
 window.addEventListener("error",e=>{ logEvento("error","window.onerror",e.message||"erro",{src:e.filename,line:e.lineno}); });
@@ -378,11 +386,15 @@ const ROLE_LABEL={super_admin:"Dono",sindico:"Síndico",conselho:"Conselho",port
 const ACAO_LABEL={condominio_criar:"Criou condomínio",condominio_editar:"Editou dados",condominio_suspender:"Suspendeu",
   condominio_reativar:"Reativou",sindico_definir:"Definiu síndico",operador_add:"Adicionou operador",operador_remove:"Removeu operador"};
 
-function show(id){ for(const s of ["login","reset","denied","force","app"]) $("#"+s).classList.toggle("hide", s!==id); }
+function show(id){
+  for(const s of ["login","reset","denied","force","app"]) $("#"+s).classList.toggle("hide", s!==id);
+  requestAnimationFrame(()=>$("#"+id+" input:not([disabled]),#"+id+" button:not([disabled]),#"+id+" [tabindex='0']")?.focus());
+}
 
 // ---------- AUTH ----------
-function loginErr(m){ const e=$("#loginErr"); e.setAttribute("role","alert"); e.setAttribute("aria-live","assertive"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function loginErr(m){ const e=$("#loginErr"); e.setAttribute("role","alert"); e.setAttribute("aria-live","assertive"); if(!m){e.classList.remove("show");return;} e.textContent=publicErrorMessage(m); e.classList.add("show"); }
 function loginMsg(m){ const e=$("#loginMsg"); e.setAttribute("role","status"); e.setAttribute("aria-live","polite"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+$("#loginForm")?.addEventListener("submit", e=>{ e.preventDefault(); $("#loginBtn")?.click(); });
 $("#loginBtn").addEventListener("click", async ()=>{
   const email=$("#email").value.trim(), pass=$("#pass").value;
   if(!email||!pass){ loginErr("Preencha e-mail e senha."); return; }
@@ -412,7 +424,7 @@ $("#forgotBtn")?.addEventListener("click", async ()=>{
   $("#forgotBtn").disabled=false;
 });
 // ---------- Definir nova senha ----------
-function rsErr(m){ const e=$("#rsErr"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
+function rsErr(m){ const e=$("#rsErr"); if(!m){e.classList.remove("show");return;} e.textContent=publicErrorMessage(m); e.classList.add("show"); }
 function rsMsg(m){ const e=$("#rsMsg"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
 $("#rsSave")?.addEventListener("click", async ()=>{
   const p1=$("#rsPass").value, p2=$("#rsPass2").value;
@@ -501,7 +513,7 @@ async function showForce2FA(){
     $("#fOk").addEventListener("click",go);
     $("#fCode").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
   }catch(e){
-    card.innerHTML=`<p class="empty">Falha ao iniciar o 2FA: ${esc(e.message||"erro")}</p><button class="btn ghost" id="fSair2">Sair</button>`;
+    card.innerHTML=`<p class="empty">Falha ao iniciar o 2FA: ${esc(publicErrorMessage(e,"erro"))}</p><button class="btn ghost" id="fSair2">Sair</button>`;
     $("#fSair2").addEventListener("click",logout);
   }
 }
@@ -576,7 +588,7 @@ async function renderDashboard(){
       rpc("plataforma_imobiliarias").catch(()=>[]),
       rpcSilencioso("plataforma_cadastros_resumo",{p_limit:20},{nao_lidos:0,itens:[]})
     ]);
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   S._planos=planos; S._rel=rel;
   S._fin={ fat, rel, mensal, dre, despesas };
   const me = admins.find(a=>a.user_id===S.user.id);
@@ -791,16 +803,23 @@ const AD_TABS=[
   {id:"integridade",label:"Sistema",ic:AD_SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>')},
   {id:"config",label:"Config",ic:AD_SVG('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h7M15 18h5"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="18" r="2"/>')}
 ];
+const AD_PRIMARY_IDS=["inicio","financeiro","condominios","imobiliarias","atendimento"];
 function buildAdminNav(){
   const nav=$("#adminNav"); if(!nav) return;
   nav.setAttribute("aria-label","Navegação administrativa");
-  nav.innerHTML=`<div class="navinner">${AD_TABS.map(t=>`<button data-tab="${t.id}" title="${t.label}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span class="lbl">${t.label}</span></button>`).join("")}</div>`;
-  nav.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>goAdmin(b.dataset.tab)));
+  const more=AD_TABS.filter(t=>!AD_PRIMARY_IDS.includes(t.id));
+  nav.innerHTML=`<div class="navinner">${AD_TABS.map(t=>`<button class="${AD_PRIMARY_IDS.includes(t.id)?"":"nav-secondary"}" data-tab="${t.id}" title="${t.label}" aria-label="${t.label}"><span class="ic" aria-hidden="true">${t.ic}</span><span class="lbl">${t.label}</span></button>`).join("")}<button class="more-nav" data-tab="__mais" title="Mais opções" aria-label="Mais opções"><span class="ic" aria-hidden="true">${AD_SVG('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>')}</span><span class="lbl">Mais</span></button></div>`;
+  nav.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>b.dataset.tab==="__mais"?openAdminMore():goAdmin(b.dataset.tab)));
+}
+function openAdminMore(){
+  const rest=AD_TABS.filter(t=>!AD_PRIMARY_IDS.includes(t.id));
+  modal(`<h2>Mais opções</h2><p class="sub" style="text-align:left">Acesse configurações e rotinas menos frequentes.</p><div class="admin-more-list">${rest.map(t=>`<button type="button" class="btn secondary" data-more-tab="${t.id}"><span aria-hidden="true">${t.ic}</span>${t.label}</button>`).join("")}</div>`);
+  $("#modal").querySelectorAll("[data-more-tab]").forEach(b=>b.addEventListener("click",()=>{const tab=b.dataset.moreTab;closeModal();goAdmin(tab);}));
 }
 function goAdmin(tab){
   S._adminTab=tab;
   document.querySelectorAll(".adsec").forEach(s=>s.classList.toggle("on",s.dataset.ad===tab));
-  const nav=$("#adminNav"); if(nav) nav.querySelectorAll("[data-tab]").forEach(b=>{ const active=b.dataset.tab===tab; b.classList.toggle("active",active); if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current"); });
+  const nav=$("#adminNav"); if(nav) nav.querySelectorAll("[data-tab]").forEach(b=>{ const active=b.dataset.tab===tab || (b.dataset.tab==="__mais" && !AD_PRIMARY_IDS.includes(tab)); b.classList.toggle("active",active); if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current"); });
   if(tab==="integridade" && !S._saudeLoaded){ S._saudeLoaded=true; drawIntegridade(); }
   window.scrollTo(0,0);
 }
@@ -1096,7 +1115,7 @@ function novaDespesa(){
 async function configCobranca(){
   modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2><div class="spin"></div>`);
   let c={cobranca_ativa:false,dia_vencimento:10,multa_pct:0,juros_mes_pct:0};
-try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p class="sub">${esc(e.message)}</p><div class="bar"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`); return; }
+try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p class="sub">${esc(publicErrorMessage(e))}</p><div class="bar"><button class="btn secondary" data-close-modal>Fechar</button></div>`); return; }
   const whUrl="https://bklvbhsaxcmrnjxjbzjh.supabase.co/functions/v1/mp-mensalidade-webhook";
   modal(`<h2>⚙️ Cobrança &amp; Mercado Pago</h2>
     <div class="tile" style="padding:14px">
@@ -1124,14 +1143,14 @@ try{ c=await rpc("plataforma_config_get"); }catch(e){ modal(`<h2>Erro</h2><p cla
       <div class="chk-item">6. Teste com uma fatura (botão “Mensalidades (PIX)”) antes de ligar a cobrança.</div>
       <button class="btn small secondary" id="ccCopyWh" style="margin-top:6px">📋 Copiar URL do webhook</button>
     </div>
-<div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`);
+<div class="bar" style="margin-top:14px"><button class="btn secondary" data-close-modal>Fechar</button></div>`);
   $("#ccCopyWh").onclick=()=>{ try{ navigator.clipboard.writeText(whUrl); toast("URL copiada ✅"); }catch(_){ toast("Copie manualmente."); } };
   $("#ccSave").onclick=async()=>{
     const dia=parseInt($("#ccDia").value,10); if(!(dia>=1&&dia<=28)){ $("#ccErr").textContent="Dia de vencimento deve ser entre 1 e 28."; $("#ccErr").classList.add("show"); return; }
     $("#ccSave").disabled=true;
     try{ await rpc("plataforma_config_salvar",{p_cobranca_ativa:$("#ccAtiva").checked,p_dia_vencimento:dia,p_multa_pct:parseFloat($("#ccMulta").value)||0,p_juros_mes_pct:parseFloat($("#ccJuros").value)||0});
       closeModal(); toast("Configuração salva ✅"); }
-    catch(e){ $("#ccErr").textContent=e.message||"Erro"; $("#ccErr").classList.add("show"); $("#ccSave").disabled=false; }
+    catch(e){ $("#ccErr").textContent=publicErrorMessage(e,"Erro"); $("#ccErr").classList.add("show"); $("#ccSave").disabled=false; }
   };
 }
 function gerenciarFaturas(){
@@ -1140,14 +1159,14 @@ function gerenciarFaturas(){
     <label>Competência</label><input id="ftComp" class="field" value="${comp}" placeholder="AAAA-MM">
     <div class="bar" style="margin-top:10px"><button class="btn small" id="ftGerar">Gerar faturas do mês</button><button class="btn small secondary" id="ftListar">Atualizar</button></div>
     <div id="ftOut" style="margin-top:10px"><div class="spin"></div></div>
-    <div class="bar" style="margin-top:14px"><button class="btn secondary" onclick="window.closeModal()">Fechar</button></div>`);
+    <div class="bar" style="margin-top:14px"><button class="btn secondary" data-close-modal>Fechar</button></div>`);
   async function listar(){ const el=$("#ftOut"); el.innerHTML='<div class="spin"></div>';
     try{ const fs=await rpc("plataforma_faturas_listar",{p_competencia:$("#ftComp").value.trim()});
       if(!fs.length){ el.innerHTML='<p class="sub">Nenhuma fatura nesta competência. Clique em “Gerar faturas do mês”.</p>'; return; }
       const pend=fs.filter(f=>f.status==="pendente").length, pago=fs.filter(f=>f.status==="pago").length;
       el.innerHTML=`<div class="meta" style="margin:0 2px 8px"><span>${fs.length} fatura(s)</span><span>${pago} paga(s)</span><span>${pend} pendente(s)</span></div>`+
         fs.map(f=>`<div class="drow"><span class="k" style="flex:1">${esc(f.cliente||"—")} <span class="badge">${f.tipo==="condominio"?"Condo":"Imob"}</span></span><span class="v">${fmtMoney(f.valor)} · <span class="badge">${esc(f.status)}</span></span></div>`).join("");
-    }catch(e){ el.innerHTML=`<p class="sub">${esc(e.message)}</p>`; } }
+    }catch(e){ el.innerHTML=`<p class="sub">${esc(publicErrorMessage(e))}</p>`; } }
   $("#ftGerar").onclick=async()=>{ $("#ftGerar").disabled=true; try{ const n=await rpc("plataforma_faturas_gerar",{p_competencia:$("#ftComp").value.trim()}); toast(`${n} fatura(s) gerada(s)`); await listar(); }catch(e){ toast(e.message); } $("#ftGerar").disabled=false; };
   $("#ftListar").onclick=listar;
   listar();
@@ -1365,7 +1384,7 @@ function drawTicketsAdmin(){
 function tkBubble(m,signed){
   const anex=(m.anexos||[]).map(a=>({...a,url:signed[a.path]}));
   const side=m.eu?"flex-end":"flex-start", bg=m.eu?"var(--brand)":"var(--chip)", col=m.eu?"#fff":"var(--ink)";
-  const thumbs=anex.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${anex.map(a=>(a.mime||"").startsWith("image/")?`<a href="${a.url}" target="_blank" rel="noopener"><img src="${a.url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></a>`:`<a href="${a.url}" target="_blank" rel="noopener" class="badge">📎 ${esc((a.nome||"arquivo").slice(0,18))}</a>`).join("")}</div>`:"";
+  const thumbs=anex.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${anex.map(a=>(a.mime||"").startsWith("image/")?`<a href="${esc(a.url||"#")}" target="_blank" rel="noopener"><img src="${esc(a.url||"")}" loading="lazy" decoding="async" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></a>`:`<a href="${esc(a.url||"#")}" target="_blank" rel="noopener" class="badge">📎 ${esc((a.nome||"arquivo").slice(0,18))}</a>`).join("")}</div>`:"";
   return `<div style="align-self:${side};max-width:84%">
     ${!m.eu?`<div style="font-size:11px;color:var(--muted);margin:0 0 3px 4px">${esc(m.autor)}</div>`:""}
     <div style="background:${bg};color:${col};padding:10px 12px;border-radius:14px;font-size:14px;white-space:pre-wrap;word-break:break-word">${esc(m.corpo)}</div>
@@ -1477,7 +1496,7 @@ function mapaDefinir(cond){
 
 function drawConds(conds){
   const el=$("#condList");
-  if(!conds.length){ el.innerHTML='<div class="empty"><div class="big">🏢</div><p>Nenhum condomínio.</p></div>'; return; }
+  if(!conds.length){ el.innerHTML='<div class="empty"><div class="big" aria-hidden="true">🏢</div><p>Nenhum condomínio.</p></div>'; return; }
   el.innerHTML=conds.map(c=>{
     const sind=(c.sindicos&&c.sindicos.length)?c.sindicos.join(", "):"— sem síndico —";
     const semSind = !(c.sindicos&&c.sindicos.length);
@@ -1527,7 +1546,7 @@ function drawImobiliarias(){
   const q=S._qImob||"";
   const list=(S._imobs||[]).filter(i=> !q || (i.nome||"").toLowerCase().includes(q) || (i.cidade||"").toLowerCase().includes(q));
   const cnt=$("#imobCount"); if(cnt) cnt.textContent = `${list.length} de ${(S._imobs||[]).length}`;
-  if(!list.length){ el.innerHTML='<div class="empty"><div class="big">🏘️</div><p>Nenhuma imobiliária.</p></div>'; return; }
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="big" aria-hidden="true">🏘️</div><p>Nenhuma imobiliária.</p></div>'; return; }
   el.innerHTML=list.map(i=>{
     const [slbl,scls]=statusMens(i.status);
     return `<div class="tile">
@@ -1626,7 +1645,7 @@ function definirPlanoImob(d){
     $("#ipSave").disabled=true;
     try{ await rpc("plataforma_assinatura_imob_definir",{p_imob:d.id,p_plano_id:plano,p_status:status,p_valor:isNaN(valor)?null:valor});
       closeModal(); toast("Assinatura atualizada"); renderDashboard(); }
-    catch(e){ const er=$("#ipErr"); er.textContent=e.message||"Erro"; er.classList.add("show"); $("#ipSave").disabled=false; }
+    catch(e){ const er=$("#ipErr"); er.textContent=publicErrorMessage(e,"Erro"); er.classList.add("show"); $("#ipSave").disabled=false; }
   });
 }
 
@@ -1852,7 +1871,7 @@ async function buscarCnpj(){
     if(situ && situ!=="ATIVA") setSt(`⚠️ Dados preenchidos — situação cadastral: <b>${esc(situ)}</b>`,"var(--warn)");
     else setSt("✅ Dados preenchidos. Confira e cadastre.","var(--ok)");
   }catch(e){
-    setSt(/Failed to fetch|NetworkError/i.test(e.message)?"Sem conexão com o serviço de CNPJ. Preencha manualmente.":esc(e.message),"var(--danger)");
+    setSt(/Failed to fetch|NetworkError/i.test(e.message)?"Sem conexão com o serviço de CNPJ. Preencha manualmente.":esc(publicErrorMessage(e,"Não foi possível consultar o CNPJ.")),"var(--danger)");
   }
   btn.disabled=false;
 }

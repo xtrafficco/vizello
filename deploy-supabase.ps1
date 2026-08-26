@@ -15,6 +15,13 @@ $ErrorActionPreference = "Stop"
 $PROJECT_REF = "bklvbhsaxcmrnjxjbzjh"
 $SB = "supabase"   # troque para "npx supabase" se preferir sem instalar global
 
+if(-not (Test-Path "supabase/migrations")) {
+  throw "Backend ausente neste checkout: supabase/migrations não foi encontrado. Use o repositório de backend ou aplique uma migration revisada pelo Supabase Studio."
+}
+if(-not (Test-Path "supabase/functions/feed-imoveis")) {
+  throw "Backend ausente neste checkout: supabase/functions/feed-imoveis não foi encontrado. Não é seguro tentar publicar a Edge Function a partir desta pasta estática."
+}
+
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 
 # 0) Confere CLI

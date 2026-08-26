@@ -1,7 +1,7 @@
 // =============================================================================
 // Vizello — helpers puros (sem dependência de DOM, estado ou Supabase).
 // Extraído de app.js (modularização — ver docs/MODULARIZATION.md).
-// Testável isoladamente: test/helpers.test.js
+// Testável isoladamente: tests/helpers.test.js
 // =============================================================================
 
 // ---- papéis / vínculos ----
@@ -50,6 +50,42 @@ export function compLabel(c){ if(!c||!/^\d{4}-\d{2}$/.test(c)) return c||""; con
 export function fmtBytes(b){ if(!b) return ""; const u=["B","KB","MB","GB"]; let i=0,n=Number(b); while(n>=1024&&i<u.length-1){n/=1024;i++;} return `${n.toFixed(n<10&&i>0?1:0)} ${u[i]}`; }
 export const fmtMoney = v => "R$ " + Number(v||0).toFixed(2).replace(".",",");
 export const unitLabel = (bloco,numero)=> numero ? `${bloco?bloco+" ":""}${numero}` : "Sem unidade";
+
+// Mensagens de banco/infraestrutura não devem ser expostas diretamente na UI.
+// O detalhe técnico continua disponível no console/observabilidade do app.
+export function publicErrorMessage(error, fallback="Não foi possível concluir a ação."){
+  const text=String(error?.message??error??"").trim();
+  if(!text || text.length>220 || /(postgres|postgrest|supabase|permission denied|violates|relation |column |function |sqlstate|pgrst|jwt|duplicate key|foreign key)/i.test(text)) return fallback;
+  return text;
+}
+
+// Dados recebidos do backend nunca devem controlar a navegação do app.
+// Notificações são permitidas somente para abas conhecidas, sem URL externa,
+// query string ou código executável.
+export const APP_TABS = Object.freeze([
+  "inicio", "ocorrencias", "portaria", "encomendas", "servicos", "reservas",
+  "financeiro", "assembleias", "enquetes", "manutencoes", "mural", "livro",
+  "documentos", "gestao", "atendimento", "contas", "perfil", "cadastros",
+  "vagas", "autorizacoes", "conversas", "pesquisas", "consumo", "painel", "sos"
+]);
+export function safeAppTab(value){
+  const raw=String(value??"").trim().replace(/^#/,"");
+  return APP_TABS.includes(raw) ? raw : null;
+}
+
+// Defesa em profundidade para uploads: a policy/RPC do servidor continua
+// sendo a autoridade final, mas o cliente rejeita arquivos obviamente abusivos.
+export const ALLOWED_UPLOAD_MIME = Object.freeze([
+  "image/jpeg", "image/png", "image/webp", "application/pdf",
+  "text/plain", "application/zip"
+]);
+export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+export function validateUpload(file, {maxBytes=MAX_UPLOAD_BYTES, mime=ALLOWED_UPLOAD_MIME}={}){
+  if(!file || typeof file.name!=="string") return {ok:false, message:"Arquivo inválido."};
+  if(!Number.isFinite(file.size) || file.size<=0 || file.size>maxBytes) return {ok:false, message:"O arquivo excede o limite permitido."};
+  if(file.type && !mime.includes(file.type.toLowerCase())) return {ok:false, message:"Tipo de arquivo não permitido."};
+  return {ok:true};
+}
 
 // ---- rótulos de domínio ----
 export const OC_CAT = {manutencao:"Manutenção",limpeza:"Limpeza",seguranca:"Segurança",barulho:"Barulho",area_comum:"Área comum",outro:"Outro"};

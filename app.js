@@ -3,7 +3,8 @@ import {
   ROLE_APPS, appsFor, membershipsForApp, ROLE_LABEL, VINCULO_LABEL,
   isGestor, isPortaria, isSindico, NAV_SVG, tabsFor,
   fmtDate, esc, fmtNum, compLabel, fmtBytes, fmtMoney, unitLabel,
-  OC_CAT, OC_STATUS, urlBase64ToUint8Array, abToB64u
+  OC_CAT, OC_STATUS, urlBase64ToUint8Array, abToB64u, publicErrorMessage,
+  safeAppTab, validateUpload
 } from "./helpers.js";
 import { wireLabels, syncA11y } from "./ui-a11y.js";
 
@@ -28,6 +29,8 @@ function gotoApp(app){ if(SINGLE){ APP_ROLE = app; enterApp(); } else { location
 
 // ---------- estado ----------
 const S = { user:null, profile:null, memberships:[], condId:null, cond:null, role:null, tab:"inicio", assinatura:null };
+let renderGeneration=0;
+const isCurrentRender=token=>token===renderGeneration;
 
 // helpers puros (ROLE_LABEL, VINCULO_LABEL, isGestor/isPortaria/isSindico,
 // NAV_SVG, tabsFor, fmtDate, esc, OC_CAT, OC_STATUS...): em ./helpers.js
@@ -37,9 +40,9 @@ const HUB_TABS = ["servicos","painel","reservas","financeiro","contas","assemble
 const $ = s => document.querySelector(s);
 const view = () => $("#view");
 let sheetReturnFocus=null;
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2400); }
-function sheet(html){ sheetReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#sheet"); el.innerHTML = '<div class="grab" aria-hidden="true"></div>'+html; const title=el.querySelector("h2"); if(title){title.id=title.id||"sheetTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#sheetBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
-function closeSheet(){ $("#sheetBg").classList.remove("show"); if(sheetReturnFocus?.isConnected) sheetReturnFocus.focus(); sheetReturnFocus=null; if(typeof pararToque==="function") pararToque(); }
+function toast(msg){ const t=$("#toast"); t.textContent=publicErrorMessage(msg); t.classList.add("show"); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove("show"),2400); }
+function sheet(html){ sheetReturnFocus=document.activeElement?.nodeType===1?document.activeElement:null; const el=$("#sheet"); el.innerHTML = '<div class="grab" aria-hidden="true"></div>'+html+'<button type="button" class="sheet-close" aria-label="Fechar">×</button>'; el.querySelector(".sheet-close")?.addEventListener("click",closeSheet); const title=el.querySelector("h2"); if(title){title.id=title.id||"sheetTitle";el.setAttribute("aria-labelledby",title.id);} else el.removeAttribute("aria-labelledby"); el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); $("#app")?.setAttribute("inert",""); $("#sheetBg").classList.add("show"); syncA11y(el); requestAnimationFrame(()=>{(el.querySelector("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])")||el).focus();}); }
+function closeSheet(){ $("#sheetBg").classList.remove("show"); $("#app")?.removeAttribute("inert"); if(sheetReturnFocus?.isConnected) sheetReturnFocus.focus(); sheetReturnFocus=null; if(typeof pararToque==="function") pararToque(); }
 $("#sheetBg").addEventListener("click",e=>{ if(e.target.id==="sheetBg") closeSheet(); });
 $("#sheet").addEventListener("keydown",e=>{ if(e.key==="Escape"){e.preventDefault();closeSheet();return;} if(e.key!=="Tab") return; const fs=[...$("#sheet").querySelectorAll("a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])")]; if(!fs.length)return; const first=fs[0],last=fs[fs.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();} });
 const viewObserver=new window.MutationObserver(()=>{ const v=view(); if(v){v.setAttribute("aria-busy",v.querySelector(".spin")?"true":"false");syncA11y(v);} });
@@ -72,12 +75,32 @@ async function rpc(fn,args){ const {data,error}=await sb.rpc(fn,args); if(error)
 async function rpcSilencioso(fn,args,fallback=null){ const {data,error}=await sb.rpc(fn,args); return error?fallback:data; }
 // ---- Observabilidade: log de erros do cliente (best-effort, nunca quebra o app) ----
 const _logDedup=new Set();
+function scrubLogValue(value, depth=0){
+  if(depth>2 || value==null) return value==null?null:String(value);
+  if(typeof value === "object"){
+    const out={};
+    for(const key of ["code","status","name","type","event","source"]){
+      if(value[key]!=null) out[key]=String(value[key]).slice(0,80);
+    }
+    return out;
+  }
+  return String(value)
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi,"Bearer [redacted]")
+    .replace(/(password|token|secret|authorization|apikey|access_token)\s*[:=]\s*[^\s,;]+/gi,(_, key)=>`${key}=[redacted]`)
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,"[email redacted]")
+    .replace(/https?:\/\/[^\s]+/gi,"[url redacted]")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/gi,"[id redacted]")
+    .slice(0,220);
+}
 async function logEvento(nivel,contexto,mensagem,detalhe){
   try{
     if(!S.user) return; // só logados
-    const key=(contexto||"")+"|"+String(mensagem||"").slice(0,120);
+    const safeContext=scrubLogValue(contexto);
+    const safeMessage=scrubLogValue(mensagem);
+    const safeDetail=scrubLogValue(detalhe);
+    const key=(safeContext||"")+"|"+String(safeMessage||"").slice(0,120);
     if(_logDedup.has(key)) return; _logDedup.add(key); setTimeout(()=>_logDedup.delete(key),60000);
-    await sb.rpc("log_evento",{p_nivel:nivel||"error",p_contexto:contexto||null,p_mensagem:String(mensagem||"").slice(0,500),p_detalhe:detalhe||null,p_url:(location.hash||location.pathname||"").slice(0,300),p_app:APP_ROLE||"app",p_cond:S.condId||null});
+    await sb.rpc("log_evento",{p_nivel:["error","warn","info"].includes(nivel)?nivel:"error",p_contexto:safeContext||null,p_mensagem:safeMessage||"erro",p_detalhe:safeDetail,p_url:(location.hash||location.pathname||"").replace(/[?].*$/,"" ).slice(0,120),p_app:APP_ROLE||"app",p_cond:S.condId||null});
   }catch(_){/* silencioso */}
 }
 if(typeof window!=="undefined"){
@@ -88,6 +111,8 @@ if(typeof window!=="undefined"){
 // ---------- ANEXOS (fotos/arquivos em ocorrências/comunicados) ----------
 async function uploadAnexos(escopo, refId, files){
   for(const f of files){
+    const check=validateUpload(f);
+    if(!check.ok) throw new Error(check.message);
     const safe=f.name.replace(/[^a-zA-Z0-9.\-_]/g,"_");
     const path=`${S.condId}/${escopo}/${refId}/${crypto.randomUUID()}-${safe}`;
     const up=await sb.storage.from("anexos").upload(path,f,{contentType:f.type||"application/octet-stream"});
@@ -109,8 +134,8 @@ function anexoThumbs(arr){
   if(!arr||!arr.length) return "";
   return `<div class="anexos">`+arr.map(a=>{
     return (a.mime||"").startsWith("image/")
-      ? `<a href="${a.url}" target="_blank" rel="noopener" class="anexo"><img src="${a.url}" alt="${esc(a.nome||"")}" loading="lazy"></a>`
-      : `<a href="${a.url}" target="_blank" rel="noopener" class="anexo file">📎 ${esc((a.nome||"arquivo").slice(0,20))}</a>`;
+      ? `<a href="${esc(a.url||"#")}" target="_blank" rel="noopener" class="anexo"><img src="${esc(a.url||"")}" alt="${esc(a.nome||"")}" loading="lazy" decoding="async"></a>`
+      : `<a href="${esc(a.url||"#")}" target="_blank" rel="noopener" class="anexo file">📎 ${esc((a.nome||"arquivo").slice(0,20))}</a>`;
   }).join("")+`</div>`;
 }
 
@@ -197,7 +222,8 @@ function renderAuthMode(){
   $("#nameLbl").classList.toggle("hide",!signup);
   $("#name").classList.toggle("hide",!signup);
 }
-$("#switchBtn")?.addEventListener("click",()=>{ signup=!signup; renderAuthMode(); });
+$("#switchBtn")?.addEventListener("click",()=>{ signup=!signup; renderAuthMode(); $(signup?"#name":"#email")?.focus(); });
+$("#authForm")?.addEventListener("submit",e=>{ e.preventDefault(); $("#authBtn")?.click(); });
 
 // Login unificado: sem seletor manual de papel. A categoria é decidida pelos
 // vínculos da conta após o login (ver showRoleChooser). __loginTarget é usado
@@ -241,7 +267,7 @@ function traduzErro(e){
   if(m.includes("already registered")) return "Este e-mail já tem conta.";
   if(m.includes("password")) return "Senha muito curta (mín. 6 caracteres).";
   if(m.includes("rate limit")||m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos e tente de novo.";
-  return e?.message||"Erro inesperado.";
+  return publicErrorMessage(e,"Erro inesperado.");
 }
 function authMsg(m){ const e=$("#authMsg"); e.setAttribute("role","status"); e.setAttribute("aria-live","polite"); if(!m){e.classList.remove("show");return;} e.textContent=m; e.classList.add("show"); }
 
@@ -387,6 +413,7 @@ function showRoleChooser(msg, force){
 }
 function showScreen(id){
   for(const s of ["auth","reset","roles","pick","app"]) $("#"+s)?.classList.toggle("hide", s!==id);
+  requestAnimationFrame(()=>$("#"+id+" input:not([disabled]),#"+id+" button:not([disabled]),#"+id+" [tabindex='0']")?.focus());
 }
 function renderPick(listArg){
   const list=$("#pickList");
@@ -410,7 +437,15 @@ async function enterCond(m){
   S.unidadeId=m.unidade_id||null;
   // Acesso liberado durante o trial e após uma assinatura aprovada. Quando
   // expirar, o gestor vai direto para o checkout e não entra no produto.
-  S.assinatura=await rpcSilencioso("minha_assinatura_vizello",{p_cond:S.condId});
+  try{
+    S.assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId});
+    if(!S.assinatura || typeof S.assinatura!=="object") throw new Error("assinatura indisponível");
+  }catch(e){
+    S.assinatura=null;
+    showScreen("pick");
+    toast("Não foi possível validar a assinatura. Tente novamente em instantes.");
+    return;
+  }
   if(S.assinatura?.precisa_pagamento){
     location.href="/pagamento?tipo=condominio&tenant="+encodeURIComponent(S.condId);
     return;
@@ -543,7 +578,9 @@ function setActive(tab){
 }
 window.addEventListener("hashchange",()=>{ if(!$("#app").classList.contains("hide")) go(location.hash.replace("#","")||"inicio",true); });
 function go(tab,fromHash){
-  S.tab=tab; if(location.hash.replace("#","")!==tab && !fromHash) location.hash=tab;
+  tab=safeAppTab(tab)||"inicio";
+  S.tab=tab; const token=++renderGeneration; S._renderToken=token;
+  if(location.hash.replace("#","")!==tab && !fromHash) location.hash=tab;
   setActive(tab); $("#fab").classList.add("hide");
   const R={inicio:renderComunicados,ocorrencias:renderOcorrencias,portaria:renderPortaria,encomendas:renderEncomendas,
            servicos:renderServicos,reservas:renderReservas,financeiro:renderFinanceiro,assembleias:renderAssembleias,
@@ -566,8 +603,8 @@ async function renderConsumo(){
   $("#fab").classList.add("hide");
   const gestor=isGestor(S.role)||isPortaria(S.role);
   const [{data:unids},{data:leituras}]=await Promise.all([
-    sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero"),
-    sb.from("leituras").select("*").eq("condominio_id",S.condId).order("competencia",{ascending:false}).order("created_at",{ascending:false})
+    sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero").limit(500),
+    sb.from("leituras").select("*").eq("condominio_id",S.condId).order("competencia",{ascending:false}).order("created_at",{ascending:false}).limit(500)
   ]);
   S._consUnids=unids||[];
   const unMap={}; (unids||[]).forEach(u=>unMap[u.id]=unitLabel(u.bloco,u.numero));
@@ -823,8 +860,8 @@ function mostrarChamada(c){
 async function openNotificacoes(){
   sheet('<h2>Notificações</h2><div class="spin"></div>');
   let list=[];
-  try{ const {data}=await sb.from("notificacoes").select("*").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(40); list=data||[]; }
-  catch(_){ $("#sheet").innerHTML='<div class="grab"></div><p class="empty">Erro ao carregar.</p>'; return; }
+  try{ const {data}=await sb.from("notificacoes").select("id,titulo,corpo,link,tipo,lida,created_at").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(40); list=data||[]; }
+  catch(_){ sheet('<h2>Notificações</h2><p class="empty">Não foi possível carregar as notificações.</p>'); return; }
   const hasUnread=list.some(n=>!n.lida);
   let html=`<div class="row" style="align-items:center;margin-bottom:8px"><h2 style="flex:1;margin:0">Notificações</h2>
     ${hasUnread?'<button class="badge" id="notifAll">Marcar todas</button>':""}</div>`;
@@ -832,13 +869,14 @@ async function openNotificacoes(){
   else html+=list.map(n=>`<button class="tile" data-notif="${n.id}" data-link="${esc(n.link||"")}" style="width:100%;text-align:left;display:block;${n.lida?"":"border-color:var(--brand)"}">
     <div class="row"><h3 style="flex:1;font-size:15px">${!n.lida?'<span class="unread"></span> ':""}${esc(n.titulo)}</h3><span class="sub" style="margin:0 0 0 8px;white-space:nowrap">${fmtDate(n.created_at)}</span></div>
     ${n.corpo?`<p style="margin-top:4px">${esc(n.corpo).replace(/\n/g,"<br>")}</p>`:""}</button>`).join("");
-  $("#sheet").innerHTML='<div class="grab"></div>'+html;
+  sheet(html);
   $("#notifAll")?.addEventListener("click",async()=>{ try{ await rpc("notif_marcar_todas"); }catch(_){} closeSheet(); refreshNotifBadge(); });
   $("#sheet").querySelectorAll("[data-notif]").forEach(b=>b.addEventListener("click",async()=>{
     const id=b.dataset.notif, link=b.dataset.link;
     try{ await rpc("notif_marcar_lida",{p_notif:id}); }catch(_){}
     closeSheet(); refreshNotifBadge();
-    if(link) go(link.replace("#",""));
+    const safeTab=safeAppTab(link);
+    if(safeTab) go(safeTab);
   }));
 }
 $("#bell")?.addEventListener("click",openNotificacoes);
@@ -886,19 +924,20 @@ async function bgDoSearch(q){
     el.innerHTML=grupos.map(g=>`<div class="h" style="font-size:14px;margin:10px 2px 6px">${g.icon} ${g.nome}</div>${g.itens.map(it=>`<button class="tile" data-goto-tab="${g.tab}" style="width:100%;text-align:left;margin-bottom:8px">
       <b>${esc(it.t)}</b>${it.s?`<p style="margin-top:4px;color:var(--muted);font-size:13px">${esc((it.s||"").slice(0,90))}</p>`:""}</button>`).join("")}`).join("");
     el.querySelectorAll("[data-goto-tab]").forEach(b=>b.addEventListener("click",()=>{ closeSheet(); go(b.dataset.gotoTab); }));
-  }catch(e){ el.innerHTML=`<p class="empty">${esc(e.message)}</p>`; }
+  }catch(e){ el.innerHTML=`<p class="empty">${esc(publicErrorMessage(e))}</p>`; }
 }
 
 // ===================================================================
 // MÓDULO: COMUNICADOS
 // ===================================================================
 async function renderComunicados(){
+  const token=S._renderToken;
   loading();
   const lim=S._limComs||20;
   const {data:coms,error}=await sb.from("comunicados").select("*")
     .eq("condominio_id",S.condId).order("fixado",{ascending:false}).order("publicado_em",{ascending:false}).limit(lim);
-  if(error){ view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
-  const {data:reads}=await sb.from("comunicado_leituras").select("comunicado_id").eq("user_id",S.user.id);
+  if(error){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
+  const {data:reads}=await sb.from("comunicado_leituras").select("comunicado_id").eq("user_id",S.user.id).limit(500);
   const readSet=new Set((reads||[]).map(r=>r.comunicado_id));
   const anexMap=await fetchAnexos("comunicado",(coms||[]).map(c=>c.id));
 
@@ -936,6 +975,7 @@ async function renderComunicados(){
     }).join("");
     if(coms.length>=lim) html+=`<button class="btn secondary" id="comMais" style="margin-top:6px">Ver mais</button>`;
   }
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html;
   $("#comMais")?.addEventListener("click",()=>{ S._limComs=lim+20; renderComunicados(); });
   // marcar lido ao ver
@@ -959,7 +999,7 @@ async function renderComunicados(){
 }
 async function novoComunicado(){
   let prio="normal", alvo="todos";
-  const {data:unids}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero");
+  const {data:unids}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero").limit(500);
   const us=unids||[]; const blocos=[...new Set(us.map(u=>u.bloco).filter(Boolean))];
   sheet(`<h2>Novo comunicado</h2>
     <label>Título</label><input id="cTit" class="field" placeholder="Manutenção do elevador">
@@ -1008,22 +1048,24 @@ async function novoComunicado(){
 // MÓDULO: OCORRÊNCIAS
 // ===================================================================
 async function renderOcorrencias(){
+  const token=S._renderToken;
   loading();
   const lim=S._limOcs||20;
-  const {data:ocs,error}=await sb.from("ocorrencias").select("*")
+    const {data:ocs,error}=await sb.from("ocorrencias").select("id,titulo,status,descricao,categoria,created_at")
     .eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(lim);
-  if(error){ view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
+  if(error){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
   let html=`<div class="h">Ocorrências <small>${isGestor(S.role)?"Chamados do condomínio":"Seus chamados e avisos do prédio"}</small></div>`;
   if(!ocs||ocs.length===0){
     html+=emptyBox("✅","Nenhuma ocorrência aberta.","Toque em ＋ para registrar um chamado.");
   }else{
     html+=ocs.map(o=>`<div class="tile" data-oc="${o.id}" style="cursor:pointer">
-      <div class="row"><h3 style="flex:1">${esc(o.titulo)}</h3><span class="badge ${o.status}">${OC_STATUS[o.status]}</span></div>
+      <div class="row"><h3 style="flex:1">${esc(o.titulo)}</h3><span class="badge ${esc(o.status)}">${OC_STATUS[o.status]||esc(o.status)}</span></div>
       <p>${esc(o.descricao).slice(0,120)}${o.descricao.length>120?"…":""}</p>
       <div class="meta"><span>🏷️ ${OC_CAT[o.categoria]||o.categoria}</span><span>🕒 ${fmtDate(o.created_at)}</span></div>
     </div>`).join("");
     if(ocs.length>=lim) html+=`<button class="btn secondary" id="ocMais" style="margin-top:6px">Ver mais</button>`;
   }
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html;
   $("#ocMais")?.addEventListener("click",()=>{ S._limOcs=lim+20; renderOcorrencias(); });
   view().querySelectorAll("[data-oc]").forEach(b=>b.addEventListener("click",()=>detalheOcorrencia(b.dataset.oc)));
@@ -1057,12 +1099,12 @@ async function detalheOcorrencia(id){
   const anexMap=await fetchAnexos("ocorrencia",[id]); const anex=anexMap[id]||[];
   const gestor=isGestor(S.role)||S.role==="portaria";
   const timeline=(ups||[]).map(u=>`<div class="tile" style="margin:8px 0;padding:12px">
-    ${u.novo_status?`<span class="badge ${u.novo_status}">${OC_STATUS[u.novo_status]}</span> `:""}
+    ${u.novo_status?`<span class="badge ${esc(u.novo_status)}">${OC_STATUS[u.novo_status]||esc(u.novo_status)}</span> `:""}
     ${u.corpo?esc(u.corpo):""}<div class="meta"><span>🕒 ${fmtDate(u.created_at)}</span></div></div>`).join("")||'<p class="sub">Sem atualizações ainda.</p>';
   const stBtns=gestor?["aberta","em_andamento","resolvida","cancelada"].map(st=>
     `<button data-st="${st}" class="${st===o.status?"on":""}">${OC_STATUS[st]}</button>`).join(""):"";
   sheet(`<h2>${esc(o.titulo)}</h2>
-    <div class="meta"><span class="badge ${o.status}">${OC_STATUS[o.status]}</span><span>🏷️ ${OC_CAT[o.categoria]}</span><span>🕒 ${fmtDate(o.created_at)}</span></div>
+    <div class="meta"><span class="badge ${esc(o.status)}">${OC_STATUS[o.status]||esc(o.status)}</span><span>🏷️ ${OC_CAT[o.categoria]||esc(o.categoria)}</span><span>🕒 ${fmtDate(o.created_at)}</span></div>
     <p style="margin:12px 0;line-height:1.55">${esc(o.descricao).replace(/\n/g,"<br>")}</p>
     ${anexoThumbs(anex)}
     ${gestor?`<label style="margin-top:14px">Alterar status</label><div class="seg" id="ocSt">${stBtns}</div>`:""}
@@ -1094,10 +1136,11 @@ async function detalheOcorrencia(id){
 // MÓDULO: ENCOMENDAS (visão morador)
 // ===================================================================
 async function renderEncomendas(){
+  const token=S._renderToken;
   loading();
   const {data:enc,error}=await sb.from("encomendas").select("*")
-    .eq("condominio_id",S.condId).order("created_at",{ascending:false});
-  if(error){ view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
+    .eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100);
+  if(error){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(error.message)}</p>`; return; }
   let html=`<div class="h">Encomendas <small>Entregas na portaria para sua unidade</small></div>`;
   const pend=(enc||[]).filter(e=>e.status==="recebida");
   if(pend.length) html+=`<div class="tile" style="background:#fdfce4;border-color:#ece79a"><b>📦 ${pend.length} encomenda(s) aguardando retirada</b></div>`;
@@ -1107,11 +1150,12 @@ async function renderEncomendas(){
     const anexMap=await fetchAnexos("encomenda",enc.map(e=>e.id));
     html+=enc.map(e=>encCard(e,false,anexMap[e.id])).join("");
   }
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html;
 }
 function encCard(e,portaria,anexos){
   return `<div class="tile">
-    <div class="row"><h3 style="flex:1">${esc(e.remetente||"Encomenda")}</h3><span class="badge ${e.status}">${e.status==="recebida"?"Aguardando":"Retirada"}</span></div>
+    <div class="row"><h3 style="flex:1">${esc(e.remetente||"Encomenda")}</h3><span class="badge ${esc(e.status)}">${e.status==="recebida"?"Aguardando":"Retirada"}</span></div>
     ${e.descricao?`<p>${esc(e.descricao)}</p>`:""}
     ${anexos&&anexos.length?anexoThumbs(anexos):""}
     <div class="meta">${e.codigo_rastreio?`<span>🔖 ${esc(e.codigo_rastreio)}</span>`:""}<span>🕒 ${fmtDate(e.created_at)}</span>
@@ -1127,14 +1171,14 @@ async function renderPortaria(){
   loading();
   const [unids,enc,vis,cheg]=await Promise.all([
     sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero"),
-    sb.from("encomendas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("created_at",{ascending:false}),
-    sb.from("visitantes").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("created_at",{ascending:false}),
+    sb.from("encomendas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100),
+    sb.from("visitantes").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100),
     sb.from("chegadas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(20)
   ]);
   S._unids=unids.data||[];
   const encs=enc.data||[], viss=vis.data||[], chegs=cheg.data||[];
   const pend=encs.filter(e=>e.status==="recebida").length;
-  const {data:sosAtivos}=await sb.from("sos_alertas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false});
+  const {data:sosAtivos}=await sb.from("sos_alertas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false}).limit(100);
   const CHEG_TIPO={visita:"🚶 Visita",delivery:"🛵 Delivery",prestador:"🔧 Prestador",outro:"👤 Outro"};
   const CHEG_ST={tocando:"Tocando…",autorizado:"Autorizado",negado:"Negado",expirado:"Expirado",cancelado:"Cancelado",na_portaria:"📦 Na portaria"};
   const CHEG_BADGE={tocando:"em_andamento",autorizado:"resolvida",negado:"cancelada",expirado:"cancelada",cancelado:"cancelada",na_portaria:"recebida"};
@@ -1175,7 +1219,7 @@ async function renderPortaria(){
   html+= encs.length? encs.map(e=>{
     const un=e.unidades?`${e.unidades.bloco?e.unidades.bloco+" ":""}${e.unidades.numero}`:"—";
     return `<div class="tile"><div class="row"><h3 style="flex:1">🏠 ${esc(un)} — ${esc(e.remetente||"Encomenda")}</h3>
-      <span class="badge ${e.status}">${e.status==="recebida"?"Aguardando":"Retirada"}</span></div>
+      <span class="badge ${esc(e.status)}">${e.status==="recebida"?"Aguardando":"Retirada"}</span></div>
       ${e.descricao?`<p>${esc(e.descricao)}</p>`:""}
       <div class="meta"><span>🕒 ${fmtDate(e.created_at)}</span>${e.status==="retirada"?`<span>✅ ${esc(e.retirada_por||"")}</span>`:""}</div>
       ${e.status==="recebida"?`<button class="btn" data-retirar="${e.id}" style="margin-top:10px">Registrar retirada</button>`:""}</div>`;
@@ -1185,7 +1229,7 @@ async function renderPortaria(){
   const ativos=viss.filter(v=>["autorizado","entrou"].includes(v.status));
   html+= ativos.length? ativos.map(v=>{
     const un=v.unidades?`${v.unidades.bloco?v.unidades.bloco+" ":""}${v.unidades.numero}`:"—";
-    return `<div class="tile"><div class="row"><h3 style="flex:1">${esc(v.nome_visitante)}</h3><span class="badge ${v.status}">${v.status==="entrou"?"No prédio":"Autorizado"}</span></div>
+    return `<div class="tile"><div class="row"><h3 style="flex:1">${esc(v.nome_visitante)}</h3><span class="badge ${esc(v.status)}">${v.status==="entrou"?"No prédio":"Autorizado"}</span></div>
       <div class="meta"><span>🏠 ${esc(un)}</span><span>🔑 ${esc(v.codigo)}</span>${v.documento?`<span>🪪 ${esc(v.documento)}</span>`:""}</div></div>`;
   }).join("") : '<p class="sub">Nenhum visitante ativo.</p>';
 
@@ -1276,7 +1320,7 @@ function buscarPlaca(){
         <div class="row"><h3 style="flex:1">${esc(r.placa)}</h3><span class="badge">${VEIC_TIPO[r.tipo]||r.tipo}</span></div>
         <div class="meta"><span>🏠 ${esc(unitLabel(r.bloco,r.numero))}</span>${r.modelo?`<span>${esc(r.modelo)}</span>`:""}${r.cor?`<span>🎨 ${esc(r.cor)}</span>`:""}${r.vaga?`<span>🅿️ ${esc(r.vaga)}</span>`:""}</div>
         ${r.moradores?`<div class="meta"><span>👤 ${esc(r.moradores)}</span></div>`:""}</div>`).join("");
-    }catch(e){ $("#bpRes").innerHTML=`<p class="sub">${esc(e.message||"Erro na busca.")}</p>`; }
+    }catch(e){ $("#bpRes").innerHTML=`<p class="sub">${esc(publicErrorMessage(e,"Erro na busca."))}</p>`; }
     $("#bpGo").disabled=false;
   };
   $("#bpGo").addEventListener("click",go);
@@ -1306,7 +1350,7 @@ function validarAcessoMorador(){
         $("#amEnt").addEventListener("click",()=>logar("entrada"));
         $("#amSai").addEventListener("click",()=>logar("saida"));
       }
-    }catch(e){ $("#amRes").innerHTML=`<p class="sub">${esc(e.message||"Erro.")}</p>`; }
+    }catch(e){ $("#amRes").innerHTML=`<p class="sub">${esc(publicErrorMessage(e,"Erro."))}</p>`; }
     $("#amGo").disabled=false;
   };
   $("#amGo").addEventListener("click",()=>validar());
@@ -1389,7 +1433,7 @@ function validarVisitante(){
       $("#vRes").innerHTML=`<div class="tile" style="margin-top:14px;background:#e6f5ee;border-color:#bfe6d1">
         <b>✅ ${esc(r.nome_visitante)}</b><p>${r.documento?"🪪 "+esc(r.documento)+" · ":""}${acao==="entrada"?"Entrada registrada":"Saída registrada"}</p></div>`;
       toast(acao==="entrada"?"Entrada liberada":"Saída registrada"); setTimeout(renderPortaria,900);
-    }catch(e){ $("#vRes").innerHTML=`<div class="tile" style="margin-top:14px;background:#fdecea;border-color:#f3c0ba"><b>❌ ${esc(e.message)}</b></div>`; }
+    }catch(e){ $("#vRes").innerHTML=`<div class="tile" style="margin-top:14px;background:#fdecea;border-color:#f3c0ba"><b>❌ ${esc(publicErrorMessage(e))}</b></div>`; }
   }
   $("#vEnt").addEventListener("click",()=>act("entrada"));
   $("#vSai").addEventListener("click",()=>act("saida"));
@@ -1432,7 +1476,7 @@ async function renderAtendimento(){
   const canalFiltro = gestor ? S._tkSeg : "condominio";
   let list=[];
   try{ list=await rpc("ticket_listar",{p_cond:S.condId,p_canal:canalFiltro}); }
-  catch(e){ $("#tkList").innerHTML=`<p class="empty">${esc(e.message)}</p>`; return; }
+  catch(e){ $("#tkList").innerHTML=`<p class="empty">${esc(publicErrorMessage(e))}</p>`; return; }
   const el=$("#tkList");
   if(!list.length){ el.innerHTML=emptyBox("🎫","Nenhum chamado por aqui.", gestor&&S._tkSeg==="condominio"?"Os chamados dos moradores aparecem aqui.":"Toque em ＋ para abrir um chamado."); return; }
   el.innerHTML=list.map(t=>`<button class="tile" data-tk="${t.id}" style="width:100%;text-align:left">
@@ -1493,7 +1537,7 @@ async function abrirTicketDetalhe(id){
   const signed=await signPaths(paths);
   const gestor=isGestor(S.role);
   const podeGerir = d.canal==="condominio" && gestor;   // responsável no app é a gestão (plataforma = VIZELLO responde no admin)
-  $("#sheet").innerHTML='<div class="grab"></div>'+`
+  sheet(`
     <h2 style="margin-bottom:2px">${esc(d.assunto)}</h2>
     <div class="meta" style="margin-bottom:10px">${tkStatusBadge(d.status)}${tkPrioBadge(d.prioridade)}<span class="badge">${TK_CAT[d.categoria]||d.categoria}</span>${d.canal==="plataforma"?'<span class="badge" style="background:#e2eff2;color:#00596b">VIZELLO</span>':""}${!d.aberto_por_eu?`<span>por ${esc(d.abridor)}</span>`:""}</div>
     <div id="tkThread" style="max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0">
@@ -1504,7 +1548,7 @@ async function abrirTicketDetalhe(id){
       <textarea id="tkReply" class="field" rows="2" placeholder="Escreva uma resposta..."></textarea>
       <input id="tkReplyFiles" class="field" type="file" accept="image/*,application/pdf" multiple style="margin-top:8px">
       <button class="btn" id="tkReplySend">Responder</button></div>`}
-    ${tkStatusControls(d,podeGerir)}`;
+    ${tkStatusControls(d,podeGerir)}`);
   const thread=$("#tkThread"); if(thread) thread.scrollTop=thread.scrollHeight;
   const rs=$("#tkReplySend");
   if(rs) rs.addEventListener("click",async()=>{
@@ -1533,7 +1577,7 @@ async function renderPrestacaoContas(){
   const ano=S._contasAno||new Date().getFullYear();
   let pc;
   try{ pc=await rpc("prestacao_contas",{p_cond:S.condId,p_ano:ano}); }
-  catch(e){ view().innerHTML=`<div class="subhead"><button class="back" data-goto="servicos">‹</button><div class="h" style="margin:0">Prestação de contas</div></div><p class="empty">${esc(e.message)}</p>`; view().querySelector('[data-goto]').addEventListener('click',()=>go('servicos')); return; }
+  catch(e){ view().innerHTML=`<div class="subhead"><button class="back" data-goto="servicos">‹</button><div class="h" style="margin:0">Prestação de contas</div></div><p class="empty">${esc(publicErrorMessage(e))}</p>`; view().querySelector('[data-goto]').addEventListener('click',()=>go('servicos')); return; }
   const meses=pc.meses||[];
   const maxV=Math.max(1,...meses.map(m=>Math.max(Number(m.receitas)||0,Number(m.despesas)||0)));
   const saldo=(Number(pc.total_receitas)||0)-(Number(pc.total_despesas)||0);
@@ -1691,7 +1735,7 @@ function lancarDespesa(pendentePadrao){
 async function configDespesasRecorrentes(){
   sheet('<h2>Despesas recorrentes</h2><div class="spin"></div>');
   let recs=[];
-  try{ const r=await sb.from("despesas_recorrentes").select("*").eq("condominio_id",S.condId).order("created_at"); recs=r.data||[]; }catch(_){}
+  try{ const r=await sb.from("despesas_recorrentes").select("*").eq("condominio_id",S.condId).order("created_at").limit(200); recs=r.data||[]; }catch(_){}
   const list=recs.length?recs.map(r=>`<div class="tile" style="padding:12px 14px">
       <div class="row"><h3 style="flex:1;font-size:15px">${esc(r.descricao)}</h3><b>${fmtMoney(r.valor)}</b></div>
       <div class="meta"><span class="badge">${DESP_CAT[r.categoria]||r.categoria}</span><span>🗓️ vence dia ${r.dia_vencimento}</span><span class="badge ${r.ativo?"resolvida":"cancelada"}">${r.ativo?"Ativa":"Pausada"}</span></div>
@@ -1752,18 +1796,18 @@ async function renderPainel(){
   try{
     const [rpcPc,cb,oc,rv,en,mn,lt,uc]=await Promise.all([
       rpc("prestacao_contas",{p_cond:S.condId,p_ano:ano}).catch(()=>null),
-      sb.from("cobrancas").select("status,valor,vencimento,unidade_id").eq("condominio_id",S.condId),
-      sb.from("ocorrencias").select("status").eq("condominio_id",S.condId),
-      sb.from("reservas").select("status,inicio").eq("condominio_id",S.condId),
-      sb.from("encomendas").select("status").eq("condominio_id",S.condId),
-      sb.from("manutencoes").select("proxima_data,ativo").eq("condominio_id",S.condId).eq("ativo",true),
-      sb.from("leituras").select("tipo,competencia,unidade_id,consumo").eq("condominio_id",S.condId),
+      sb.from("cobrancas").select("status,valor,vencimento,unidade_id").eq("condominio_id",S.condId).limit(500),
+      sb.from("ocorrencias").select("status").eq("condominio_id",S.condId).limit(500),
+      sb.from("reservas").select("status,inicio").eq("condominio_id",S.condId).limit(500),
+      sb.from("encomendas").select("status").eq("condominio_id",S.condId).limit(500),
+      sb.from("manutencoes").select("proxima_data,ativo").eq("condominio_id",S.condId).eq("ativo",true).limit(200),
+      sb.from("leituras").select("tipo,competencia,unidade_id,consumo").eq("condominio_id",S.condId).limit(500),
       sb.from("unidades").select("id",{count:"exact",head:true}).eq("condominio_id",S.condId),
     ]);
     if(rpcPc) pc=rpcPc;
     cobr=cb.data||[]; ocor=oc.data||[]; resv=rv.data||[]; enco=en.data||[]; manu=mn.data||[]; leit=lt.data||[]; totalUnid=uc.count||0;
   }catch(e){
-    view().innerHTML=subhead("📈 Painel do síndico")+`<p class="empty">${esc(e.message||"Erro ao carregar")}</p>`;
+    view().innerHTML=subhead("📈 Painel do síndico")+`<p class="empty">${esc(publicErrorMessage(e,"Erro ao carregar"))}</p>`;
     $("#voltarServ")?.addEventListener("click",()=>go("servicos")); return;
   }
   // --- Finanças / inadimplência ---
@@ -1891,7 +1935,7 @@ async function renderSOS(){
   loading();
   const gestor=isGestor(S.role)||S.role==="portaria";
   let unids=S._unids;
-  if(gestor && !unids){ const {data:u}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId); unids=u||[]; S._unids=unids; }
+  if(gestor && !unids){ const {data:u}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).limit(500); unids=u||[]; S._unids=unids; }
   let html=`<div class="subhead"><button class="back" data-goto="servicos">‹</button><div class="h" style="margin:0">🆘 SOS / Emergência <small>Alerta imediato à portaria</small></div></div>`;
 
   const {data:meus}=await sb.from("sos_alertas").select("*").eq("user_id",S.user.id).eq("status","ativo").order("created_at",{ascending:false}).limit(1);
@@ -1907,7 +1951,7 @@ async function renderSOS(){
   }
 
   if(gestor){
-    const {data:ativos}=await sb.from("sos_alertas").select("*").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false});
+    const {data:ativos}=await sb.from("sos_alertas").select("*").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false}).limit(100);
     html+=`<div class="h" style="font-size:16px;margin:22px 2px 8px">Alertas ativos (${(ativos||[]).length})</div>`;
     if(!ativos||!ativos.length){ html+=`<p class="sub" style="margin:0 2px">Nenhum alerta ativo. ✅</p>`; }
     else html+=ativos.map(a=>{
@@ -2006,8 +2050,8 @@ async function renderCadastros(){
     return;
   }
   const [{data:veics},{data:pets}]=await Promise.all([
-    sb.from("veiculos").select("*").eq("condominio_id",S.condId).eq("unidade_id",unid).order("created_at"),
-    sb.from("pets").select("*").eq("condominio_id",S.condId).eq("unidade_id",unid).order("created_at")
+    sb.from("veiculos").select("*").eq("condominio_id",S.condId).eq("unidade_id",unid).order("created_at").limit(200),
+    sb.from("pets").select("*").eq("condominio_id",S.condId).eq("unidade_id",unid).order("created_at").limit(200)
   ]);
   let html=subhead("Veículos & Pets <small>Cadastros da sua unidade</small>");
   // Veículos
@@ -2096,8 +2140,8 @@ async function renderVagas(){
   $("#fab").classList.add("hide");
   const gestor=isGestor(S.role);
   const [{data:vagas},{data:unids}]=await Promise.all([
-    sb.from("vagas").select("*").eq("condominio_id",S.condId).order("identificacao"),
-    sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero")
+    sb.from("vagas").select("*").eq("condominio_id",S.condId).order("identificacao").limit(300),
+    sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero").limit(500)
   ]);
   S._unidsVaga=unids||[];
   const unMap={}; (unids||[]).forEach(u=>unMap[u.id]=unitLabel(u.bloco,u.numero));
@@ -2151,9 +2195,9 @@ async function renderAutorizacoes(){
   $("#voltarServ")?.addEventListener("click",()=>go("servicos"));
   $("#fab").classList.add("hide");
   const portaria=isPortaria(S.role)&&!S.unidadeId; // portaria pura vê tudo por unidade
-  const {data:unids}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero");
+  const {data:unids}=await sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero").limit(500);
   const unMap={}; (unids||[]).forEach(u=>unMap[u.id]=unitLabel(u.bloco,u.numero));
-  let q=sb.from("autorizacoes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false});
+  let q=sb.from("autorizacoes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(500);
   const {data:auts}=await q;
   const list=auts||[];
   let html=subhead("Autorizações <small>Pré-liberações recorrentes</small>");
@@ -2232,11 +2276,12 @@ let _convPoll=null, _convId=null;
 function pararConvPoll(){ if(_convPoll){ clearInterval(_convPoll); _convPoll=null; } }
 
 async function renderConversas(){
+  const token=S._renderToken;
   pararConvPoll(); _convId=null;
   view().innerHTML=subhead("Mensagens <small>Fale com a gestão ou a portaria</small>")+'<div class="spin"></div>';
   $("#voltarServ")?.addEventListener("click",()=>go("servicos"));
   $("#fab").classList.add("hide");
-  const {data:convs}=await sb.from("conversas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("updated_at",{ascending:false});
+  const {data:convs}=await sb.from("conversas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("updated_at",{ascending:false}).limit(100);
   const list=convs||[];
   let html=subhead("Mensagens <small>Fale com a gestão ou a portaria</small>");
   html+=`<button class="btn secondary" id="novaConv" style="margin:0 0 14px">＋ Nova conversa</button>`;
@@ -2250,6 +2295,7 @@ async function renderConversas(){
       <div class="meta"><span>➡️ ${CONV_DEST[c.destino]||c.destino}</span>${!mine&&un?`<span>🏠 ${esc(un)}</span>`:""}<span>🕒 ${fmtDate(c.updated_at)}</span></div>
     </div>`;
   }).join("") : emptyBox("💬","Nenhuma conversa ainda","Toque em “Nova conversa” para falar com a gestão ou a portaria.");
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html;
   $("#voltarServ")?.addEventListener("click",()=>go("servicos"));
   $("#novaConv").addEventListener("click",novaConversa);
@@ -2279,6 +2325,7 @@ function novaConversa(){
   });
 }
 async function abrirConversa(id){
+  const token=S._renderToken;
   pararConvPoll(); _convId=id;
   view().innerHTML=subhead("Conversa")+'<div class="spin"></div>';
   $("#voltarServ")?.addEventListener("click",()=>go("conversas"));
@@ -2295,6 +2342,7 @@ async function abrirConversa(id){
     <div class="chat" id="chatBox"><div class="spin"></div></div>
     <div class="composer"><textarea id="msgInput" rows="1" placeholder="Escreva uma mensagem..."></textarea>
       <button class="send" id="msgSend" aria-label="Enviar">➤</button></div>`;
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html;
   $("#voltarConv").addEventListener("click",()=>go("conversas"));
   $("#convToggle").addEventListener("click",async()=>{
@@ -2302,7 +2350,8 @@ async function abrirConversa(id){
   });
   const meId=S.user.id, openerId=conv.aberta_por;
   async function carregar(scroll){
-    const {data:msgs}=await sb.from("mensagens").select("*").eq("conversa_id",id).order("created_at");
+    const {data:msgs}=await sb.from("mensagens").select("*").eq("conversa_id",id).order("created_at").limit(200);
+    if(!isCurrentRender(token)) return;
     const box=$("#chatBox"); if(!box) return;
     box.innerHTML=(msgs||[]).map(m=>{
       const me=m.autor_id===meId;
@@ -2338,7 +2387,7 @@ async function renderPesquisas(){
   $("#voltarServ")?.addEventListener("click",()=>go("servicos"));
   $("#fab").classList.add("hide");
   const gestor=isGestor(S.role);
-  const {data:pesqs}=await sb.from("pesquisas").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false});
+  const {data:pesqs}=await sb.from("pesquisas").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100);
   const list=pesqs||[];
   const results={};
   await Promise.all(list.map(async p=>{ try{ results[p.id]=await rpc("pesquisa_resultado",{p_pesquisa:p.id}); }catch(_){ results[p.id]={}; } }));
@@ -2428,11 +2477,11 @@ async function renderReservas(){
   let areas=[], reservas=[];
   try{
     const [a,r]=await Promise.all([
-      sb.from("areas").select("*").eq("condominio_id",S.condId).eq("ativo",true).order("nome"),
-      sb.from("reservas").select("*, areas(nome), unidades(bloco,numero)").eq("condominio_id",S.condId).order("inicio")
+      sb.from("areas").select("*").eq("condominio_id",S.condId).eq("ativo",true).order("nome").limit(200),
+      sb.from("reservas").select("*, areas(nome), unidades(bloco,numero)").eq("condominio_id",S.condId).order("inicio").limit(500)
     ]);
     areas=a.data||[]; reservas=r.data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   S._areas=areas;
   const gestor=isGestor(S.role), agora=Date.now();
 
@@ -2561,7 +2610,7 @@ function decidirReserva(id,aprovar){
 }
 async function gerenciarBloqueios(areaId){
   const a=(S._areas||[]).find(x=>x.id===areaId);
-  const {data:bloq}=await sb.from("area_bloqueios").select("*").eq("area_id",areaId).order("data");
+  const {data:bloq}=await sb.from("area_bloqueios").select("*").eq("area_id",areaId).order("data").limit(200);
   const list=(bloq||[]).map(b=>`<div class="tile" style="padding:10px 12px"><div class="row">
     <span style="flex:1">📅 ${new Date(b.data+"T00:00:00").toLocaleDateString("pt-BR")}${b.motivo?" — "+esc(b.motivo):""}</span>
     <button class="badge" data-delbloq="${b.id}">Remover</button></div></div>`).join("")||'<p class="sub">Nenhuma data bloqueada.</p>';
@@ -2584,16 +2633,17 @@ async function gerenciarBloqueios(areaId){
 // ===================================================================
 // fmtMoney: em ./helpers.js
 async function renderFinanceiro(){
+  const token=S._renderToken;
   loading();
   const gestor=isGestor(S.role), sindico=isSindico(S.role);
   let cobrancas=[], unids=[];
   try{
     const [cb,un]=await Promise.all([
-      sb.from("cobrancas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("vencimento",{ascending:false}),
-      sindico ? sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero") : Promise.resolve({data:[]})
+      sb.from("cobrancas").select("*, unidades(bloco,numero)").eq("condominio_id",S.condId).order("vencimento",{ascending:false}).limit(500),
+      sindico ? sb.from("unidades").select("id,bloco,numero").eq("condominio_id",S.condId).order("numero").limit(500) : Promise.resolve({data:[]})
     ]);
     if(cb.error) throw cb.error; cobrancas=cb.data||[]; unids=un.data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   if(unids.length) S._unids=unids;
 
   const hoje=new Date(); hoje.setHours(0,0,0,0);
@@ -2666,6 +2716,7 @@ async function renderFinanceiro(){
     }
   }
 
+  if(!isCurrentRender(token)) return;
   view().innerHTML=html; $("#fab").classList.add("hide");
   $("#fBack").addEventListener("click",()=>go("servicos"));
   $("#fLancar")?.addEventListener("click",lancarCobranca);
@@ -2747,7 +2798,7 @@ async function configFinanceiro(){
   let recs=[], cfg={encargos_ativo:false,multa_pct:2,juros_mes_pct:1};
   try{
     const [rc,cc]=await Promise.all([
-      sb.from("recorrencias").select("*").eq("condominio_id",S.condId).order("created_at"),
+      sb.from("recorrencias").select("*").eq("condominio_id",S.condId).order("created_at").limit(200),
       sb.from("condominios").select("encargos_ativo,multa_pct,juros_mes_pct").eq("id",S.condId).single()
     ]);
     recs=rc.data||[]; if(cc.data) cfg=cc.data;
@@ -2833,7 +2884,7 @@ async function pagarCobranca(id){
     throw new Error("Resposta inesperada do pagamento.");
   }catch(e){
     sheet(`<h2>Pagamento</h2>
-      <p class="sub">${esc(e.message||"Falha ao iniciar o pagamento.")}</p>
+      <p class="sub">${esc(publicErrorMessage(e,"Falha ao iniciar o pagamento."))}</p>
       <p class="sub" style="margin-top:8px">O pagamento online ainda não está ativo neste condomínio. É preciso conectar o Mercado Pago (ver instruções do síndico).</p>
       <button class="btn secondary" id="pgClose">Fechar</button>`);
     $("#pgClose")?.addEventListener("click",closeSheet);
@@ -3001,9 +3052,9 @@ async function renderAssembleias(){
   loading();
   let assembleias=[];
   try{
-    const {data,error}=await sb.from("assembleias").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false});
+    const {data,error}=await sb.from("assembleias").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100);
     if(error) throw error; assembleias=data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   let html=`<div class="subhead"><button class="back" id="asBack">‹</button>
     <div class="h" style="margin:0">Assembleias <small>Pautas e votações do condomínio</small></div></div>`;
   if(isSindico(S.role)) html+=`<button class="btn secondary" id="asNova" style="margin-bottom:14px">➕ Nova assembleia</button>`;
@@ -3042,7 +3093,7 @@ async function abrirAssembleia(id){
   try{
     const [ar,pr]=await Promise.all([
       sb.from("assembleias").select("*").eq("id",id).single(),
-      sb.from("pautas").select("*").eq("assembleia_id",id).order("ordem")
+      sb.from("pautas").select("*").eq("assembleia_id",id).order("ordem").limit(200)
     ]);
     a=ar.data; pautas=pr.data||[];
   }catch(e){ return toast(e.message); }
@@ -3186,13 +3237,13 @@ async function renderDocumentos(){
   loading();
   let docs=[];
   try{
-    const {data,error}=await sb.from("documentos").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false});
+    const {data,error}=await sb.from("documentos").select("id,nome,categoria,storage_path,tamanho,mime,requer_aceite,created_at").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(200);
     if(error) throw error; docs=data||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   const sindico=isSindico(S.role);
   const gestor=isGestor(S.role);
   // aceites: membro vê os seus; gestor vê todos (RLS)
-  const {data:aceites}=await sb.from("documento_aceites").select("documento_id,user_id");
+  const {data:aceites}=await sb.from("documento_aceites").select("documento_id,user_id").eq("condominio_id",S.condId).limit(500);
   const meusAceites=new Set((aceites||[]).filter(a=>a.user_id===S.user.id).map(a=>a.documento_id));
   const contaAceites={}; (aceites||[]).forEach(a=>{ contaAceites[a.documento_id]=(contaAceites[a.documento_id]||0)+1; });
   let html=`<div class="subhead"><button class="back" id="dBack">‹</button>
@@ -3256,6 +3307,7 @@ function enviarDocumento(){
   $("#dArq").addEventListener("change",e=>{ const f=e.target.files?.[0]; if(f && !$("#dNome").value) $("#dNome").value=f.name.replace(/\.[^.]+$/,""); });
   $("#dSave").addEventListener("click",async()=>{
     const f=$("#dArq").files?.[0]; if(!f) return toast("Escolha um arquivo.");
+    const check=validateUpload(f); if(!check.ok) return toast(check.message);
     const nome=$("#dNome").value.trim()||f.name;
     const safe=f.name.replace(/[^a-zA-Z0-9.\-_]/g,"_");
     const path=`${S.condId}/${crypto.randomUUID()}-${safe}`;
@@ -3282,8 +3334,8 @@ async function abrirDocumento(path){
 async function renderEnquetes(){
   loading();
   let enquetes=[];
-  try{ const {data,error}=await sb.from("enquetes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}); if(error) throw error; enquetes=data||[]; }
-  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  try{ const {data,error}=await sb.from("enquetes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100); if(error) throw error; enquetes=data||[]; }
+  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   const results={};
   await Promise.all(enquetes.map(async q=>{ try{ results[q.id]=await rpc("enquete_resultado",{p_enquete:q.id}); }catch(_){ results[q.id]=null; } }));
   const podeCriar=isGestor(S.role);
@@ -3341,8 +3393,8 @@ const MANUT_CAT={extintor:"Extintores",elevador:"Elevador",avcb:"AVCB",dedetizac
 async function renderManutencoes(){
   loading();
   let itens=[];
-  try{ const {data,error}=await sb.from("manutencoes").select("*").eq("condominio_id",S.condId).eq("ativo",true).order("proxima_data"); if(error) throw error; itens=data||[]; }
-  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  try{ const {data,error}=await sb.from("manutencoes").select("*").eq("condominio_id",S.condId).eq("ativo",true).order("proxima_data").limit(200); if(error) throw error; itens=data||[]; }
+  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   const sindico=isSindico(S.role);
   const hoje=new Date(); hoje.setHours(0,0,0,0);
   let html=`<div class="subhead"><button class="back" id="mtBack">‹</button><div class="h" style="margin:0">Manutenções <small>Preventivas e obrigatórias</small></div></div>`;
@@ -3401,8 +3453,8 @@ const muralBadge=t=>({venda:"resolvida",procura:"aberta",servico:"aberta",achado
 async function renderMural(){
   loading();
   let posts=[];
-  try{ const {data,error}=await sb.from("mural_posts").select("*").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false}); if(error) throw error; posts=data||[]; }
-  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  try{ const {data,error}=await sb.from("mural_posts").select("*").eq("condominio_id",S.condId).eq("status","ativo").order("created_at",{ascending:false}).limit(200); if(error) throw error; posts=data||[]; }
+  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   const gestor=isGestor(S.role);
   let html=`<div class="subhead"><button class="back" id="muBack">‹</button><div class="h" style="margin:0">Mural <small>Classificados, achados e recados</small></div></div>
     <button class="btn secondary" id="muNovo" style="margin-bottom:14px">➕ Publicar no mural</button>`;
@@ -3448,7 +3500,7 @@ async function renderLivroPortaria(){
   loading();
   let regs=[];
   try{ const {data,error}=await sb.from("portaria_registros").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(100); if(error) throw error; regs=data||[]; }
-  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   let html=`<div class="subhead"><button class="back" id="lpBack">‹</button><div class="h" style="margin:0">Livro de Portaria <small>Registro de turno</small></div></div>
     <button class="btn secondary" id="lpNovo" style="margin-bottom:14px">➕ Novo registro</button>`;
   if(!regs.length){ html+=emptyBox("📒","Sem registros.","Registre ocorrências, rondas e observações do turno."); }
@@ -3481,7 +3533,10 @@ function novoRegistroPortaria(){
 async function carregarAssinaturaVizello(){
   const el=$("#assinVizello"); if(!el) return;
   let assinatura=S.assinatura||null, fats=[];
-  if(!assinatura) assinatura=await rpcSilencioso("minha_assinatura_vizello",{p_cond:S.condId});
+  if(!assinatura){
+    try{ assinatura=await rpc("minha_assinatura_vizello",{p_cond:S.condId}); }
+    catch(_){ el.innerHTML='<p class="sub">Não foi possível carregar os dados da assinatura.</p>'; return; }
+  }
   try{ fats=(await rpc("minha_fatura_vizello"))||[]; }catch(_){ fats=[]; }
   fats=fats.filter(f=>f.tipo==="condominio");
   if(!fats.length && !assinatura){ el.innerHTML=""; return; }
@@ -3512,14 +3567,14 @@ async function renderGestao(){
   let unids=[], membros=[], convites=[];
   try{
     const [u,m,c] = await Promise.all([
-      sb.from("unidades").select("id,bloco,numero,fracao_ideal").eq("condominio_id",S.condId).order("numero"),
+      sb.from("unidades").select("id,bloco,numero,fracao_ideal").eq("condominio_id",S.condId).order("numero").limit(500),
       rpc("cond_membros",{p_cond:S.condId}),
       rpc("cond_convites_pendentes",{p_cond:S.condId})
     ]);
     unids=u.data||[]; membros=m||[]; convites=c||[];
-  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(e.message)}</p>`; return; }
+  }catch(e){ view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   S._unids=unids;
-  const {data:sancoes}=await sb.from("sancoes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false});
+  const {data:sancoes}=await sb.from("sancoes").select("*").eq("condominio_id",S.condId).order("created_at",{ascending:false}).limit(200);
   const unMapG={}; unids.forEach(u=>unMapG[u.id]=unitLabel(u.bloco,u.numero));
 
   let html=`<div class="h">Gestão <small>Unidades, moradores e equipe</small></div>`;
@@ -3785,7 +3840,7 @@ async function renderPerfil(){
 
   // Morador: minhas advertências/multas (só se houver)
   if(S.unidadeId){
-    const {data:minhasSanc}=await sb.from("sancoes").select("*").eq("unidade_id",S.unidadeId).eq("status","ativa").order("created_at",{ascending:false});
+    const {data:minhasSanc}=await sb.from("sancoes").select("*").eq("unidade_id",S.unidadeId).eq("status","ativa").order("created_at",{ascending:false}).limit(100);
     if(minhasSanc&&minhasSanc.length){
       html+=`<div class="h" style="margin-top:22px">Advertências e multas</div>`+minhasSanc.map(s=>{
         const defLbl={enviada:"⏳ Defesa em análise",deferida:"✅ Defesa aceita",indeferida:"❌ Defesa indeferida"}[s.defesa_status];
@@ -3833,7 +3888,7 @@ async function renderPerfil(){
   const visList=$("#pfVisList"); if(!visList) return;
   const visMap={}; (vis||[]).forEach(v=>{ visMap[v.codigo]=v; });
   visList.innerHTML=(vis||[]).map(v=>`<div class="tile" style="padding:12px">
-    <div class="row"><h3 style="flex:1">${esc(v.nome_visitante)}</h3><span class="badge ${v.status}">${v.status}</span></div>
+    <div class="row"><h3 style="flex:1">${esc(v.nome_visitante)}</h3><span class="badge ${esc(v.status)}">${esc(v.status)}</span></div>
     <div class="meta"><span>🔑 <b>${esc(v.codigo)}</b></span>${v.data_visita?`<span>📅 ${esc(v.data_visita)}</span>`:""}${v.validade_ate?`<span>⏳ até ${fmtDate(v.validade_ate)}</span>`:""}
     <button class="badge" data-qrv="${esc(v.codigo)}">📷 QR</button>
     <button class="badge" data-wav="${esc(v.codigo)}" style="background:#25d366;color:#fff">📲 WhatsApp</button>
@@ -3862,7 +3917,7 @@ async function mostrarMeuAcesso(){
   try{
     const codigo=await rpc("acesso_meu",{p_cond:S.condId});
     render(codigo);
-  }catch(e){ $("#sheet").innerHTML='<div class="grab"></div><p class="sub">'+esc(e.message||"Erro")+'</p>'; }
+  }catch(e){ sheet('<h2>Meu QR de acesso</h2><p class="sub">'+esc(publicErrorMessage(e))+'</p>'); }
   function render(codigo){
     sheet(`<h2>Meu QR de acesso</h2><p class="sub">Mostre este código na portaria para liberar sua entrada. É pessoal — não compartilhe.</p>
       <div class="codebox">${esc(codigo)}</div>
@@ -3934,7 +3989,7 @@ function cadastrarUnidade(){
 }
 
 // ---------- empty helper ----------
-function emptyBox(icon,title,sub){ return `<div class="empty"><div class="big">${icon}</div><b>${esc(title)}</b><p>${esc(sub||"")}</p></div>`; }
+function emptyBox(icon,title,sub){ return `<div class="empty"><div class="big" aria-hidden="true">${icon}</div><b>${esc(title)}</b><p>${esc(sub||"")}</p></div>`; }
 
 // ===================================================================
 // ALTURA REAL DA VIEWPORT (corrige o menu/login "fora do lugar" na entrada)
@@ -4051,7 +4106,8 @@ async function talvezPedirPush(){
 }
 // SW pede pra navegar quando o usuário toca numa notificação push
 navigator.serviceWorker?.addEventListener?.("message",e=>{
-  if(e.data?.type==="notif-open" && e.data.link){ const h=(e.data.link||"").replace("#",""); if(h) go(h); }
+  const safeTab=safeAppTab(e.data?.link);
+  if(e.data?.type==="notif-open" && safeTab) go(safeTab);
 });
 
 // hook de teste

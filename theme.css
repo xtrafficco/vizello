@@ -7,8 +7,11 @@
   --bg:#0b2c37; --bg2:#0e4a5a; --surface:#ffffff; --ink:#0d2830; --muted:#566d75;
   --line:#e0e8e9; --brand:#0e4a5a; --brand-ink:#0e4a5a; --accent:#17a2ba;
   --sand:#e0a33a; --ok:#1c8a5f; --warn:#b57209; --danger:#c0392b; --chip:#eef3f3;
+  --surface-success:#e6f5ee; --surface-warning:#fff4e0; --surface-danger:#fdecea; --surface-neutral:#f0f0f0;
+  --text-disabled:#6d777b;
   --shadow:0 6px 24px rgba(13,40,48,.14);
   --r:16px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
   --app-bg:#f4f7f7; --field-bg:#fbfdfd;
   /* cores das letras do wordmark (logo) */
   --wm-orange:#c85a1e; --wm-gold:#e0a11c; --wm-blue:#2e6e92; --wm-navy:#183451;
@@ -17,6 +20,8 @@
   --bg:#071f28; --bg2:#0a3542; --surface:#102d36; --ink:#eaf4f5; --muted:#9fc0c7;
   --line:#29444b; --brand:#17a2ba; --brand-ink:#8fd4e0; --accent:#5fd0e2;
   --sand:#e0a33a; --ok:#55c995; --warn:#e7b455; --danger:#e2645a; --chip:#1b3d46;
+  --surface-success:#19382c; --surface-warning:#3a301e; --surface-danger:#3b2223; --surface-neutral:#26363a;
+  --text-disabled:#9badb1;
   --shadow:0 6px 24px rgba(0,0,0,.45);
   --app-bg:#081c24; --field-bg:#15323b;
   --wm-navy:#e7eef4; /* letra navy do wordmark fica clara no escuro */
@@ -25,3 +30,18 @@
 
 /* Utilitário compartilhado para textos visíveis apenas a tecnologias assistivas. */
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+
+/* Base visual contract shared by the legacy screens and the incremental
+   component migration. */
+.tile,.svc-card,.hubcard,.chartcard,.metric,.drow{
+  -webkit-tap-highlight-color:transparent;
+}
+.tile,.svc-card,.hubcard,.chartcard{
+  content-visibility:auto;
+  contain-intrinsic-size:0 112px;
+}
+img[loading="lazy"]{content-visibility:auto}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}

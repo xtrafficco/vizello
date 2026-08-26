@@ -30,7 +30,7 @@
     <img class="loginlogo" src="/logo-dark.png?v=2" alt="VIZELLO">
     <div class="tagline"><span class="tag">CONDOMÍNIO</span></div>
     <div class="sub" style="text-align:center">Gestão do seu condomínio na palma da mão.</div>
-    <div id="authForm">
+    <form id="authForm" novalidate>
       <label for="email">E-mail</label>
       <input id="email" class="field" type="email" autocomplete="email" placeholder="voce@email.com">
       <label id="nameLbl" class="hide" for="name">Nome</label>
@@ -39,14 +39,14 @@
       <input id="pass" class="field" type="password" autocomplete="current-password" placeholder="••••••••">
       <div id="authErr" class="err" role="alert" aria-live="assertive"></div>
       <div id="authMsg" class="ok" role="status" aria-live="polite"></div>
-      <button id="authBtn" class="btn">Entrar</button>
+      <button id="authBtn" class="btn" type="submit">Entrar</button>
       <button id="magicBtn" class="btn ghost" type="button">Entrar com link por e-mail</button>
       <div class="switch">
         <span id="switchTxt">Ainda não tem conta?</span>
-        <button id="switchBtn">Criar conta</button>
+      <button id="switchBtn" type="button">Criar conta</button>
         <div style="margin-top:8px"><button id="forgotBtn" type="button">Esqueci minha senha</button></div>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -106,7 +106,7 @@
     <button class="ib-no" id="installNo" aria-label="Agora não">✕</button>
   </div>
   <main id="view" aria-live="polite" aria-busy="true"><div class="spin" role="status" aria-label="Carregando"></div></main>
-  <button class="fab hide" id="fab">＋</button>
+  <button class="fab hide" id="fab" type="button" aria-label="Adicionar">＋</button>
   <nav class="bottom" id="nav"></nav>
 </div>
 

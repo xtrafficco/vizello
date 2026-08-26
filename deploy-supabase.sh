@@ -15,6 +15,15 @@ set -euo pipefail
 PROJECT_REF="bklvbhsaxcmrnjxjbzjh"
 SB="supabase"   # troque para "npx supabase" se preferir sem instalar global
 
+if [[ ! -d "supabase/migrations" ]]; then
+  echo "Backend ausente neste checkout: supabase/migrations não foi encontrado." >&2
+  exit 1
+fi
+if [[ ! -d "supabase/functions/feed-imoveis" ]]; then
+  echo "Backend ausente neste checkout: supabase/functions/feed-imoveis não foi encontrado." >&2
+  exit 1
+fi
+
 step(){ printf "\n==> %s\n" "$1"; }
 
 step "Verificando Supabase CLI"

@@ -1,10 +1,23 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
-const CACHE = "condoapp-v19";
-const SHELL = ["/", "/site", "/condominio", "/login", "/imobiliaria", "/admin",
-  "/app.css", "/app.js", "/helpers.js", "/ui-a11y.js", "/theme.css", "/qrcode.js", "/jsqr.js",
-  "/manifest.webmanifest",
+const CACHE = "condoapp-v21";
+const SHELL = ["/", "/index.html", "/condominio.html", "/login", "/imobiliaria.html", "/admin.html", "/pagamento.html",
+  "/app.css", "/app.js", "/helpers.js", "/ui-a11y.js", "/theme.css", "/plans.js", "/qrcode.js", "/jsqr.js",
+  "/manifest.webmanifest", "/manifest-imobiliaria.webmanifest", "/manifest-morador-imob.webmanifest", "/manifest-proprietario.webmanifest", "/admin.webmanifest",
   "/logo-dark.png", "/logo-white.png",
   "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png"];
+const SAFE_TABS = new Set([
+  "inicio", "ocorrencias", "portaria", "encomendas", "servicos", "reservas",
+  "financeiro", "assembleias", "enquetes", "manutencoes", "mural", "livro",
+  "documentos", "gestao", "atendimento", "contas", "perfil", "cadastros",
+  "vagas", "autorizacoes", "conversas", "pesquisas", "consumo", "painel", "sos"
+]);
+const PROTECTED_NAVIGATION = new Set(["/admin", "/admin.html", "/condominio", "/condominio.html", "/morador", "/sindico", "/portaria", "/imobiliaria", "/imobiliaria.html", "/morador-imob", "/proprietario", "/pagamento", "/pagamento.html"]);
+const isProtectedNavigation = (pathname) => PROTECTED_NAVIGATION.has(pathname);
+function safeNotificationLink(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  const tab = raw.replace(/^#/, "");
+  return SAFE_TABS.has(tab) ? "#" + tab : "#inicio";
+}
 
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
@@ -30,7 +43,8 @@ self.addEventListener("fetch", (e) => {
   // Supabase (API/Auth/Storage): sempre rede — nunca cachear dados/sessão.
   if (url.hostname.endsWith("supabase.co")) return;
 
-  // Biblioteca do CDN (esm.sh): cache-first (acelera e permite abrir offline).
+  // Biblioteca do CDN (esm.sh): cache-first (acelera e permite abrir offline
+  // depois do primeiro acesso; o primeiro acesso ainda precisa de rede).
   if (url.hostname === "esm.sh") {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
@@ -63,10 +77,21 @@ self.addEventListener("fetch", (e) => {
       try {
         const res = await fetch(req);
         const c = await caches.open(CACHE);
-        c.put(req, res.clone());
+        // O shell é estático e não contém dados de usuário, mas não persistimos
+        // respostas de navegação com query string ou URL externa.
+        if (url.origin === self.location.origin && !url.search && !isProtectedNavigation(url.pathname)) c.put(req, res.clone());
         return res;
       } catch {
-        return (await caches.match(req)) || (await caches.match("/condominio"));
+        const cachedNavigation = await caches.match(req);
+        if (cachedNavigation) return cachedNavigation;
+        const pathname = url.pathname;
+        const fallback = /imobiliaria|morador-imob|proprietario/.test(pathname)
+          ? "/imobiliaria.html"
+          : pathname.includes("admin") ? "/admin.html"
+          : pathname.includes("pagamento") ? "/pagamento.html"
+          : pathname === "/" ? "/index.html"
+          : "/condominio.html";
+        return (await caches.match(fallback)) || (await caches.match("/index.html"));
       }
     })());
     return;
@@ -90,20 +115,20 @@ self.addEventListener("fetch", (e) => {
 self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { title: "CondoApp", body: e.data ? e.data.text() : "" }; }
-  const title = d.title || "CondoApp";
+  const title = String(d.title || "CondoApp").slice(0, 80);
   const options = {
-    body: d.body || "",
+    body: String(d.body || "").slice(0, 500),
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    data: { link: d.link || "#inicio" },
-    tag: d.tag,
+    data: { link: safeNotificationLink(d.link) },
+    tag: typeof d.tag === "string" ? d.tag.slice(0, 80) : undefined,
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const link = e.notification.data?.link || "#inicio";
+  const link = safeNotificationLink(e.notification.data?.link);
   const APPS = ["/condominio", "/morador", "/sindico", "/portaria", "/login"];
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });

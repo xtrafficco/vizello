@@ -12,7 +12,7 @@
 <title>Começar teste grátis — Vizello</title>
 <style>
 :root{--navy:#183451;--teal:#12869b;--teal-dark:#0e6375;--ink:#102a3b;--muted:#647887;--line:#dce7eb;--surface:#fff;--soft:#f4f8f9;--ok:#19734f;--danger:#ad3e3e;--shadow:0 24px 70px rgba(18,53,77,.14)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(135deg,#f4f8f9 0%,#fff 52%,#eef7f8 100%);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}a{color:inherit}
+*{box-sizing:border-box}fieldset{border:0;padding:0;margin:0}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(135deg,#f4f8f9 0%,#fff 52%,#eef7f8 100%);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100vh}a{color:inherit}
 .page{width:min(1120px,calc(100% - 36px));margin:0 auto;padding:28px 0 56px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:36px}.logo{width:132px;height:auto;display:block}.back{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;font-weight:700;text-decoration:none}.back:hover{color:var(--teal)}
 .layout{display:grid;grid-template-columns:minmax(0,.84fr) minmax(420px,1.16fr);gap:38px;align-items:start}.intro{padding:22px 8px 0 0}.eyebrow{color:var(--teal);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.intro h1{font-family:"Bricolage Grotesque",Inter,sans-serif;font-size:clamp(36px,5vw,60px);line-height:.98;letter-spacing:-.045em;margin:15px 0 18px;color:var(--navy)}.intro h1 span{color:var(--teal)}.intro>p{font-size:17px;line-height:1.65;color:var(--muted);max-width:460px;margin:0 0 28px}.benefits{display:grid;gap:13px;margin:0;padding:0;list-style:none}.benefits li{display:flex;gap:11px;align-items:flex-start;color:#34505f;font-size:14px;line-height:1.45}.check{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;border-radius:50%;background:#dff1f1;color:var(--teal);font-weight:900;font-size:13px;margin-top:1px}.trust{margin-top:32px;display:flex;flex-wrap:wrap;gap:8px 15px;color:var(--muted);font-size:12px;font-weight:700}.trust span{display:inline-flex;gap:6px;align-items:center}
 .card{background:var(--surface);border:1px solid rgba(220,231,235,.9);border-radius:24px;padding:30px;box-shadow:var(--shadow)}.card-head{margin-bottom:23px}.card h2{font-family:"Bricolage Grotesque",Inter,sans-serif;font-size:28px;letter-spacing:-.03em;margin:0 0 7px;color:var(--navy)}.card-head p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:15px}.field-group{margin-bottom:16px}.field-group label{display:block;margin-bottom:7px;font-size:12px;font-weight:800;color:#34505f}.field,.select{width:100%;border:1px solid var(--line);border-radius:11px;background:#fbfdfd;color:var(--ink);padding:12px 13px;font:inherit;font-size:14px;min-height:46px;outline:none;transition:border-color .2s,box-shadow .2s}.field::placeholder{color:#9aabb3}.field:focus,.select:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(18,134,155,.12)}.field.invalid,.select.invalid{border-color:var(--danger);box-shadow:0 0 0 3px rgba(173,62,62,.1)}
@@ -65,10 +65,10 @@
             <div class="field-group"><label for="password">Crie uma senha</label><input class="field" id="password" name="password" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo de 6 caracteres" required></div>
             <div class="field-group"><label for="password2">Confirme a senha</label><input class="field" id="password2" name="password2" type="password" autocomplete="new-password" placeholder="Repita a senha" required></div>
           </div>
-          <div class="field-group"><label>Escolha seu plano inicial</label><div class="plans" role="radiogroup" aria-label="Plano inicial">
-            <label class="plan"><input type="radio" name="plan" value="essencial"><span class="plan-name">Essencial</span><span class="plan-price">R$ 4,90 <small>/unidade/mês</small></span><span class="plan-desc">Comunicação, operação e financeiro básico.</span></label>
-            <label class="plan"><input type="radio" name="plan" value="pro"><span class="plan-badge">Mais escolhido</span><span class="plan-name">Gestão Pro</span><span class="plan-price">R$ 7,90 <small>/unidade/mês</small></span><span class="plan-desc">Automação financeira e gestão avançada.</span></label>
-          </div></div>
+          <fieldset class="field-group"><legend>Escolha seu plano inicial</legend><div class="plans" role="radiogroup" aria-label="Plano inicial">
+            <label class="plan"><input type="radio" name="plan" value="essencial"><span class="plan-name">Essencial</span><span class="plan-price" data-plan="essencial"><small>/unidade/mês</small></span><span class="plan-desc">Comunicação, operação e financeiro básico.</span></label>
+            <label class="plan"><input type="radio" name="plan" value="pro"><span class="plan-badge">Mais escolhido</span><span class="plan-name">Gestão Pro</span><span class="plan-price" data-plan="pro"><small>/unidade/mês</small></span><span class="plan-desc">Automação financeira e gestão avançada.</span></label>
+          </div></fieldset>
           <label class="terms"><input id="terms" type="checkbox" required><span>Li e concordo com os <a href="/termos" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</span></label>
           <button class="submit" id="submitBtn" type="submit">Criar minha conta grátis →</button>
           <p class="fine">Após 14 dias, assine para continuar. Você poderá ajustar o plano depois; a implantação assistida é gratuita no contrato anual.</p>
@@ -86,6 +86,12 @@
 
 <script type="module">
 import { supabase as sb } from "./supabase-client.js";
+import { PLAN_PRICES, planBRL } from "./plans.js";
+
+document.querySelectorAll(".plan-price[data-plan]").forEach((el) => {
+  const plan = PLAN_PRICES[el.dataset.plan];
+  if (plan) el.innerHTML = `${planBRL(plan.monthly)} <small>/unidade/mês</small>`;
+});
 
 const form = document.getElementById("signupForm");
 const message = document.getElementById("message");
@@ -112,7 +118,7 @@ document.querySelector(`input[name="plan"][value="${initialPlan}"]`).checked = t
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearMessage();
-  form.querySelectorAll(".invalid").forEach(el=>el.classList.remove("invalid"));
+  form.querySelectorAll(".invalid").forEach(el=>{el.classList.remove("invalid");el.removeAttribute("aria-invalid");el.removeAttribute("aria-describedby");});
   const data = new FormData(form);
   const name=String(data.get("name")||"").trim();
   const phone=String(data.get("phone")||"").trim();
@@ -135,7 +141,7 @@ form.addEventListener("submit", async (event) => {
   if(!plan) problems.push(["plan","Escolha um plano inicial."]);
   if(!document.getElementById("terms").checked) problems.push(["terms","Aceite os termos para continuar."]);
   if(problems.length){
-    problems.forEach(([id])=>document.getElementById(id)?.classList.add("invalid"));
+     problems.forEach(([id])=>{const el=document.getElementById(id);if(el){el.classList.add("invalid");el.setAttribute("aria-invalid","true");el.setAttribute("aria-describedby","message");}});
     showMessage(problems[0][1]);
     document.getElementById(problems[0][0])?.focus();
     return;
