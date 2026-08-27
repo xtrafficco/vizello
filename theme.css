@@ -4,6 +4,10 @@
    Fonte única da paleta e do modo escuro (data-theme="dark" no <html>).
    ===================================================================== */
 :root{
+  /* Faz controles nativos (checkbox, radio, select, date/time picker),
+     scrollbars e o canvas do UA seguirem o tema ativo — evita render claro e
+     "flash branco" no modo escuro. Ligado ao data-theme (tema é manual, não OS). */
+  color-scheme: light;
   --bg:#0b2c37; --bg2:#0e4a5a; --surface:#ffffff; --ink:#0d2830; --muted:#566d75;
   --line:#e0e8e9; --brand:#0e4a5a; --brand-ink:#0e4a5a; --accent:#17a2ba;
   --sand:#e0a33a; --ok:#1c8a5f; --warn:#b57209; --danger:#c0392b; --chip:#eef3f3;
@@ -17,6 +21,7 @@
   --wm-orange:#c85a1e; --wm-gold:#e0a11c; --wm-blue:#2e6e92; --wm-navy:#183451;
 }
 :root[data-theme="dark"]{
+  color-scheme: dark;
   --bg:#071f28; --bg2:#0a3542; --surface:#102d36; --ink:#eaf4f5; --muted:#9fc0c7;
   --line:#29444b; --brand:#17a2ba; --brand-ink:#8fd4e0; --accent:#5fd0e2;
   --sand:#e0a33a; --ok:#55c995; --warn:#e7b455; --danger:#e2645a; --chip:#1b3d46;

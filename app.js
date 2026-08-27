@@ -4,9 +4,10 @@ import {
   isGestor, isPortaria, isSindico, NAV_SVG, tabsFor,
   fmtDate, esc, fmtNum, compLabel, fmtBytes, fmtMoney, unitLabel,
   OC_CAT, OC_STATUS, urlBase64ToUint8Array, abToB64u, publicErrorMessage,
-  safeAppTab, validateUpload
+  safeAppTab, validateUpload, waPhone
 } from "./helpers.js";
 import { wireLabels, syncA11y } from "./ui-a11y.js";
+import { applyTheme, currentTheme, toggleTheme } from "./theme.js";
 
 // Chave pública VAPID do Web Push (pública; a privada é secret da Edge Function)
 const VAPID_PUBLIC = "BJeUbCaT-75qLroDtQvhI-yy-LN5AzTH67ymOqx4kO-0S9YinNIXpnJYJQYLrV1T6WCA12sl6p_MOuUOT_nlfjw";
@@ -148,7 +149,6 @@ function qrDataUrl(text, cell=7){
   const tag=qrImg(text,cell); const m=/src="([^"]+)"/.exec(tag||""); return m?m[1]:"";
 }
 // número no formato do WhatsApp (adiciona 55 quando parece só DDD+número)
-function waPhone(raw){ let d=(raw||"").replace(/\D/g,""); if(!d) return ""; if(d.length<=11 && !d.startsWith("55")) d="55"+d; return d; }
 function waMsgVisitante(v){
   const cond=(S.cond&&S.cond.nome)||"condomínio";
   const val=v.validade_ate?("válido até "+new Date(v.validade_ate).toLocaleString("pt-BR")):"sem prazo de expiração";
@@ -893,9 +893,7 @@ document.addEventListener("keydown",e=>{
   }
 });
 // ---------- TEMA (claro/escuro) ----------
-function currentTheme(){ return document.documentElement.getAttribute("data-theme")||"light"; }
-function applyTheme(t){ document.documentElement.setAttribute("data-theme",t); try{ localStorage.setItem("vz-theme",t); }catch(_){}; const el=document.querySelector('meta[name=theme-color]'); if(el) el.content=t==="dark"?"#0d1f30":"#183451"; }
-function toggleTheme(){ applyTheme(currentTheme()==="dark"?"light":"dark"); }
+// currentTheme/applyTheme/toggleTheme movidos para ./theme.js (compartilhado).
 function buscaGlobal(){
   sheet(`<h2>🔍 Buscar</h2>
     <input id="bgInput" class="field" placeholder="Buscar em avisos, ocorrências, mural..." autocomplete="off">

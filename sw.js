@@ -1,7 +1,8 @@
 // CondoApp — Service Worker (PWA: instalável + shell offline básico).
-const CACHE = "condoapp-v23";
+const CACHE = "condoapp-v25";
 const SHELL = ["/", "/index.html", "/condominio.html", "/login", "/imobiliaria.html", "/admin.html", "/pagamento.html",
-  "/app.css", "/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js", "/theme.css", "/plans.js", "/qrcode.js", "/jsqr.js",
+  "/app.css", "/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js", "/theme.js", "/theme.css", "/plans.js", "/qrcode.js", "/jsqr.js",
+  "/index-app.js", "/cadastro-app.js", "/pagamento-app.js", "/admin-app.js", "/imobiliaria-app.js",
   "/manifest.webmanifest", "/manifest-imobiliaria.webmanifest", "/manifest-morador-imob.webmanifest", "/manifest-proprietario.webmanifest", "/admin.webmanifest",
   "/logo-dark.png", "/logo-white.png",
   "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png"];
@@ -13,7 +14,8 @@ const SAFE_TABS = new Set([
 ]);
 const PROTECTED_NAVIGATION = new Set(["/admin", "/admin.html", "/condominio", "/condominio.html", "/morador", "/sindico", "/portaria", "/imobiliaria", "/imobiliaria.html", "/morador-imob", "/proprietario", "/pagamento", "/pagamento.html"]);
 const isProtectedNavigation = (pathname) => PROTECTED_NAVIGATION.has(pathname);
-const AUTH_CRITICAL_ASSETS = new Set(["/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js"]);
+const AUTH_CRITICAL_ASSETS = new Set(["/app.js", "/helpers.js", "/supabase-client.js", "/ui-a11y.js",
+  "/index-app.js", "/cadastro-app.js", "/pagamento-app.js", "/admin-app.js", "/imobiliaria-app.js"]);
 function safeNotificationLink(value) {
   const raw = typeof value === "string" ? value.trim() : "";
   const tab = raw.replace(/^#/, "");

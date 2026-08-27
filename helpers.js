@@ -1,6 +1,6 @@
 // =============================================================================
 // Vizello — helpers puros (sem dependência de DOM, estado ou Supabase).
-// Extraído de app.js (modularização — ver docs/MODULARIZATION.md).
+// Extraído de app.js para permitir teste isolado das funções puras.
 // Testável isoladamente: tests/helpers.test.js
 // =============================================================================
 
@@ -48,8 +48,15 @@ export function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;"
 export function fmtNum(n){ return (n==null||n==="")?"—":Number(n).toLocaleString("pt-BR",{maximumFractionDigits:3}); }
 export function compLabel(c){ if(!c||!/^\d{4}-\d{2}$/.test(c)) return c||""; const [y,m]=c.split("-"); return m+"/"+y.slice(2); }
 export function fmtBytes(b){ if(!b) return ""; const u=["B","KB","MB","GB"]; let i=0,n=Number(b); while(n>=1024&&i<u.length-1){n/=1024;i++;} return `${n.toFixed(n<10&&i>0?1:0)} ${u[i]}`; }
-export const fmtMoney = v => "R$ " + Number(v||0).toFixed(2).replace(".",",");
+// Formatação de moeda unificada (pt-BR / BRL, com separador de milhar). Antes
+// havia deriva: esta versão gerava "R$ 1234,56" enquanto admin/imobiliária
+// usavam toLocaleString ("R$ 1.234,56"). Agora todos os portais usam esta.
+export const fmtMoney = v => (Number(v)||0).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
 export const unitLabel = (bloco,numero)=> numero ? `${bloco?bloco+" ":""}${numero}` : "Sem unidade";
+// Normaliza um telefone para o formato do link wa.me (só dígitos, prefixo 55
+// quando parece um número nacional sem DDI). Compartilhado por app.js e
+// imobiliaria-app.js — antes duplicado idêntico em ambos.
+export function waPhone(raw){ let d=(raw||"").replace(/\D/g,""); if(!d) return ""; if(d.length<=11 && !d.startsWith("55")) d="55"+d; return d; }
 
 // Mensagens de banco/infraestrutura não devem ser expostas diretamente na UI.
 // O detalhe técnico continua disponível no console/observabilidade do app.
