@@ -51,7 +51,7 @@ export function fmtBytes(b){ if(!b) return ""; const u=["B","KB","MB","GB"]; let
 // Formatação de moeda unificada (pt-BR / BRL, com separador de milhar). Antes
 // havia deriva: esta versão gerava "R$ 1234,56" enquanto admin/imobiliária
 // usavam toLocaleString ("R$ 1.234,56"). Agora todos os portais usam esta.
-export const fmtMoney = v => (Number(v)||0).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+export const fmtMoney = v => (Number(v)||0).toLocaleString("pt-BR", {style:"currency", currency:"BRL"}).replace(/[\u00a0\u202f]/g, " ");
 export const unitLabel = (bloco,numero)=> numero ? `${bloco?bloco+" ":""}${numero}` : "Sem unidade";
 // Normaliza um telefone para o formato do link wa.me (só dígitos, prefixo 55
 // quando parece um número nacional sem DDI). Compartilhado por app.js e

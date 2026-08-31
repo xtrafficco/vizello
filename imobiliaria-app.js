@@ -157,6 +157,17 @@ async function enterApp(){
   $("#whoUser").textContent=saudacao();
   $("#topOut").onclick=logout;
   show("app"); buildNav(); go(S.tab||"inicio");
+  tratarRetornoMP();
+}
+// Feedback ao voltar do OAuth do Mercado Pago (?mp=conectado|erro).
+function tratarRetornoMP(){
+  const qp=new URLSearchParams(location.search); const mp=qp.get("mp"); if(!mp) return;
+  if(mp==="conectado"){ toast("Conta Mercado Pago conectada ✅"); }
+  else{ const motivos={negado:"Você não autorizou a conexão.",state_invalido:"Sessão de conexão expirada. Tente de novo.",token_falhou:"O Mercado Pago recusou a autorização.",sem_code:"Retorno inválido do Mercado Pago."}; toast(motivos[qp.get("mp_reason")]||"Não foi possível conectar o Mercado Pago."); }
+  qp.delete("mp"); qp.delete("mp_reason");
+  const url=location.pathname+(qp.toString()?"?"+qp.toString():"")+location.hash;
+  history.replaceState(null,"",url);
+  go("perfil");
 }
 
 // ---- ícones SVG (padrão do admin/condomínio) ----
@@ -192,6 +203,7 @@ const HUB=[
   {id:"leads",ic:IC.leads,label:"Leads",desc:"Interessados e visitas"},
   {id:"vistorias",ic:IC.vistorias,label:"Vistorias",desc:"Laudos de entrada/saída"},
   {id:"comissoes",ic:IC.comissoes,label:"Comissões & Repasses",desc:"Relatório para os donos"},
+  {id:"relatorio",ic:IC.financeiro,label:"Relatório de aluguéis",desc:"Recebidos, atrasos e juros"},
   {id:"mapa",ic:IC.mapa,label:"Mapa",desc:"Imóveis no mapa"},
   {id:"anuncios",ic:IC.anuncios,label:"Anúncios (OLX/ZAP)",desc:"Publicar nos portais"},
   {id:"perfil",ic:IC.config,label:"Perfil e conta",desc:"Dados, tema e sessão"},
@@ -209,7 +221,7 @@ function go(tab){
   window.scrollTo(0,0);
   const R={inicio:renderInicio,imoveis:renderImoveis,locatarios:renderLocatarios,financeiro:renderFinanceiro,
     servicos:renderServicos,donos:renderProprietarios,proprietarios:renderProprietarios,leads:renderLeads,
-    vistorias:renderVistorias,comissoes:renderComissoes,mapa:renderMapa,anuncios:renderAnuncios,
+    vistorias:renderVistorias,comissoes:renderComissoes,relatorio:renderRelatorioAluguel,mapa:renderMapa,anuncios:renderAnuncios,
     atendimento:renderAtendimentoImob,perfil:renderConfig,config:renderConfig};
   (R[tab]||renderInicio)();
 }
@@ -251,6 +263,46 @@ async function renderLocatarios(){
 }
 
 // ---------- COMISSÕES & REPASSES (relatório) ----------
+async function renderRelatorioAluguel(){
+  const token=S._renderToken;
+  const hojeD=new Date();
+  const iso=d=>d.toISOString().slice(0,10);
+  const de=S._relDe||iso(new Date(hojeD.getFullYear(),hojeD.getMonth(),1));
+  const ate=S._relAte||iso(hojeD);
+  view().innerHTML=`<div class="h">📈 Relatório de aluguéis <small>Recebidos, atrasos e juros</small></div>
+    <div class="bar">
+      <div><label style="font-size:12px">De</label><input id="relDe" class="field" type="date" value="${de}" style="max-width:170px"></div>
+      <div><label style="font-size:12px">Até</label><input id="relAte" class="field" type="date" value="${ate}" style="max-width:170px"></div>
+    </div>
+    <div class="bar"><button class="btn small secondary" id="relMes">Este mês</button><button class="btn small secondary" id="relAno">Este ano</button></div>
+    <div id="relBody"><div class="spin"></div></div>`;
+  const setRange=(d1,d2)=>{ S._relDe=d1; S._relAte=d2; renderRelatorioAluguel(); };
+  $("#relDe").onchange=()=>setRange($("#relDe").value,$("#relAte").value);
+  $("#relAte").onchange=()=>setRange($("#relDe").value,$("#relAte").value);
+  $("#relMes").onclick=()=>setRange(iso(new Date(hojeD.getFullYear(),hojeD.getMonth(),1)),iso(hojeD));
+  $("#relAno").onclick=()=>setRange(iso(new Date(hojeD.getFullYear(),0,1)),iso(hojeD));
+  let rep;
+  try{ rep=await rpc("imob_aluguel_relatorio",{p_imob:S.imob.id,p_de:de,p_ate:ate}); }
+  catch(e){ if(!isCurrentRender(token)) return; $("#relBody").innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
+  if(!isCurrentRender(token)) return;
+  const t=(rep&&rep.totais)||{}, itens=(rep&&rep.itens)||[];
+  const statusBadge=r=> r.status==="pago"?'<span class="badge pago">Recebido</span>':(r.vencido?'<span class="badge vencida">Vencido</span>':'<span class="badge pendente">A receber</span>');
+  const linhas=itens.length? itens.map(r=>`<div class="tile"><div class="row"><div style="flex:1;min-width:0">
+      <h3 style="font-size:15px">🏠 ${esc(r.imovel||"Imóvel")}</h3>
+      <div class="meta">${r.competencia?`<span>${esc(r.competencia)}</span>`:""}${r.vencimento?`<span>📅 vence ${fmtDate(r.vencimento)}</span>`:""}${r.pago_em?`<span>✅ pago ${fmtDate(r.pago_em)}</span>`:""}${r.gateway==="mercadopago"?'<span class="badge">MP</span>':""}</div>
+    </div><div style="text-align:right"><b>${fmtMoney(r.status==="pago"?(r.valor_pago??r.valor):r.valor)}</b><div style="margin-top:4px">${statusBadge(r)}</div></div></div>
+    ${(Number(r.multa)>0||Number(r.juros)>0)?`<div class="meta" style="margin-top:6px"><span>Aluguel ${fmtMoney(r.valor_base)}</span>${Number(r.multa)>0?`<span>Multa ${fmtMoney(r.multa)}</span>`:""}${Number(r.juros)>0?`<span>Juros ${fmtMoney(r.juros)}${r.dias_atraso?` (${r.dias_atraso}d)`:""}</span>`:""}</div>`:""}
+    </div>`).join("") : '<div class="empty"><div class="big" aria-hidden="true">📊</div><p>Sem aluguéis no período.</p></div>';
+  $("#relBody").innerHTML=`
+    <div class="metrics">
+      <div class="metric"><small>Recebidos</small><b style="color:var(--ok)">${fmtMoney(t.recebidos_valor)}</b><small>${t.recebidos_qtd||0} pagamento(s)</small></div>
+      <div class="metric"><small>Não recebidos</small><b class="${t.areceber_qtd?"warn":""}">${fmtMoney(t.areceber_valor)}</b><small>${t.areceber_qtd||0} em aberto</small></div>
+      <div class="metric"><small>Vencidos (inadimplência)</small><b style="color:${Number(t.vencidos_valor)>0?"var(--danger)":"inherit"}">${fmtMoney(t.vencidos_valor)}</b><small>${t.vencidos_qtd||0} vencido(s)</small></div>
+      <div class="metric"><small>Juros pagos</small><b>${fmtMoney(t.juros_pagos)}</b><small>+ multa ${fmtMoney(t.multa_paga)}</small></div>
+    </div>
+    <div class="h" style="font-size:15px;margin:14px 0 8px">Lançamentos (${itens.length})</div>
+    ${linhas}`;
+}
 async function renderComissoes(){
   const token=S._renderToken;
   const comp=S._compComissao||new Date().toISOString().slice(0,7);
@@ -902,6 +954,7 @@ async function renderFinanceiro(){
   }catch(e){ if(!isCurrentRender(token)) return; view().innerHTML=`<p class="empty">Erro: ${esc(publicErrorMessage(e))}</p>`; return; }
   if(!isCurrentRender(token)) return;
   S._lanc=lanc; S._finView=S._finView||"resumo";
+  try{ const st=await rpc("imob_mp_status",{p_imob:S.imob.id}); S._mpOn=!!(st&&st.conectado); }catch(_){ S._mpOn=false; }
   S._telByImovel={}; imoveis.forEach(i=>{ if(i.locacao) S._telByImovel[i.id]={nome:i.locacao.locatario_nome,telefone:i.locacao.locatario_telefone}; });
   const hoje=new Date().toISOString().slice(0,10);
   const rec=lanc.filter(l=>l.tipo==="receita"), desp=lanc.filter(l=>l.tipo==="despesa");
@@ -973,6 +1026,7 @@ function drawLancamentos(){
     </div><div style="text-align:right"><b style="color:${l.tipo==="receita"?"var(--ok)":"var(--danger)"}">${fmtMoney(l.valor)}</b>
       <div style="margin-top:4px"><span class="badge ${l.status==="pago"?"pago":(venc?"vencida":"pendente")}">${l.status==="pago"?"Pago":(venc?"Vencido":"Pendente")}</span></div></div></div>
     <div class="bar" style="margin:10px 0 0">${l.status==="pendente"?`<button class="btn small" data-pg="${l.id}">✅ ${l.tipo==="receita"?"Recebido":"Pago"}</button>`:`<button class="btn small secondary" data-reab="${l.id}">↩ Reabrir</button>`}
+      ${(l.tipo==="receita"&&l.categoria==="aluguel"&&l.status==="pendente"&&S._mpOn)?`<button class="btn small" data-mp="${l.id}" style="background:#009ee3;color:#fff">💠 Cobrar MP</button>`:""}
       ${(l.tipo==="receita"&&l.status==="pendente"&&S.imob.pix_chave)?`<button class="btn small secondary" data-pix="${l.id}">💠 Pix</button>`:""}
       ${(l.tipo==="receita"&&l.imovel_id&&(S._telByImovel||{})[l.imovel_id])?`<button class="btn small secondary" data-cobra="${l.id}" style="background:#25d366;color:#fff">📲 Cobrar</button>`:""}
       <button class="btn small secondary" data-edl="${l.id}">✏️</button><button class="btn small danger" data-dell="${l.id}">🗑️</button></div></div>`;
@@ -981,12 +1035,37 @@ function drawLancamentos(){
   el.querySelectorAll("[data-pg]").forEach(b=>b.onclick=()=>lancStatus(b.dataset.pg,"pago"));
   el.querySelectorAll("[data-reab]").forEach(b=>b.onclick=()=>lancStatus(b.dataset.reab,"pendente"));
   el.querySelectorAll("[data-cobra]").forEach(b=>b.onclick=()=>cobrarWhatsApp(byId[b.dataset.cobra]));
+  el.querySelectorAll("[data-mp]").forEach(b=>b.onclick=()=>cobrarAluguelMP(byId[b.dataset.mp]));
   el.querySelectorAll("[data-pix]").forEach(b=>b.onclick=()=>gerarPix(byId[b.dataset.pix]));
   el.querySelectorAll("[data-edl]").forEach(b=>b.onclick=()=>formLancamento(byId[b.dataset.edl]));
   el.querySelectorAll("[data-dell]").forEach(b=>b.onclick=async()=>{ if(!await confirmar("Excluir este lançamento?","Excluir")) return; try{ await dbWrite(sb.from("imob_lancamentos").delete().eq("id",b.dataset.dell)); toast("Excluído"); renderFinanceiro(); }catch(e){ toast(e.message); } });
 }
 async function lancStatus(id,status){
   try{ await dbWrite(sb.from("imob_lancamentos").update({status, pago_em: status==="pago"?new Date().toISOString():null}).eq("id",id)); toast(status==="pago"?"Baixado ✅":"Reaberto"); renderFinanceiro(); }catch(e){ toast(e.message); }
+}
+// Cobrança de aluguel via Mercado Pago (conta da imobiliária). Valor já com juros/multa do dia; baixa automática.
+async function cobrarAluguelMP(l){
+  if(!l) return;
+  modal(`<h2>💠 Cobrança Mercado Pago</h2><div class="spin"></div>`);
+  try{
+    const { data, error } = await sb.functions.invoke("cobrar-aluguel",{ body:{ lancamento_id:l.id } });
+    if(error||!data||data.error) throw new Error((data&&data.error)||error?.message||"Falha ao gerar a cobrança");
+    const qr=data.qr_code, qr64=data.qr_code_base64, total=data.total, base=data.valor_base, multa=data.multa||0, juros=data.juros||0, dias=data.dias_atraso||0;
+    const temEncargo=(multa>0||juros>0);
+    const detalhe=temEncargo?`<div class="drow"><span class="k">Aluguel</span><span class="v">${fmtMoney(base)}</span></div>
+      ${multa>0?`<div class="drow"><span class="k">Multa</span><span class="v">${fmtMoney(multa)}</span></div>`:""}
+      ${juros>0?`<div class="drow"><span class="k">Juros (${dias} dia(s) de atraso)</span><span class="v">${fmtMoney(juros)}</span></div>`:""}
+      <div class="drow"><span class="k"><b>Total</b></span><span class="v"><b>${fmtMoney(total)}</b></span></div>`
+      :`<div class="drow"><span class="k"><b>Total</b></span><span class="v"><b>${fmtMoney(total)}</b></span></div>`;
+    modal(`<h2>💠 Cobrança Mercado Pago</h2>
+      <p class="sub" style="text-align:left">O valor cai na conta da sua imobiliária. A baixa é automática ao pagar.</p>
+      <div class="tile" style="background:var(--chip)">${detalhe}</div>
+      ${qr64?`<div style="text-align:center;margin-top:8px"><img alt="QR PIX" src="data:image/png;base64,${qr64}" loading="lazy" decoding="async" style="width:220px;max-width:70%"></div>`:""}
+      ${qr?`<textarea class="field" rows="3" readonly style="font-size:12px;word-break:break-all;margin-top:8px">${esc(qr)}</textarea><button class="btn secondary" id="mpCopy" style="margin-top:8px">📋 Copiar código PIX</button>`:'<p class="empty">PIX indisponível. Tente novamente.</p>'}
+      <button class="btn" id="mpClose" style="margin-top:8px">Fechar</button>`);
+    $("#mpClose").onclick=closeModal;
+    $("#mpCopy")?.addEventListener("click",async()=>{ try{ await navigator.clipboard.writeText(qr); toast("Copiado ✅"); }catch(_){ toast("Copie o código manualmente."); } });
+  }catch(e){ closeModal(); toast(e.message||"Erro"); }
 }
 function cobrarWhatsApp(l){
   if(!l) return;
@@ -1211,7 +1290,7 @@ async function renderConfig(){
     </div>`;
   view().insertAdjacentHTML("beforeend",`<div id="cfRest"></div>`);
   $("#cfRest").innerHTML=`
-    <div class="bar"><button class="btn small secondary" id="cfEdit">✏️ Editar imobiliária</button><button class="btn small secondary" id="cfBanco">🏦 Dados de recebimento</button><button class="btn small secondary" id="cfIntegra">🔌 Integração de recebimento</button><button class="btn small secondary" id="cfAviso">📢 Avisos aos moradores</button>${S.imob.papel==="dono"?`<button class="btn small secondary" id="cfMembro">➕ Adicionar operador</button>`:""}</div>
+    <div class="bar"><button class="btn small secondary" id="cfEdit">✏️ Editar imobiliária</button><button class="btn small secondary" id="cfBanco">🏦 Dados de recebimento</button><button class="btn small secondary" id="cfIntegra">🔌 Integração de recebimento</button><button class="btn small secondary" id="cfEncargos">📈 Juros e multa</button><button class="btn small secondary" id="cfAviso">📢 Avisos aos moradores</button>${S.imob.papel==="dono"?`<button class="btn small secondary" id="cfMembro">➕ Adicionar operador</button>`:""}</div>
     <div class="h" style="font-size:16px;margin-top:20px">Assinatura VIZELLO</div><div id="assinVzImob"><div class="spin"></div></div>
     <div class="h" style="font-size:16px;margin-top:20px">Equipe</div><div id="cfMembros"><div class="spin"></div></div>
     <div class="h" style="font-size:16px;margin-top:20px">Aparência</div>
@@ -1221,6 +1300,7 @@ async function renderConfig(){
   $("#cfEdit").onclick=editarImob;
   $("#cfBanco").onclick=dadosRecebimento;
   $("#cfIntegra").onclick=integracaoPagamento;
+  $("#cfEncargos").onclick=encargosConfig;
   $("#cfAviso").onclick=avisosManager;
   $("#cfMembro")?.addEventListener("click",addMembro);
   $("#cfTema").onclick=()=>{ const dark=document.documentElement.getAttribute("data-theme")==="dark"; const nv=dark?"light":"dark"; document.documentElement.setAttribute("data-theme",nv); try{localStorage.setItem("vz-theme",nv);}catch(_){} renderConfig(); };
@@ -1315,6 +1395,32 @@ async function dadosRecebimento(){
     }catch(e){ setMsg("#brErr",e.message||"Erro","err"); $("#brSave").disabled=false; }
   };
 }
+async function encargosConfig(){
+  modal('<h2>Juros e multa</h2><div class="spin"></div>');
+  let d={}; try{ const {data}=await sb.from("imobiliarias").select("cobranca_ativa,cobranca_multa_pct,cobranca_juros_mes_pct,cobranca_carencia_dias").eq("id",S.imob.id).single(); d=data||{}; }catch(_){}
+  modal(`<h2>📈 Juros e multa por atraso</h2>
+    <p class="sub" style="text-align:left">Aplicados automaticamente na cobrança do Mercado Pago quando o aluguel está vencido. Os juros são pró-rata por dia.</p>
+    <label style="display:flex;align-items:center;gap:8px;margin:4px 2px"><input type="checkbox" id="enAtiva" ${d.cobranca_ativa?"checked":""}> <span>Cobrar multa e juros no atraso</span></label>
+    <div class="fld-row" style="margin-top:8px">
+      <div><label>Multa (%)</label><input id="enMulta" class="field" inputmode="decimal" value="${d.cobranca_multa_pct??0}"></div>
+      <div><label>Juros (%/mês)</label><input id="enJuros" class="field" inputmode="decimal" value="${d.cobranca_juros_mes_pct??0}"></div>
+      <div><label>Carência (dias)</label><input id="enCar" class="field" inputmode="numeric" value="${d.cobranca_carencia_dias??0}"></div>
+    </div>
+    <p class="sub" style="text-align:left;font-size:12px;margin:6px 2px 0">Padrão comum: multa 2% + juros 1%/mês. Carência = dias após o vencimento ainda sem encargo.</p>
+    <div id="enErr" class="err"></div>
+    <div class="fld-row" style="margin-top:14px"><button class="btn secondary" id="enCancel">Cancelar</button><button class="btn" id="enSave">Salvar</button></div>`);
+  $("#enCancel").onclick=closeModal;
+  $("#enSave").onclick=async()=>{
+    const rec={ cobranca_ativa:$("#enAtiva").checked,
+      cobranca_multa_pct:num($("#enMulta").value)||0,
+      cobranca_juros_mes_pct:num($("#enJuros").value)||0,
+      cobranca_carencia_dias:int($("#enCar").value)||0 };
+    $("#enSave").disabled=true;
+    try{ const {error}=await sb.from("imobiliarias").update(rec).eq("id",S.imob.id); if(error) throw error;
+      closeModal(); toast("Encargos salvos ✅"); }
+    catch(e){ setMsg("#enErr",e.message||"Erro","err"); $("#enSave").disabled=false; }
+  };
+}
 async function avisosManager(){
   modal('<h2>Avisos</h2><div class="spin"></div>');
   let avisos=[]; try{ const {data}=await sb.from("imob_avisos").select("*").eq("imobiliaria_id",S.imob.id).order("created_at",{ascending:false}).limit(20); avisos=data||[]; }catch(_){}
@@ -1334,27 +1440,50 @@ async function avisosManager(){
 async function integracaoPagamento(){
   modal('<h2>Integração de recebimento</h2><div class="spin"></div>');
   let cfg={}; try{ const {data}=await sb.from("imob_pagamentos_config").select("*").eq("imobiliaria_id",S.imob.id).maybeSingle(); cfg=data||{}; }catch(_){}
+  let mp={conectado:false}; try{ mp=(await rpc("imob_mp_status",{p_imob:S.imob.id}))||{conectado:false}; }catch(_){}
   const provs=[
     {id:"pix_manual",nome:"Pix (sua chave)",desc:"QR e copia-e-cola pela sua chave Pix. Baixa manual.",pronto:true},
-    {id:"mercadopago",nome:"Mercado Pago / Mercado Livre",desc:"Pix dinâmico + boleto + baixa automática (webhook).",pronto:false},
     {id:"cora",nome:"Cora",desc:"Boleto e Pix com conciliação automática.",pronto:false},
     {id:"itau",nome:"Itaú",desc:"API de cobrança (Pix/boleto) com baixa automática.",pronto:false},
     {id:"bradesco",nome:"Bradesco",desc:"API de cobrança (Pix/boleto) com baixa automática.",pronto:false},
   ];
+  // Cartão do Mercado Pago (conexão OAuth: o aluguel cai 100% na conta da imobiliária).
+  const mpTile=`<div class="tile" style="padding:14px"><div class="row"><div style="flex:1;min-width:0">
+      <h3>Mercado Pago / Mercado Livre ${mp.conectado?'<span class="badge pago">conectado</span>':'<span class="badge pendente">não conectado</span>'}</h3>
+      <div class="meta"><span>O aluguel cai <b>100% na conta da sua imobiliária</b>, com Pix dinâmico e <b>baixa automática</b>.</span></div>
+      ${mp.conectado&&mp.mp_user_id?`<div class="meta"><span>Conta MP: ${esc(mp.mp_user_id)}</span>${mp.connected_at?`<span>desde ${fmtDate(mp.connected_at)}</span>`:""}</div>`:""}
+      </div></div>
+      <div class="bar" style="margin:10px 0 0">${mp.conectado?'<button class="btn small secondary" id="mpDisc">Desconectar</button>':'<button class="btn small" id="mpConn">Conectar conta Mercado Pago</button>'}</div></div>`;
   modal(`<h2>🔌 Integração de recebimento</h2>
-    <p class="sub" style="text-align:left">Como sua imobiliária recebe. O <b>Pix pela sua chave já funciona</b> (gera QR/copia-e-cola). Os bancos/PSPs abaixo habilitam <b>boleto e baixa automática</b> e exigem as credenciais do provedor (configuração no servidor).</p>
+    <p class="sub" style="text-align:left">Como sua imobiliária recebe. O <b>Pix pela sua chave já funciona</b> (gera QR/copia-e-cola). Conecte o <b>Mercado Pago</b> para receber com <b>baixa automática e juros no atraso</b>.</p>
+    ${mpTile}
     ${provs.map(p=>`<div class="tile" style="padding:14px"><div class="row"><div style="flex:1;min-width:0">
       <h3>${esc(p.nome)} ${cfg.provider===p.id&&cfg.conectado?'<span class="badge pago">conectado</span>':(cfg.provider===p.id?'<span class="badge pendente">selecionado</span>':"")}</h3>
       <div class="meta"><span>${esc(p.desc)}</span>${p.pronto?'<span class="badge pago">disponível</span>':'<span class="badge pendente">requer credenciais</span>'}</div></div></div>
       <div class="bar" style="margin:10px 0 0"><button class="btn small ${cfg.provider===p.id?"secondary":""}" data-prov="${p.id}">${cfg.provider===p.id?"Selecionado ✓":(p.pronto?"Ativar":"Selecionar")}</button></div></div>`).join("")}
     <button class="btn secondary" id="ipClose" style="margin-top:6px">Fechar</button>`);
   $("#ipClose").onclick=closeModal;
+  $("#mpConn")?.addEventListener("click",conectarMercadoPago);
+  $("#mpDisc")?.addEventListener("click",desconectarMercadoPago);
   document.querySelectorAll("[data-prov]").forEach(b=>b.onclick=async()=>{
     const pid=b.dataset.prov, pronto=pid==="pix_manual";
     try{ await sb.from("imob_pagamentos_config").upsert({imobiliaria_id:S.imob.id, provider:pid, conectado:pronto, atualizado_em:new Date().toISOString()},{onConflict:"imobiliaria_id"});
       toast(pronto?"Pix ativado ✅":"Provedor selecionado — próximo passo: credenciais no servidor"); integracaoPagamento(); }
     catch(e){ toast(e.message); }
   });
+}
+async function conectarMercadoPago(){
+  const btn=$("#mpConn"); if(btn){ btn.disabled=true; btn.textContent="Abrindo…"; }
+  try{
+    const {data,error}=await sb.functions.invoke("mp-oauth-start",{body:{imobiliaria_id:S.imob.id}});
+    if(error||!data?.url) throw new Error(data?.error||error?.message||"Falha ao iniciar a conexão");
+    location.href=data.url;
+  }catch(e){ toast(e.message||"Erro"); if(btn){ btn.disabled=false; btn.textContent="Conectar conta Mercado Pago"; } }
+}
+async function desconectarMercadoPago(){
+  if(!(await confirmar("Desconectar o Mercado Pago? Novas cobranças de aluguel voltam a exigir o Pix manual.","Desconectar"))) return;
+  try{ await rpc("imob_mp_desconectar",{p_imob:S.imob.id}); toast("Mercado Pago desconectado"); integracaoPagamento(); }
+  catch(e){ toast(e.message||"Erro"); }
 }
 function addMembro(){
   modal(`<h2>Adicionar operador</h2><p class="sub" style="text-align:left">A pessoa precisa já ter uma conta (criada nesta página).</p>

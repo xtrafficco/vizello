@@ -42,14 +42,14 @@ test("preços públicos usam a fonte compartilhada de planos", () => {
   const plans = read("plans.js");
   assert.match(plans, /essencial:\s*Object\.freeze/);
   assert.match(plans, /pro:\s*Object\.freeze/);
-  assert.match(read("index.html"), /import \{ PLAN_PRICES, planBRL \} from "\.\/plans\.js"/);
-  assert.match(read("cadastro.html"), /import \{ PLAN_PRICES, planBRL \} from "\.\/plans\.js"/);
+  assert.match(read("index-app.js"), /import \{ PLAN_PRICES, planBRL \} from "\.\/plans\.js"/);
+  assert.match(read("cadastro-app.js"), /import \{ PLAN_PRICES, planBRL \} from "\.\/plans\.js"/);
   assert.match(read("sw.js"), /"\/plans\.js"/);
 });
 
 test("fluxos críticos falham fechados quando a assinatura não pode ser validada", () => {
   const app = read("app.js");
-  const imob = read("imobiliaria.html");
+  const imob = read("imobiliaria-app.js");
   assert.match(app, /minha_assinatura_vizello/);
   assert.match(app, /Não foi possível validar a assinatura/);
   assert.match(imob, /minha_assinatura_imob/);
